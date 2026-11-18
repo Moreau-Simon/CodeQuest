@@ -74,4 +74,47 @@ describe('validateur de contrat OpenAPI (T042)', () => {
       validator.validateResponse({ method: 'delete', path: '/me/sessions' }, 204, undefined)
     ).toEqual({ valid: true, errors: [] });
   });
+
+  it('valide les schémas des cours (US6), y compris les champs nullables', () => {
+    const lesson = validator.validateNamedSchema('Lesson', {
+      id: '018f2c9e-7b3a-7c4d-9e11-2a6f5d4c8b01',
+      title: 'Les bases',
+      theme: 'Tri',
+      order: 1,
+      estimatedMinutes: 10,
+      status: 'not_started',
+      positioningTestAvailable: true,
+      applicationChallenge: null,
+      progress: { status: 'not_started', quizScore: null, completedAt: null }
+    });
+    expect(lesson).toEqual({ valid: true, errors: [] });
+
+    const completion = validator.validateResponse(
+      { method: 'post', path: '/lessons/{lessonId}/complete' },
+      200,
+      {
+        lessonId: '018f2c9e-7b3a-7c4d-9e11-2a6f5d4c8b01',
+        status: 'completed',
+        quizScore: 100,
+        completedAt: '2026-11-18T10:00:00.000Z',
+        xp: 100,
+        level: 2,
+        applicationChallenge: null
+      }
+    );
+    expect(completion.valid).toBe(true);
+
+    expect(
+      validator.validateNamedSchema('PositioningResult', {
+        score: 40,
+        passed: false,
+        exempted: false,
+        source: null
+      }).valid
+    ).toBe(true);
+
+    expect(
+      validator.validateNamedSchema('FirstAttemptStats', { attempts: 10, successes: 8, rate: 0.8 }).valid
+    ).toBe(true);
+  });
 });

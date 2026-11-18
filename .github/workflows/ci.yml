@@ -55,7 +55,7 @@ jobs:
         run: pnpm build
 
   integration-tests:
-    name: API integration tests
+    name: API integration, contract and E2E tests
     runs-on: ubuntu-latest
     needs: node-checks
     steps:
@@ -80,8 +80,16 @@ jobs:
       - name: Generate Prisma Client
         run: pnpm --filter @codequest/api prisma:generate
 
-      - name: Run integration and contract tests
+      # RegExp du projet : test/(integration|contract)/.*\.spec\.ts$.
+      # Couvre les suites Testcontainers US1–US6, dont :
+      #   - test/integration/lessons.spec.ts       (progression, XP, lore, SC-010)
+      #   - test/contract/lessons.contract.spec.ts (routes /lessons/*)
+      - name: Run API integration and contract tests (US1–US6)
         run: pnpm test:integration
+
+      # Non-fuite des tests cachés (SC-007) — nécessite également Docker.
+      - name: Run API E2E tests (SC-007)
+        run: pnpm --filter @codequest/api test:e2e
 
   python-assets:
     name: Python assets service

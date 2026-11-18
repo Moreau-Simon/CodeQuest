@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { seedChallenges } from './challenges';
+import { seedLessons } from './lessons';
 import { seedRbac } from './rbac';
 
 /**
@@ -11,7 +12,8 @@ async function main(): Promise<void> {
   try {
     await seedRbac(prisma);
     await seedChallenges(prisma);
-    console.warn('✓ Seed terminé : rôles, permissions et défi de tri');
+    await seedLessons(prisma);
+    console.warn('✓ Seed terminé : rôles, permissions, défi de tri et leçons');
   } finally {
     await prisma.$disconnect();
   }

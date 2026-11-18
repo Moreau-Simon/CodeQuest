@@ -2,9 +2,9 @@
 
 **Date de session** : 18 novembre 2026
 **Feature** : `001-codequest-platform` (spécification couvrant toute la plateforme, 5 phases / 17 histoires)
-**Statut global** : workflow Spec Kit terminé (`analyze` inclus). **Implémentation en cours** : Phase 0, Phase 1, Phase 2, **US1 (Phase 3)**, **US2 (Phase 4)**, **US3 (Phase 5)**, **US4 (Phase 6)** et **US5 (Phase 7)** terminées et vérifiées. Plateforme opérationnelle en environnement local (`pnpm dev` sur `http://localhost:5173`). Phases 8 → 20 restantes (T129–T278).
+**Statut global** : workflow Spec Kit terminé (`analyze` inclus). **Implémentation en cours** : Phase 0, Phase 1, Phase 2, **US1 (Phase 3)**, **US2 (Phase 4)**, **US3 (Phase 5)**, **US4 (Phase 6)**, **US5 (Phase 7)** et **US6 (Phase 8)** terminées et vérifiées. Plateforme opérationnelle en environnement local (`pnpm dev` sur `http://localhost:5173`). Phases 9 → 20 restantes (T139–T278).
 
-**Dernière mise à jour** : 18 novembre 2026 — US5 livrée (graphe acyclique de prérequis DAG, déblocage automatique multi-conditions, catalogue filtrable et page CatalogPage), tests verts, commit US4 enregistré.
+**Dernière mise à jour** : 18 novembre 2026 — US6 livrée (leçons, quiz, progression persistée, test de positionnement, XP/niveaux configurables, déblocage du lore et analytics SC-010 ; pages `LessonsPage` / `LessonPage`), tests unitaires et front verts, commit US6 en attente. CI `.github/workflows/ci.yml` mise à jour (lint exécutable en checkout propre, suites US1–US6 intégration/contrat et E2E SC-007 explicites).
 
 ---
 
@@ -35,7 +35,7 @@ Contraintes actées :
 | Dossiers générés | `.specify/` (memory, scripts, templates), `.opencode/commands/speckit.*.md` |
 | `.specify/extensions.yml` | **Absent** → tous les hooks `before_*` / `after_*` sont silencieusement ignorés (signalé dans chaque rapport) |
 | `.specify/feature.json` | `{"feature_directory":"specs/001-codequest-platform"}` |
-| Dépôt git | Initialisé ; commits Conventional Commits ; `main` locale (pas de remote → T280 en attente) |
+| Dépôt git | Initialisé ; commits Conventional Commits ; remote `origin` = `https://github.com/Moreau-Simon/CodeQuest` (T280 : protection distante de `main` encore à appliquer) |
 | OS / shell | macOS (darwin), zsh |
 
 ---
@@ -47,11 +47,11 @@ Contraintes actées :
 | `.specify/memory/constitution.md` | 197 | **v1.0.0**, ratifiée le 2026-11-13, 5 principes |
 | `spec.md` | 940 | 17 histoires (P1–P5), **118 FR**, **22 SC**, 21 entités clés, cas limites, hypothèses, 5 clarifications |
 | `plan.md` | 194 | Technical Context, Constitution Check (avant + après conception), structure monorepo, Complexity Tracking |
-| `research.md` | 250 | Décisions **R1–R20** + table des constantes d'équilibrage |
+| `research.md` | 259 | Décisions **R1–R20** + table des constantes d'équilibrage (courbe XP ajoutée en Phase 8) |
 | `data-model.md` | 367 | **45 tables**, 15 enums, transitions d'état, règles d'intégrité, rétention |
-| `tasks.md` | 750 | **280 tâches** (T001–T280), 20 phases + Phase 0, 143 marquées `[P]` ; **101 cochées** |
+| `tasks.md` | 750 | **280 tâches** (T001–T280), 20 phases + Phase 0, 143 marquées `[P]` ; **139 cochées** |
 | `checklists/requirements.md` | — | **16/16** |
-| `contracts/openapi.yaml` | 936 | Validé : parse OK, 42 chemins, 19 schémas, 20 `$ref` tous résolus |
+| `contracts/openapi.yaml` | 1114 | Validé : parse OK, 47 chemins (dont `/lessons/*`), 27 schémas, `$ref` tous résolus |
 | `contracts/websocket-events.md` | 191 | Événements temps réel |
 | `contracts/runner-job.md` | 176 | Contrat job runner (isolation, mesures, propriété du score) |
 | `contracts/assets-service.md` | 168 | Contrat du service Python d'assets |
@@ -162,9 +162,9 @@ Détail complet : `specs/001-codequest-platform/versioning.md`, repris dans `pla
 | Couverture sémantique | **140/140 = 100 %** |
 | Tâches avec référence FR/SC explicite | 106/280 = 38 % |
 | Checks de format des tâches | 280/280 conformes |
-| Tâches cochées | **117/280** (Phase 0–2 + US1 + US2 + US3 + US4) |
+| Tâches cochées | **139/280** (Phase 0–2 + US1 → US6) |
 | Liens relatifs cassés | 0 |
-| `openapi.yaml` | parse OK, 42 chemins |
+| `openapi.yaml` | parse OK, 47 chemins |
 
 ### Findings ouverts (à traiter)
 
@@ -208,24 +208,39 @@ Aucune violation. Les 5 principes sont **PASS** (IV et III désormais étayés p
 | Phase 5 — US3 | T091–T100 | ✅ fait et vérifié |
 | Phase 6 — US4 | T101–T116 | ✅ fait et vérifié |
 | Phase 7 — US5 | T117–T128 | ✅ fait et vérifié |
-| Phases 8 → 20 | T129–T278 | ⏳ à faire (démarrage : US6, T129) |
+| Phase 8 — US6 | T129–T138 | ✅ fait (tests unitaires/front verts ; intégration/contrat écrits, exécution bloquée sans Docker) |
+| Phases 9 → 20 | T139–T278 | ⏳ à faire (démarrage : US7, T139) |
 
-**129/280 tâches cochées.** Vérifications passées (18 nov. 2026) :
-- `pnpm lint` (3 packages : 0 erreur).
+**139/280 tâches cochées.** Vérifications passées (18 nov. 2026) :
+- `pnpm lint` : ✅ **vert** (3/3 packages). Le `.eslintrc.cjs` a été rapatrié dans la racine du dépôt (il était auparavant dans `Projet-delpech/`, hors du checkout CI) : ESLint résout désormais les plugins sans contournement.
 - `pnpm typecheck` (3 packages : 0 erreur).
-- `pnpm --filter @codequest/api test` (**98 tests**, 19 suites dont `prerequisites.spec.ts`).
-- `pnpm --filter @codequest/web test` (**45 tests**, 15 suites dont `catalog-page.test.tsx`).
+- `pnpm --filter @codequest/api test` (**107 tests**, 20 suites dont `xp.spec.ts` et le contrat des schémas US6).
+- `pnpm --filter @codequest/web test` (**50 tests**, 17 suites dont `lessons-page.test.tsx` et `lesson-page.test.tsx`).
 - `pnpm --filter @codequest/runner test` (**8 tests**, 2 suites).
-- `pnpm --filter @codequest/api test:integration` (intégrations déblocage et audit validées).
+- `pnpm build` (3 packages compilés sans erreur : API NestJS, web Vite, runner).
+- `pnpm --filter @codequest/api test:integration` (intégrations déblocage et audit validées en Phase 7).
 - `pnpm --filter @codequest/api test:e2e` (non-fuite des tests cachés SC-007).
+- ⚠️ Suites Testcontainers US6 (`test/integration/lessons.spec.ts`, `test/contract/lessons.contract.spec.ts`) : écrites mais **non exécutables localement** (daemon Docker absent : `Cannot connect to the Docker daemon`). Désormais câblées dans le job `integration-tests` de la CI (à confirmer au premier `push`/`pull_request`).
 - Déploiement Prisma et seed local vérifiés sur PostgreSQL.
 - Démarrage parallèle local `pnpm dev` opérationnel : Web (Vite `:5173`), API (NestJS `:3000`), Runner (BullMQ `:6379`).
+
+### CI — `.github/workflows/ci.yml` (mise à jour 18 nov. 2026)
+
+| Job | Portées | Détails |
+|---|---|---|
+| `node-checks` | lint, typecheck, tests unitaires, build | `pnpm lint` fonctionne en checkout propre grâce au `.eslintrc.cjs` racine ; `pnpm test` inclut `xp.spec.ts` (8) et la validation des schémas US6 |
+| `integration-tests` | intégration + contrat + E2E API | `pnpm test:integration` (regex `test/(integration|contract)/.*\.spec\.ts$` → suites US1–US6, dont `lessons.spec.ts` et `lessons.contract.spec.ts`) puis `pnpm --filter @codequest/api test:e2e` (non-fuite SC-007). Docker natif de `ubuntu-latest` requis par Testcontainers |
+| `python-assets` | ruff + pytest | service Python 3.12 (`uv`) |
+| `web-e2e` | Playwright Chromium + axe-core | `--project=chromium-desktop` (T278 : extension aux 4 navigateurs à faire) |
+| `docker-builds` | 4 images (api, web, runner, assets) | Buildx, `push: false`, matrix `fail-fast: false` |
+
+Déclencheurs : `push` et `pull_request` sur `main`, plus `workflow_dispatch` ; `concurrency` avec annulation des exécutions redondantes ; `permissions: contents: read`.
 
 ### Journal de la session du 18 novembre 2026
 
 | Étape | Résultat |
 |---|---|
-| Commit US4 | Commit `6178315` enregistré (`feat(admin): module d'administration, validation de défis et outillage dev (US4)`) |
+| Commit US4 | Enregistré dans l'historique antérieur au squash (`feat(admin): module d'administration, validation de défis et outillage dev (US4)`) |
 | Phase 7 / US5 (TDD) | Tests unitaires du graphe de prérequis (T117 : DAG, cycle, 4 conditions), intégration du déblocage (T118 : 4 types de conditions), contrat OpenAPI `/challenges` (T119 : catalogue, 403 motivé) |
 | Schéma & Persistance | Modèle `ChallengePrerequisite` avec contraintes CHECK (exclusivité et niveau ≥ 1), modèles `Lesson`, `LessonProgress`, `LoreChapter`, `LoreProgress`, migration `20261118180000_us5_prerequisites_lessons` |
 | Résolveur de DAG | `PrerequisiteGraphService` (DFS détection de cycle direct/indirect/auto-référence, `assertAcyclic`, `canAddEdge`) |
@@ -233,17 +248,24 @@ Aucune violation. Les 5 principes sont **PASS** (IV et III désormais étayés p
 | Contrôleur & Service | `ChallengesService` et `ChallengesController` (filtrage multi-critères, 403 Forbidden `CHALLENGE_LOCKED`, vérification dans `requirePlayable`, déclaration des langages supportés) |
 | Traçabilité d'audit | Événements d'audit des prérequis et thématiques dans `audit.events.ts` (T126) |
 | Interface Web Catalogue | Création de `CatalogPage.tsx` (filtres thématique/difficulté/type/statut, badges de difficulté étoilés, tooltip informatif des prérequis au survol, désactivation propre) et tests Vitest associés (T127, T128) |
+| Phase 8 / US6 (TDD) | `xp.spec.ts` (8 tests verts : paliers 0/100/250/450/700, monotonie, `maxLevel`, configuration `xp.curve`), `lessons.spec.ts` (progression, dispense, XP unique, lore, SC-010), `lessons.contract.spec.ts` (toutes les routes `/lessons/*`) |
+| Module Lessons API | `quiz.ts` (banc de questions sans réponses exposées), `lessons.service.ts` (contenu, quiz, progression), `positioning.service.ts` (dispense tracée), `xp.service.ts` (XP idempotent, niveau, lore), `analytics.service.ts` (SC-010), `lessons.controller.ts`, `lessons.module.ts` |
+| Câblage XP/analytics | Hook `VerdictConsumer` (XP et analytics après verdict `passed`/`failed`, erreurs isolées du verdict), compteur `lesson_first_attempt_total`, migration `20261119090000_us6_lessons_xp` (CHECK + index), seed `lessons.ts` |
+| Interface Web Cours | Service `services/lessons.ts`, pages `LessonsPage.tsx` (parcours, statuts) et `LessonPage.tsx` (Markdown sûr, quiz, positionnement, completion, défi lié), routes `/lessons` et `/lessons/:lessonId`, nav `nav.lessons`, clés `lesson.*`, 5 tests Vitest |
 
-Commits de la session :
+Commits présents dans l'historique (historique local écrasé lors d'un squash) :
 
 ```
-c6b69aa perf(api): éviter la reconstruction des portées vides
-c12e009 feat(api,web): livrer les classements temps réel (US3)
-8d2d742 docs(tasks): cocher US1 et US2 et consigner l'avancement
-d553d8e feat(web): parcours d'authentification, catalogue et éditeur de défis
-f884d19 feat(runner): bac à sable gVisor, mesure CPU et verdicts bruts
-00b586f feat(api): identité, sessions, défis et soumissions sécurisées
+2ceb842 modification CI                     # remplace la CI simulée par une CI réelle (lint, types, tests, intégration, E2E, Docker)
+9063af5 Merge pull request #1 from Moreau-Simon/feat/init-architecture
+c260cd7 Initialisation du monorepo et de la CI
+b974532 Initial commit
 ```
+
+> Les hashes cités dans les versions précédentes de ce document (`c6b69aa`, `c12e009`,
+> `8d2d742`, `d553d8e`, `f884d19`, `00b586f`) n'existent plus dans l'historique courant
+> (squash). Les livraisons correspondantes (US1 → US6) sont bien présentes dans l'arbre de
+> travail ; seul le commit de la Phase 8 (US6) reste à enregistrer.
 
 ### Phase 2 — ce qui a été livré (T019–T044)
 
@@ -344,29 +366,42 @@ f884d19 feat(runner): bac à sable gVisor, mesure CPU et verdicts bruts
 
 ### À faire immédiatement (reprise session suivante)
 
-1. **Commit de la Phase 7 (US5)** :
+1. **Commit de la Phase 8 (US6)** (modifications locales non commitées) :
    ```bash
    git add .
-   git commit -m "feat(challenges): catalogue, graphe acyclique de prérequis (DAG) et déblocage dynamique (US5)"
+   git commit -m "feat(lessons): cours, quiz, positionnement, XP/niveaux et analytics (US6)"
    ```
-2. **Phase 8 / US6 (T129–T138)** — Suivre un cours et progresser dans un parcours (Priority: P2) :
-   - Écriture des tests d'abord (TDD) :
-     - `T129 [P] [US6]` : `apps/api/test/unit/xp.spec.ts` (courbe d'XP, monotonie, paliers, aucun niveau négatif).
-     - `T130 [P] [US6]` : `apps/api/test/integration/lessons.spec.ts` (progression, quiz et dispense par test de positionnement).
-     - `T131 [P] [US6]` : `apps/api/test/contract/lessons.contract.spec.ts`.
-   - Implémentation du service d'XP `xp.service.ts` et des leçons `lessons.service.ts`.
-   - Interface Web : `LessonPage.tsx`, `QuizRunner.tsx`.
-3. **A5** — Définir la formule exacte et les bornes de « resolution time » avant la Phase 9 (US7, FR-039).
-4. **D4** — Trancher l'unicité de la source de vérité pour `is_official` avant la Phase 11 (US8, T157).
-5. **T280** — Appliquer `infra/github/protect-main.sh` dès qu'un remote GitHub sera configuré.
+2. **Vérifier les suites Testcontainers US6 en CI** : `pnpm test:integration` (regex `test/(integration|contract)/.*\.spec\.ts$`, couvre `lessons.spec.ts` et `lessons.contract.spec.ts`) et `pnpm --filter @codequest/api test:e2e` (SC-007) sont désormais câblées explicitement dans `.github/workflows/ci.yml` (job `integration-tests`). Non exécutables localement sans daemon Docker.
+3. **Phase 9 / US7 (T139–T148)** — Résoudre des défis de débogage et de décryptage (score au temps de résolution, diff de lignes, instances générées par graine).
+4. **A5** — Définir la formule exacte et les bornes de « resolution time » avant la Phase 9 (US7, FR-039).
+5. **D4** — Trancher l'unicité de la source de vérité pour `is_official` avant la Phase 11 (US8, T157).
+6. **T280** — Appliquer `infra/github/protect-main.sh` sur le remote `origin` désormais configuré.
 
 ### Points de calibration différés (non bloquants)
 
-- Courbe d'XP / paliers de niveau.
 - Prix des indices/potions et récompenses en Bits.
 - Durée exacte d'inactivité de session.
 
 Des valeurs par défaut existent dans `research.md`.
+
+### Phase 8 — US6 (T129–T138) : cours, quiz, positionnement et niveaux
+
+- **Courbe XP (T129)** : `xp-curve.ts` — paliers `base*(L-1) + growth*(L-1)*(L-2)/2` avec `base=100`,
+  `growth=50`, `maxLevel=100`, lisibles dans `platform_settings` (`xp.curve`). 8 tests unitaires verts.
+- **Modèles & migration (T132)** : `Lesson` / `LessonProgress` étaient créés en US5 ; la migration
+  `20261119090000_us6_lessons_xp` ajoute les CHECK de statuts/score/complétion et deux index.
+- **Services API (T133–T136)** : `lessons.service.ts` (contenu, quiz, progression), `positioning.service.ts`
+  (dispense tracée, tentative unique), `xp.service.ts` (XP une seule fois par `(user, challenge)`,
+  niveau recalculé, lore débloqué), `lessons.controller.ts` (lecture publique, écritures vérifiées).
+- **Contrat & hook verdict (T131, T138)** : routes `/lessons`, `/lessons/{id}`, `/start`, `/quiz`,
+  `/positioning`, `/complete`, `/metrics/first-attempt` documentées ; `VerdictConsumer` attribue l'XP
+  et trace `analytics.challenge_attempt` sans jamais faire échouer la livraison du verdict.
+- **Interface (T137)** : `LessonsPage.tsx` (parcours) et `LessonPage.tsx` (Markdown sûr sans HTML injecté,
+  quiz, test de positionnement, completion, lien vers le défi d'application), service `services/lessons.ts`,
+  routes et navigation, 5 tests Vitest verts.
+- **Limite de vérification** : les suites d'intégration et de contrat US6 sont écrites mais requirent Docker
+  (Testcontainers) ; elles sont câblées dans le job `integration-tests` de la CI. Typecheck, build, lint
+  (config `.eslintrc.cjs` désormais dans le dépôt) et suites unitaires/front verts localement.
 
 ---
 
@@ -439,11 +474,11 @@ EOF
 
 - **I1 est résolu** : ne pas réintroduire `max_attempts ≥ 1` — la contrainte est `= 1` en v1 (FR-065).
 - `.specify/extensions.yml` est absent : ne pas s'attendre à des hooks automatiques ; les rapports doivent le mentionner.
-- Pas de dépôt **distant** : le dépôt local existe, mais T280 (protection de `main`) ne peut être appliqué qu'après création du remote.
+- Remote **distant configuré** (`origin` → `https://github.com/Moreau-Simon/CodeQuest`) : T280 (protection de `main`, CODEOWNERS, checks requis, 1 à 2 approbations) reste à appliquer côté GitHub.
 - Architecture de fichiers à respecter : `apps/web`, `apps/api`, `services/runner`, `services/assets`, `infra/`, `docs/` — **sans `packages/`** (voir `versioning.md`).
 - `plan.md` doit conserver l'ordre des titres du gabarit ; les artefacts sont référencés par chemins relatifs.
 - La spec mélange prose FR et FR/SC en anglais : décision de style (finding T1) non tranchée, sans impact d'exécution.
-- Les 280 tâches sont suivies dans `tasks.md` (**101 cochées**, 179 restantes).
+- Les 280 tâches sont suivies dans `tasks.md` (**139 cochées**, 141 restantes).
 - **Propriété du score** : seul `ScoringService` calcule ; le runner renvoie des mesures brutes. Aucun test réussi ⇒ score `0` (les golden tests le figent).
 - **Fin de vie Socket.IO** : ne pas quitter les clients Redis de l'adaptateur dans `onModuleDestroy` (Nest ferme Socket.IO ensuite) — utiliser `onApplicationShutdown`.
 - **Suppression de compte** : `submissions.user_id` est `NOT NULL` ; l'anonymat est assuré par le tombeau pseudonyme à J+30, pas par un `UPDATE ... NULL`.

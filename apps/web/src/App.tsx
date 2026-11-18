@@ -15,6 +15,8 @@ import { VerifyEmailPage } from './pages/auth/VerifyEmailPage';
 import { ChallengePage } from './pages/challenges/ChallengePage';
 import { CatalogPage } from './pages/challenges/CatalogPage';
 import { LeaderboardPage } from './pages/leaderboards/LeaderboardPage';
+import { LessonPage } from './pages/lessons/LessonPage';
+import { LessonsPage } from './pages/lessons/LessonsPage';
 import { ProfilePage } from './pages/settings/ProfilePage';
 import { SessionsPage } from './pages/settings/SessionsPage';
 
@@ -67,6 +69,8 @@ export function App(): JSX.Element {
         <Route path="verify-email" element={<VerifyEmailPage />} />
         <Route path="challenges" element={<CatalogPage />} />
         <Route path="challenges/:challengeId" element={<ChallengePage />} />
+        <Route path="lessons" element={<LessonsPage />} />
+        <Route path="lessons/:lessonId" element={<LessonPage />} />
         <Route path="leaderboards" element={<LeaderboardPage />} />
         <Route path="teams" element={<PlaceholderPage title={t('nav.teams')} />} />
         <Route path="events" element={<PlaceholderPage title={t('nav.events')} />} />

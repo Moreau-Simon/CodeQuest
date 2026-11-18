@@ -7,6 +7,7 @@ import { Button } from '../ui';
 
 const NAV_ITEMS = [
   { to: '/challenges', key: 'nav.challenges' },
+  { to: '/lessons', key: 'nav.lessons' },
   { to: '/leaderboards', key: 'nav.leaderboards' },
   { to: '/teams', key: 'nav.teams' },
   { to: '/events', key: 'nav.events' }

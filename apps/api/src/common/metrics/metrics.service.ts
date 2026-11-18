@@ -45,6 +45,13 @@ export class MetricsService {
     registers: [this.registry]
   });
 
+  private readonly lessonFirstAttempt = new Counter({
+    name: 'lesson_first_attempt_total',
+    help: 'Défis liés à une leçon réussis ou manqués au premier essai (SC-010)',
+    labelNames: ['outcome'] as const,
+    registers: [this.registry]
+  });
+
   observeHttp(method: string, route: string, status: number, seconds: number): void {
     this.httpRequestDuration.observe(
       { method, route, status: String(status) },
@@ -66,6 +73,10 @@ export class MetricsService {
 
   countRateLimitHit(scope: string): void {
     this.rateLimitHits.inc({ scope });
+  }
+
+  countFirstAttempt(outcome: 'success' | 'failure'): void {
+    this.lessonFirstAttempt.inc({ outcome });
   }
 
   render(): Promise<string> {

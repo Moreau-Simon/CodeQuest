@@ -248,3 +248,13 @@ Ces valeurs restent modifiables par configuration ou par le back-office, sans mi
 | Purge après suppression de compte | 30 jours | spec FR-012 |
 | Taille d'équipe | 2 à 5, configurable | spec FR-056 |
 | Participants minimum battle royale | 8 | spec FR-101 |
+| Palier XP de base | 100 XP (niveau 1 → 2) | décision Phase 8, `xp.curve` |
+| Croissance des paliers | +50 XP par niveau | décision Phase 8, `xp.curve` |
+| Niveau maximum | 100 | décision Phase 8, `xp.curve` |
+| XP par défi réussi | `max(10, score)` | décision Phase 8, `xp.awarded` |
+
+Courbe retenue (US6, FR-054) : `xpForLevel(L) = base*(L-1) + growth*(L-1)*(L-2)/2`, soit
+0 / 100 / 250 / 450 / 700 … avec les valeurs par défaut. La configuration est lue dans
+`platform_settings` sous la clé `xp.curve` (`{ base, growth, maxLevel }`) : aucun changement de
+schéma n'est nécessaire pour recalibrer. Un défi ne rapporte de l'XP qu'une seule fois par
+joueur (trace d'audit `xp.awarded` par `(user_id, challenge_id)`).

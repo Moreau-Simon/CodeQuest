@@ -1,10 +1,12 @@
-import { Inject, Injectable, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable, Logger, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
 import { Worker, type ConnectionOptions } from 'bullmq';
 import { uuidv7 } from '../../common/uuid';
 import { PrismaService } from '../../prisma/prisma.service';
 import { BULLMQ_CONNECTION } from '../../redis/redis.constants';
 import { SubmissionsGateway } from '../../realtime/submissions.gateway';
 import { LeaderboardService } from '../leaderboards/leaderboard.service';
+import { AnalyticsService } from '../lessons/analytics.service';
+import { XpService } from '../lessons/xp.service';
 import { ScoringService } from '../scoring/scoring.service';
 import type { SubmissionResult } from './submissions.types';
 
@@ -20,13 +22,16 @@ export const SUBMISSIONS_RESULTS_QUEUE_NAME = 'submissions-results';
 @Injectable()
 export class VerdictConsumer implements OnModuleInit, OnModuleDestroy {
   private worker?: Worker<SubmissionResult>;
+  private readonly logger = new Logger(VerdictConsumer.name);
 
   constructor(
     @Inject(BULLMQ_CONNECTION) private readonly connection: ConnectionOptions,
     private readonly prisma: PrismaService,
     private readonly scoring: ScoringService,
     private readonly gateway: SubmissionsGateway,
-    private readonly leaderboards: LeaderboardService
+    private readonly leaderboards: LeaderboardService,
+    private readonly xp: XpService,
+    private readonly analytics: AnalyticsService
   ) {}
 
   onModuleInit(): void {
@@ -142,6 +147,29 @@ export class VerdictConsumer implements OnModuleInit, OnModuleDestroy {
         teamId: submission.teamId,
         eventId: submission.eventId
       });
+    }
+
+    // US6 (FR-054, SC-010) : ces effets ne doivent jamais faire échouer la
+    // livraison d'un verdict déjà commité.
+    try {
+      if (result.status === 'passed' || result.status === 'failed') {
+        await this.analytics.recordChallengeVerdict({
+          userId: submission.userId,
+          challengeId: submission.challengeId,
+          attemptNo: submission.attemptNo,
+          passed: result.status === 'passed',
+          score
+        });
+      }
+      if (result.status === 'passed' && score > 0) {
+        await this.xp.awardForChallenge({
+          userId: submission.userId,
+          challengeId: submission.challengeId,
+          score
+        });
+      }
+    } catch (error) {
+      this.logger.error('Impossible d’enregistrer XP/analytics pour le verdict', error as Error);
     }
 
     this.gateway.verdict(submission.userId, {
