@@ -1,0 +1,20 @@
+# CODEOWNERS — revue obligatoire (section 11.2)
+# Propriétaires par défaut : mainteneurs de la plateforme.
+
+*                                   @codequest/maintainers
+
+# Contrats d'interface : 2 approbations (voir T280 / versioning.md §2)
+/specs/001-codequest-platform/contracts/   @codequest/maintainers @codequest/architects
+/apps/api/prisma/schema.prisma             @codequest/maintainers @codequest/architects
+/apps/api/prisma/migrations/               @codequest/maintainers @codequest/architects
+
+# Infrastructure et sécurité
+/infra/                             @codequest/maintainers @codequest/security
+/.github/workflows/                 @codequest/maintainers @codequest/security
+
+# Modules métier sensibles
+/apps/api/src/modules/auth/         @codequest/maintainers @codequest/security
+/apps/api/src/modules/scoring/      @codequest/maintainers @codequest/architects
+/apps/api/src/modules/economy/      @codequest/maintainers @codequest/architects
+/apps/api/src/modules/audit/        @codequest/maintainers @codequest/security
+/services/runner/                   @codequest/maintainers @codequest/security

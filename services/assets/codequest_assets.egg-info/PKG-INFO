@@ -1,0 +1,16 @@
+Metadata-Version: 2.4
+Name: codequest-assets
+Version: 0.1.0
+Summary: Service de génération déterministe d'assets CodeQuest (stéganographie, QR, images)
+Requires-Python: >=3.12
+Requires-Dist: fastapi>=0.115.0
+Requires-Dist: uvicorn[standard]>=0.30.0
+Requires-Dist: pydantic>=2.9.0
+Requires-Dist: pillow>=10.4.0
+Requires-Dist: qrcode>=7.4.2
+Requires-Dist: stegano>=0.11.3
+Provides-Extra: dev
+Requires-Dist: pytest>=8.3.0; extra == "dev"
+Requires-Dist: pytest-cov>=5.0.0; extra == "dev"
+Requires-Dist: httpx>=0.27.0; extra == "dev"
+Requires-Dist: ruff>=0.6.0; extra == "dev"

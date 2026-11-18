@@ -1,0 +1,5 @@
+packages:
+  - 'apps/api'
+  - 'apps/web'
+  - 'services/runner'
+  # services/assets est un projet Python (pyproject.toml), hors workspace pnpm.
