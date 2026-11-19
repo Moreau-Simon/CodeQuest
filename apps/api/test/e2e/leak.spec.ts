@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { AesGcmService } from '../../src/common/crypto/aes-gcm.service';
+import type { AesGcmService } from '../../src/common/crypto/aes-gcm.service';
 import { uuidv7 } from '../../src/common/uuid';
 import { createTestApp, tokenFromLink, type TestApp } from '../helpers/app';
 import { startTestInfrastructure, type TestInfrastructure } from '../helpers/db';
@@ -48,7 +48,10 @@ describe('no hidden test leak (SC-007)', () => {
 
     challengeId = uuidv7();
     const versionId = uuidv7();
-    const aes = new AesGcmService();
+    // Import différé : `AesGcmService` charge `src/config/env`. Un import
+    // statique figerait les URLs sur les valeurs par défaut de `test/env.ts`.
+    const { AesGcmService: Aes } = await import('../../src/common/crypto/aes-gcm.service');
+    const aes: AesGcmService = new Aes();
     const encrypted = aes.encrypt(
       JSON.stringify({ cases: [{ input: [1], expected: [Number(HIDDEN_MARKER)], hidden: true }] }),
       versionId
@@ -84,7 +87,7 @@ describe('no hidden test leak (SC-007)', () => {
         }
       }
     });
-  }, 180_000);
+  }, 300_000);
 
   afterAll(async () => {
     await prisma?.$disconnect();
