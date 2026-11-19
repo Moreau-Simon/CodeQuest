@@ -1,3 +1,6 @@
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { detectAbuse } from '../src/measure/abuse';
 import { buildDockerArgs, readCpuUsageUsec } from '../src/sandbox/sandbox';
@@ -54,5 +57,21 @@ describe('évasion du bac à sable (T070)', () => {
 
   it('ne trouve pas de cgroup pour un conteneur inexistant', () => {
     expect(readCpuUsageUsec('conteneur-inexistant')).toBeNull();
+  });
+
+  it('ignore le cgroup racine de l’hôte et ne lit que celui du conteneur (T083)', () => {
+    const root = mkdtempSync(path.join(tmpdir(), 'cq-cgroup-'));
+    try {
+      // Le cgroup racine (hôte / runner) existe mais ne doit jamais être utilisé.
+      writeFileSync(path.join(root, 'cpu.stat'), 'usage_usec 154943000\n');
+      const containerDir = path.join(root, 'docker', 'cq-sub-1');
+      mkdirSync(containerDir, { recursive: true });
+      writeFileSync(path.join(containerDir, 'cpu.stat'), 'usage_usec 123456789\n');
+
+      expect(readCpuUsageUsec('conteneur-inexistant', root)).toBeNull();
+      expect(readCpuUsageUsec('cq-sub-1', root)).toBe(123456789);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
   });
 });

@@ -216,7 +216,7 @@ Aucune violation. Les 5 principes sont **PASS** (IV et III désormais étayés p
 - `pnpm typecheck` (3 packages : 0 erreur).
 - `pnpm --filter @codequest/api test` (**107 tests**, 20 suites dont `xp.spec.ts` et le contrat des schémas US6).
 - `pnpm --filter @codequest/web test` (**50 tests**, 17 suites dont `lessons-page.test.tsx` et `lesson-page.test.tsx`).
-- `pnpm --filter @codequest/runner test` (**8 tests**, 2 suites).
+- `pnpm --filter @codequest/runner test` (**9 tests**, 2 suites — 8 initiaux + 1 test de non-régression cgroup ajouté après échec CI).
 - `pnpm build` (3 packages compilés sans erreur : API NestJS, web Vite, runner).
 - `pnpm --filter @codequest/api test:integration` (intégrations déblocage et audit validées en Phase 7).
 - `pnpm --filter @codequest/api test:e2e` (non-fuite des tests cachés SC-007).
@@ -235,6 +235,8 @@ Aucune violation. Les 5 principes sont **PASS** (IV et III désormais étayés p
 | `docker-builds` | 4 images (api, web, runner, assets) | Buildx, `push: false`, matrix `fail-fast: false` |
 
 Déclencheurs : `push` et `pull_request` sur `main`, plus `workflow_dispatch` ; `concurrency` avec annulation des exécutions redondantes ; `permissions: contents: read`.
+
+**Incident CI du 19 nov. 2026 (résolu) — premier échec sur `pnpm test`** : `services/runner/test/escape.test.ts` (`ne trouve pas de cgroup pour un conteneur inexistant`) renvoyait `154943000` au lieu de `null` sur `ubuntu-latest`. Cause : `readCpuUsageUsec()` retombait sur `/sys/fs/cgroup/cpu.stat`, cgroup **de l'hôte/du runner**, absent de macOS (d'où un test vert en local) mais présent en CI — avec un risque réel de mesurer le CPU de la machine au lieu du code soumis (principe III). Correctif : suppression de ce fallback, ajout d'un paramètre `cgroupRoot` injectable et d'un test déterministe qui place un `cpu.stat` hostile à la racine temporaire et vérifie qu'il est ignoré au profit de `docker/<id>/cpu.stat`. `pnpm test` complet revérifié : **107 + 50 + 9 tests verts**.
 
 ### Journal de la session du 18 novembre 2026
 

@@ -135,12 +135,22 @@ function runProcess(
   });
 }
 
-/** Lecture best-effort du cgroup v2 du conteneur (T083). */
-export function readCpuUsageUsec(containerId: string): number | null {
+/**
+ * Lecture best-effort du cgroup v2 **du conteneur sandboxé** (T083).
+ *
+ * Ne jamais retomber sur `/sys/fs/cgroup/cpu.stat` : ce chemin désigne le cgroup
+ * de l'hôte (ou du runner lui-même) et mesurerait le CPU de la machine au lieu de
+ * celui du code soumis — ce qui fausserait le score (principe III). Si aucun
+ * chemin lié au conteneur n'existe, retourner `null` : l'appelant utilise alors
+ * la durée murale comme repli explicite.
+ */
+export function readCpuUsageUsec(
+  containerId: string,
+  cgroupRoot = '/sys/fs/cgroup'
+): number | null {
   const candidates = [
-    `/sys/fs/cgroup/system.slice/docker-${containerId}.scope/cpu.stat`,
-    `/sys/fs/cgroup/docker/${containerId}/cpu.stat`,
-    `/sys/fs/cgroup/cpu.stat`
+    `${cgroupRoot}/system.slice/docker-${containerId}.scope/cpu.stat`,
+    `${cgroupRoot}/docker/${containerId}/cpu.stat`
   ];
   for (const candidate of candidates) {
     try {
