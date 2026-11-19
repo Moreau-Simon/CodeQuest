@@ -1,10 +1,10 @@
 # Avancement — Session Spec Kit / CodeQuest
 
-**Date de session** : 18 novembre 2026
+**Date de session** : 18–19 novembre 2026
 **Feature** : `001-codequest-platform` (spécification couvrant toute la plateforme, 5 phases / 17 histoires)
-**Statut global** : workflow Spec Kit terminé (`analyze` inclus). **Implémentation en cours** : Phase 0, Phase 1, Phase 2, **US1 (Phase 3)**, **US2 (Phase 4)**, **US3 (Phase 5)**, **US4 (Phase 6)**, **US5 (Phase 7)** et **US6 (Phase 8)** terminées et vérifiées. Plateforme opérationnelle en environnement local (`pnpm dev` sur `http://localhost:5173`). Phases 9 → 20 restantes (T139–T278).
+**Statut global** : workflow Spec Kit terminé (`analyze` inclus). **Implémentation en cours** : Phase 0, Phase 1, Phase 2, **US1 (Phase 3)**, **US2 (Phase 4)**, **US3 (Phase 5)**, **US4 (Phase 6)**, **US5 (Phase 7)** et **US6 (Phase 8)** terminées et vérifiées ; **Phase 9 / US7 démarrée**. Plateforme opérationnelle en environnement local (`pnpm dev` sur `http://localhost:5173`). Phases 9 → 20 restantes (T140–T278).
 
-**Dernière mise à jour** : 18 novembre 2026 — US6 livrée (leçons, quiz, progression persistée, test de positionnement, XP/niveaux configurables, déblocage du lore et analytics SC-010 ; pages `LessonsPage` / `LessonPage`), tests unitaires et front verts, commit US6 en attente. CI `.github/workflows/ci.yml` mise à jour (lint exécutable en checkout propre, suites US1–US6 intégration/contrat et E2E SC-007 explicites).
+**Dernière mise à jour** : 19 novembre 2026 — CI totale verte puis **fusionnée sur `main` (PR #2, `a32b3a7`)**. Clarification **A5 tranchée** (option recommandée) et consignée dans `spec.md`. Phase 9 / US7 démarrée en TDD : **T139** (15 tests de scoring), **T143** (`DiffService`) et **T144** (`ResolutionScoringService`) livrés → **142/280 tâches**. Branche dédiée `phase-9-us7` en cours. Vérifications 19 nov. : typecheck/lint API ✅, **123 tests unitaires API verts**, suite web 50 tests verts.
 
 ---
 
@@ -45,11 +45,11 @@ Contraintes actées :
 | Fichier | Lignes | Contenu |
 |---|---|---|
 | `.specify/memory/constitution.md` | 197 | **v1.0.0**, ratifiée le 2026-11-13, 5 principes |
-| `spec.md` | 940 | 17 histoires (P1–P5), **118 FR**, **22 SC**, 21 entités clés, cas limites, hypothèses, 5 clarifications |
+| `spec.md` | 944 | 17 histoires (P1–P5), **118 FR**, **22 SC**, 21 entités clés, cas limites, hypothèses, **6 clarifications** (dont A5, 19 nov.) |
 | `plan.md` | 194 | Technical Context, Constitution Check (avant + après conception), structure monorepo, Complexity Tracking |
 | `research.md` | 259 | Décisions **R1–R20** + table des constantes d'équilibrage (courbe XP ajoutée en Phase 8) |
 | `data-model.md` | 367 | **45 tables**, 15 enums, transitions d'état, règles d'intégrité, rétention |
-| `tasks.md` | 750 | **280 tâches** (T001–T280), 20 phases + Phase 0, 143 marquées `[P]` ; **139 cochées** |
+| `tasks.md` | 768 | **280 tâches** (T001–T280), 20 phases + Phase 0, 143 marquées `[P]` ; **142 cochées** |
 | `checklists/requirements.md` | — | **16/16** |
 | `contracts/openapi.yaml` | 1114 | Validé : parse OK, 47 chemins (dont `/lessons/*`), 27 schémas, `$ref` tous résolus |
 | `contracts/websocket-events.md` | 191 | Événements temps réel |
@@ -85,13 +85,14 @@ Détail complet : `specs/001-codequest-platform/versioning.md`, repris dans `pla
 4. **IV. Tests d'abord + portes CI bloquantes**
 5. **V. Modularité / MoSCoW + gouvernance** (semver, 2 approbations)
 
-### Clarifications intégrées (5)
+### Clarifications intégrées (6)
 
 1. Score d'équipe = **soumission officielle unique** désignée par le capitaine (aucune agrégation).
 2. Le chrono démarre au **démarrage explicite d'essai**.
 3. Compte non confirmé = **lecture seule publique**.
 4. Battle royale = 1 élimination/manche jusqu'à 50 restants, puis 10 % arrondis au supérieur.
 5. Indices achetables = défis **exploratoires uniquement, en solo**, jamais sorting/event/boss.
+6. **(A5, 19 nov. 2026)** Score de résolution : chrono `start` → verdict `passed` (ou `expiredAt` en cas d'abandon), plafonné à `t_max_ms` ; bonus temps conditionné au respect de la limite de lignes modifiées, pénalités de 2 %/ligne excédentaire et 10 %/indice (max 50 % chacune), **une seule tentative en v1**.
 
 ---
 
@@ -162,7 +163,7 @@ Détail complet : `specs/001-codequest-platform/versioning.md`, repris dans `pla
 | Couverture sémantique | **140/140 = 100 %** |
 | Tâches avec référence FR/SC explicite | 106/280 = 38 % |
 | Checks de format des tâches | 280/280 conformes |
-| Tâches cochées | **139/280** (Phase 0–2 + US1 → US6) |
+| Tâches cochées | **142/280** (Phase 0–2 + US1 → US7 partielle) |
 | Liens relatifs cassés | 0 |
 | `openapi.yaml` | parse OK, 47 chemins |
 
@@ -170,7 +171,7 @@ Détail complet : `specs/001-codequest-platform/versioning.md`, repris dans `pla
 
 | ID | Sévérité | Résumé | Emplacements |
 |---|---|---|---|
-| **A5** | **HIGH** | « resolution time » non défini (début/fin, impact indices et essais) — touche le principe III | `spec.md:634-636` (FR-039) |
+| ~~A5~~ | ~~HIGH~~ | **Résolu le 19 nov. 2026** (option recommandée) — voir clarification #6 et `spec.md` § « Session 2026-11-19 » | `spec.md:634-636` (FR-039) |
 | D4 | MEDIUM | Double source de la soumission officielle : `submissions.is_official` **et** `team_official_submissions` | `data-model.md:163`, `tasks.md:158`, `websocket-events.md:56` |
 | T2 | MEDIUM | Confusion `theme` vs type de défi (`challenge_type`) | `spec.md:600`, `data-model.md`, T072 |
 | C5 | MEDIUM | Réversibilité des migrations affirmée mais jamais testée (seul `migrate deploy` sur base vide) | `tasks.md:69` (T021), `plan.md:75` |
@@ -208,13 +209,14 @@ Aucune violation. Les 5 principes sont **PASS** (IV et III désormais étayés p
 | Phase 5 — US3 | T091–T100 | ✅ fait et vérifié |
 | Phase 6 — US4 | T101–T116 | ✅ fait et vérifié |
 | Phase 7 — US5 | T117–T128 | ✅ fait et vérifié |
-| Phase 8 — US6 | T129–T138 | ✅ fait (tests unitaires/front verts ; intégration/contrat écrits, exécution bloquée sans Docker) |
-| Phases 9 → 20 | T139–T278 | ⏳ à faire (démarrage : US7, T139) |
+| Phase 8 — US6 | T129–T138 | ✅ fait et vérifié (CI verte, fusionnée en PR #2) |
+| Phase 9 — US7 (en cours) | T139–T148 | 🔄 T139, T143, T144 faits ; restent T140, T141, T142, T145–T148 |
+| Phases 10 → 20 | T149–T278 | ⏳ à faire |
 
-**139/280 tâches cochées.** Vérifications passées (18 nov. 2026) :
+**142/280 tâches cochées.** Vérifications passées (19 nov. 2026) :
 - `pnpm lint` : ✅ **vert** (3/3 packages). Le `.eslintrc.cjs` a été rapatrié dans la racine du dépôt (il était auparavant dans `Projet-delpech/`, hors du checkout CI) : ESLint résout désormais les plugins sans contournement.
-- `pnpm typecheck` (3 packages : 0 erreur).
-- `pnpm --filter @codequest/api test` (**108 tests**, 21 suites dont `xp.spec.ts`, `aes-gcm-di.spec.ts` et le contrat des schémas US6).
+- `pnpm typecheck` (3 packages : 0 erreur) ; `pnpm --filter @codequest/api typecheck` + `lint` ✅.
+- `pnpm --filter @codequest/api test` (**123 tests**, 22 suites dont `debug-scoring.spec.ts` (15), `xp.spec.ts`, `aes-gcm-di.spec.ts` et le contrat des schémas US6).
 - `pnpm --filter @codequest/web test` (**50 tests**, 17 suites dont `lessons-page.test.tsx` et `lesson-page.test.tsx`).
 - `pnpm --filter @codequest/runner test` (**9 tests**, 2 suites — 8 initiaux + 1 test de non-régression cgroup ajouté après échec CI).
 - `pnpm build` (3 packages compilés sans erreur : API NestJS, web Vite, runner).
@@ -255,6 +257,17 @@ Déclencheurs : `push` et `pull_request` sur `main`, plus `workflow_dispatch` ; 
 **Étape CI `test:e2e` (SC-007)** : le premier log affiché ne montrait que l'avertissement AWS SDK (non bloquant), mais le log complet révélait l'échec du hook de `leak.spec.ts` (incident #9), désormais corrigé. À re-vérifier en CI.
 
 **Incident CI du 19 nov. 2026 (résolu) — premier échec sur `pnpm test`** : `services/runner/test/escape.test.ts` (`ne trouve pas de cgroup pour un conteneur inexistant`) renvoyait `154943000` au lieu de `null` sur `ubuntu-latest`. Cause : `readCpuUsageUsec()` retombait sur `/sys/fs/cgroup/cpu.stat`, cgroup **de l'hôte/du runner**, absent de macOS (d'où un test vert en local) mais présent en CI — avec un risque réel de mesurer le CPU de la machine au lieu du code soumis (principe III). Correctif : suppression de ce fallback, ajout d'un paramètre `cgroupRoot` injectable et d'un test déterministe qui place un `cpu.stat` hostile à la racine temporaire et vérifie qu'il est ignoré au profit de `docker/<id>/cpu.stat`. `pnpm test` complet revérifié : **108 + 50 + 9 tests verts**.
+
+### Journal de la session du 19 novembre 2026
+
+| Étape | Résultat |
+|---|---|
+| CI Phase 8 | Tous les jobs verts ; PR #2 fusionnée sur `main` (`a32b3a7`). Incidents #1–#9 résolus (voir § CI). |
+| Clarification A5 | Option recommandée retenue : chrono `start` → verdict `passed` / `expiredAt`, plafond `t_max_ms`, bonus sous condition de lignes, pénalités indices/lignes, une seule tentative en v1. Consignée dans `spec.md` (§ « Session 2026-11-19 »). |
+| Branche de travail | `phase-9-us7` créée depuis `main` (protégée). |
+| Phase 9 / US7 (TDD) | `debug-scoring.spec.ts` (T139, **15 tests verts**) écrit avant l'implémentation ; `DiffService` (T143, LCS normalisé) et `ResolutionScoringService` (T144, score temps + pénalités) implémentés ; providers/exports câblés dans `ScoringModule` et `SubmissionsModule`. |
+| Vérifications | typecheck ✅, lint ✅, 123 tests API verts ; `pnpm test` global : un test web flaky (`challenges.test.tsx`) a échoué une fois en exécution parallèle puis est passé en relance (17 fichiers / 50 tests verts) — aucun changement web effectué. |
+| Reste à faire (US7) | T140 intégration debugging, T141 déterminisme assets, T142 champs Prisma, T145 instance service, T146 exposition sûre, T147 page web, T148 variante quickstart S2. |
 
 ### Journal de la session du 18 novembre 2026
 

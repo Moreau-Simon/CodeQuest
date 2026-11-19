@@ -18,6 +18,10 @@
 - Q: Combien de participants doivent être éliminés à la fin de chaque manche de battle royale ? → A: Une élimination par manche jusqu'à 50 participants restants, puis 10 % des participants restants (arrondi supérieur) par manche.
 - Q: Sur quels types de défis un joueur doit-il pouvoir acheter des indices avec ses Bits ? → A: Défis d'exploration uniquement (débogage, décryptage, stéganographie, QR codes) en solo ; jamais sur les défis de tri, les events ou les boss, et jamais de révélation des tests cachés ni de la solution de référence.
 
+### Session 2026-11-19
+
+- Q: (A5) Comment cadrer le temps de résolution et les pénalités des défis de débogage/décryptage (FR-038, FR-039) ? → A: Le chrono démarre au `start` explicite et s'arrête au verdict `passed` ; sans verdict `passed`, il court jusqu'à `attempt.expiredAt` (abandon). La durée retenue est plafonnée à `t_max_ms`. Le bonus de temps n'est accordé que si `modified_lines` respecte la limite configurée ; au-delà, le bonus est perdu et chaque ligne excédentaire retire 2 % de `base_points` (plafonné à 50 %). Chaque indice consommé retire 10 % de `base_points` (plafonné à 50 %). Une seule tentative par défi est autorisée en v1 : une demande de tentative multiple est rejetée, sans pénalité numérique.
+
 ## User Scenarios & Testing *(mandatory)*
 
 <!--
