@@ -326,7 +326,7 @@ lignes modifiées ; soumettre un code identique à l'original → échec.
 
 - [X] T139 [P] [US7] Tests unitaires du score de débogage/décryptage dans `apps/api/test/unit/debug-scoring.spec.ts` (temps de résolution, pénalité de lignes modifiées) — A5 tranchée le 19 nov. 2026
 - [ ] T140 [P] [US7] Tests d'intégration d'un défi de débogage de bout en bout dans `apps/api/test/integration/debugging.spec.ts`
-- [ ] T141 [P] [US7] Tests de déterminisme des instances générées dans `services/assets/tests/test_determinism.py`
+- [X] T141 [P] [US7] Tests de déterminisme des instances générées dans `services/assets/tests/test_determinism.py`
 
 ### Implementation for User Story 7
 
