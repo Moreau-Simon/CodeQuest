@@ -324,19 +324,19 @@ lignes modifiées ; soumettre un code identique à l'original → échec.
 
 ### Tests for User Story 7 ⚠️
 
-- [ ] T139 [P] [US7] Tests unitaires du score de débogage/décryptage dans `apps/api/test/unit/debug-scoring.spec.ts` (temps de résolution, pénalité de lignes modifiées)
-- [ ] T140 [P] [US7] Tests d'intégration d'un défi de débogage de bout en bout dans `apps/api/test/integration/debugging.spec.ts`
-- [ ] T141 [P] [US7] Tests de déterminisme des instances générées dans `services/assets/tests/test_determinism.py`
+- [X] T139 [P] [US7] Tests unitaires du score de débogage/décryptage dans `apps/api/test/unit/debug-scoring.spec.ts` (temps de résolution, pénalité de lignes modifiées) — A5 tranchée le 19 nov. 2026
+- [X] T140 [P] [US7] Tests d'intégration d'un défi de débogage de bout en bout dans `apps/api/test/integration/debugging.spec.ts`
+- [X] T141 [P] [US7] Tests de déterminisme des instances générées dans `services/assets/tests/test_determinism.py`
 
 ### Implementation for User Story 7
 
-- [ ] T142 [US7] Ajouter les champs de débogage (`buggy_code`, `modified_lines`) et de décryptage (`cipher`, `key_seed_ref`) aux modèles de défi dans `apps/api/prisma/schema.prisma` (FR-037)
-- [ ] T143 [US7] Implémenter le comptage de lignes modifiées dans `apps/api/src/modules/submissions/diff.service.ts` (diff normalisé indépendant du style) (FR-038)
-- [ ] T144 [US7] Implémenter `apps/api/src/modules/scoring/resolution-scoring.service.ts` : score fondé sur le temps de résolution, plafonné, avec pénalité de lignes (FR-039)
-- [ ] T145 [US7] Implémenter la génération d'instance de décryptage par graine dans `apps/api/src/modules/challenges/instance.service.ts` (appel au service d'assets, seed HMAC) (FR-040)
-- [ ] T146 [US7] Exposer le bloc de code bogué dans `GET /challenges/{id}` sans révéler les bugs ni la solution (FR-028)
-- [ ] T147 [P] [US7] Créer `apps/web/src/pages/challenges/DebugChallengePage.tsx` (éditeur préchargé, surlignage des lignes modifiées, compteur de modifications)
-- [ ] T148 [US7] Vérifier `quickstart.md` § S2 (variante débogage) et l'absence de fuite de solution
+- [X] T142 [US7] Ajouter les champs de débogage (`buggy_code`, `modified_lines`) et de décryptage (`cipher`, `key_seed_ref`) aux modèles de défi dans `apps/api/prisma/schema.prisma` (FR-037) — migration `20261119150000_us7_debugging_decryption` + modèle `ChallengeAttempt` (une seule tentative en v1)
+- [X] T143 [US7] Implémenter le comptage de lignes modifiées dans `apps/api/src/modules/submissions/diff.service.ts` (diff normalisé indépendant du style) (FR-038)
+- [X] T144 [US7] Implémenter `apps/api/src/modules/scoring/resolution-scoring.service.ts` : score fondé sur le temps de résolution, plafonné, avec pénalité de lignes (FR-039)
+- [X] T145 [US7] Implémenter la génération d'instance de décryptage par graine dans `apps/api/src/modules/challenges/instance.service.ts` (appel au service d'assets, seed HMAC) (FR-040)
+- [X] T146 [US7] Exposer le bloc de code bogué dans `GET /challenges/{id}` sans révéler les bugs ni la solution (FR-028)
+- [X] T147 [P] [US7] Créer `apps/web/src/pages/challenges/DebugChallengePage.tsx` (éditeur préchargé, surlignage des lignes modifiées, compteur de modifications) — route `/challenges/:id/debug`, `debug-diff.ts` et 5 tests Vitest
+- [X] T148 [US7] Vérifier `quickstart.md` § S2 (variante débogage) et l'absence de fuite de solution — variantes A/B documentées, contrôle graine/tests cachés (SC-007 + `debugging.spec.ts` + `test_determinism.py`)
 
 **Checkpoint**: US7 livrable seule.
 

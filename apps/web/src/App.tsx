@@ -14,6 +14,7 @@ import { ResetPasswordPage } from './pages/auth/ResetPasswordPage';
 import { VerifyEmailPage } from './pages/auth/VerifyEmailPage';
 import { ChallengePage } from './pages/challenges/ChallengePage';
 import { CatalogPage } from './pages/challenges/CatalogPage';
+import { DebugChallengePage } from './pages/challenges/DebugChallengePage';
 import { LeaderboardPage } from './pages/leaderboards/LeaderboardPage';
 import { LessonPage } from './pages/lessons/LessonPage';
 import { LessonsPage } from './pages/lessons/LessonsPage';
@@ -69,6 +70,7 @@ export function App(): JSX.Element {
         <Route path="verify-email" element={<VerifyEmailPage />} />
         <Route path="challenges" element={<CatalogPage />} />
         <Route path="challenges/:challengeId" element={<ChallengePage />} />
+        <Route path="challenges/:challengeId/debug" element={<DebugChallengePage />} />
         <Route path="lessons" element={<LessonsPage />} />
         <Route path="lessons/:lessonId" element={<LessonPage />} />
         <Route path="leaderboards" element={<LeaderboardPage />} />

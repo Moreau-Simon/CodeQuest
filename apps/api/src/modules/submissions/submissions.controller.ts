@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Headers, HttpCode, Param, Post } from '@nestjs/common';
-import { IsIn, IsString, MaxLength } from 'class-validator';
+import { IsIn, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
 import type { AuthenticatedUser } from '../../common/auth/authenticated-user';
 import { Authenticated, CurrentUser } from '../rbac/rbac.constants';
 import { SubmissionsService, type SubmissionView } from './submissions.service';
@@ -11,6 +11,11 @@ export class CreateSubmissionDto {
   @IsString()
   @MaxLength(131_072)
   code!: string;
+
+  /** Essai démarré explicitement, obligatoire pour les défis chronométrés (A5). */
+  @IsOptional()
+  @IsUUID('7')
+  attemptId?: string;
 }
 
 /** Soumissions (T077) : `202` à la création, lecture de repli du temps réel. */

@@ -7,6 +7,7 @@ import { SubmissionsGateway } from '../../realtime/submissions.gateway';
 import { LeaderboardService } from '../leaderboards/leaderboard.service';
 import { AnalyticsService } from '../lessons/analytics.service';
 import { XpService } from '../lessons/xp.service';
+import { ResolutionScoringService } from '../scoring/resolution-scoring.service';
 import { ScoringService } from '../scoring/scoring.service';
 import type { SubmissionResult } from './submissions.types';
 
@@ -28,6 +29,7 @@ export class VerdictConsumer implements OnModuleInit, OnModuleDestroy {
     @Inject(BULLMQ_CONNECTION) private readonly connection: ConnectionOptions,
     private readonly prisma: PrismaService,
     private readonly scoring: ScoringService,
+    private readonly resolutionScoring: ResolutionScoringService,
     private readonly gateway: SubmissionsGateway,
     private readonly leaderboards: LeaderboardService,
     private readonly xp: XpService,
@@ -59,8 +61,16 @@ export class VerdictConsumer implements OnModuleInit, OnModuleDestroy {
       where: { id: result.submissionId },
       include: {
         challenge: {
-          select: { basePoints: true, perfMax: true, tOptMs: true, tMaxMs: true }
-        }
+          select: {
+            basePoints: true,
+            perfMax: true,
+            tOptMs: true,
+            tMaxMs: true,
+            type: true,
+            maxModifiedLines: true
+          }
+        },
+        attempt: true
       }
     });
 
@@ -73,24 +83,45 @@ export class VerdictConsumer implements OnModuleInit, OnModuleDestroy {
     const testsTotal = result.testsTotal ?? 0;
     const testsPassed = Math.min(Math.max(result.testsPassed ?? 0, 0), testsTotal);
     const median = result.cpuTimeMedianMs ?? null;
-    const scored =
-      (result.status === 'passed' || result.status === 'failed') &&
-      median !== null &&
-      testsTotal > 0;
-
-    const score = scored
-      ? this.scoring.score({
-          basePoints: submission.challenge.basePoints,
-          perfMax: submission.challenge.perfMax,
-          testsPassed,
-          testsTotal,
-          cpuTimeMedianMs: median,
-          tOptMs: submission.challenge.tOptMs,
-          tMaxMs: submission.challenge.tMaxMs
-        })
-      : 0;
-
     const finishedAt = new Date();
+
+    // A5 : les défis de débogage/décryptage sont scorés sur le temps écoulé
+    // depuis le `start` explicite, avec pénalités d'indices et de lignes.
+    const timed =
+      submission.challenge.type === 'debugging' ||
+      submission.challenge.type === 'decryption';
+    const verdictReached = result.status === 'passed' || result.status === 'failed';
+    const scored =
+      verdictReached && testsTotal > 0 && (timed ? submission.attempt !== null : median !== null);
+
+    let score = 0;
+    if (scored && timed && submission.attempt) {
+      score = this.resolutionScoring.compute({
+        basePoints: submission.challenge.basePoints,
+        perfMax: submission.challenge.perfMax,
+        testsPassed,
+        testsTotal,
+        startedAt: submission.attempt.startedAt,
+        verdictAt: result.status === 'passed' ? finishedAt : undefined,
+        expiredAt: submission.attempt.expiredAt,
+        tOptMs: submission.challenge.tOptMs,
+        tMaxMs: submission.challenge.tMaxMs,
+        hintsUsed: submission.attempt.hintsUsed,
+        attempts: 1,
+        modifiedLines: submission.modifiedLines ?? 0,
+        maxModifiedLines: submission.challenge.maxModifiedLines ?? undefined
+      }).score;
+    } else if (scored) {
+      score = this.scoring.score({
+        basePoints: submission.challenge.basePoints,
+        perfMax: submission.challenge.perfMax,
+        testsPassed,
+        testsTotal,
+        cpuTimeMedianMs: median ?? 0,
+        tOptMs: submission.challenge.tOptMs,
+        tMaxMs: submission.challenge.tMaxMs
+      });
+    }
 
     const bestScoreChanged = await this.prisma.$transaction(async (tx) => {
       await tx.submission.update({
@@ -103,9 +134,21 @@ export class VerdictConsumer implements OnModuleInit, OnModuleDestroy {
           testsTotal,
           score,
           verdictReason: sanitizeReason(result.verdictReason),
-          finishedAt
+          finishedAt,
+          verdictAt: verdictReached ? finishedAt : null
         }
       });
+
+      if (submission.attempt && verdictReached) {
+        await tx.challengeAttempt.update({
+          where: { id: submission.attempt.id },
+          data: {
+            verdictAt: finishedAt,
+            modifiedLines: submission.modifiedLines,
+            hintsUsed: submission.attempt.hintsUsed
+          }
+        });
+      }
 
       const key = {
         challengeId: submission.challengeId,
@@ -187,13 +230,17 @@ export class VerdictConsumer implements OnModuleInit, OnModuleDestroy {
   private async markStarted(submissionId: string): Promise<void> {
     const submission = await this.prisma.submission.findUnique({
       where: { id: submissionId },
-      select: { id: true, userId: true, attemptNo: true, status: true }
+      select: { id: true, userId: true, attemptNo: true, status: true, attemptId: true }
     });
     if (!submission || submission.status !== 'pending') return;
 
     await this.prisma.submission.update({
       where: { id: submission.id },
-      data: { status: 'running', startedAt: new Date() }
+      data: {
+        status: 'running',
+        // A5 : pour un essai explicite, le chrono a déjà démarré côté client.
+        ...(submission.attemptId ? {} : { startedAt: new Date() })
+      }
     });
     this.gateway.started(submission.userId, submission.id, submission.attemptNo);
   }

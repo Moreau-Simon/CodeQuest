@@ -284,6 +284,21 @@ paths:
               schema: { $ref: '#/components/schemas/ChallengeDetail' }
         '403': { description: Prérequis non satisfaits, motif détaillé }
 
+  /challenges/{challengeId}/attempts:
+    post:
+      tags: [Challenges]
+      summary: Démarrer explicitement l'unique essai d'un défi chronométré (A5)
+      parameters:
+        - { name: challengeId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '201':
+          description: Essai démarré ; le chrono part de startedAt
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ChallengeAttempt' }
+        '403': { description: Compte non confirmé ou prérequis non satisfaits }
+        '409': { description: Une seule tentative autorisée (ATTEMPT_ALREADY_STARTED) }
+
   /challenges/{challengeId}/submissions:
     post:
       tags: [Challenges]
@@ -301,7 +316,12 @@ paths:
               properties:
                 language: { type: string, enum: [python, javascript] }
                 code: { type: string, maxLength: 131072 }
+                attemptId:
+                  type: string
+                  format: uuid
+                  description: Essai démarré explicitement, obligatoire en débogage/décryptage (A5)
       responses:
+        '400': { description: Essai requis (ATTEMPT_REQUIRED) }
         '202':
           description: Soumission acceptée, verdict diffusé en temps réel
           content:
@@ -877,6 +897,20 @@ components:
             languages: { type: array, items: { type: string } }
             basePoints: { type: integer }
             perfMax: { type: integer }
+            currentVersion: { type: integer }
+            buggyCode:
+              type: string
+              nullable: true
+              description: Code bogué du défi de débogage, sans indication du bug ni correction
+            maxModifiedLines:
+              type: integer
+              nullable: true
+              description: Limite de lignes modifiées conservant le bonus temps (FR-038)
+            cipher: { type: string, nullable: true }
+            instance:
+              type: object
+              nullable: true
+              description: Instance de décryptage générée pour ce joueur, sans graine ni réponse attendue
             hints:
               type: array
               items:
@@ -903,6 +937,18 @@ components:
         cpuTimeMedianMs: { type: integer, nullable: true }
         verdictReason: { type: string, nullable: true }
         createdAt: { type: string, format: date-time }
+        attemptId: { type: string, format: uuid, nullable: true }
+        modifiedLines: { type: integer, nullable: true }
+        hintsUsed: { type: integer }
+
+    ChallengeAttempt:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        challengeId: { type: string, format: uuid }
+        startedAt: { type: string, format: date-time }
+        expiredAt: { type: string, format: date-time }
+        verdictAt: { type: string, format: date-time, nullable: true }
 
     LeaderboardEntry:
       type: object

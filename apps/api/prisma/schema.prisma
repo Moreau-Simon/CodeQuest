@@ -64,6 +64,7 @@ model User {
   createdChallenges   Challenge[]        @relation("ChallengeCreatedBy")
   challengeVersions   ChallengeVersion[] @relation("ChallengeVersionCreatedBy")
   submissions         Submission[]
+  attempts            ChallengeAttempt[]
   lessonProgress      LessonProgress[]
   loreProgress        LoreProgress[]
 
@@ -305,6 +306,13 @@ model Challenge {
   perfMax        Int             @default(0) @map("perf_max")
   tOptMs         Int             @map("t_opt_ms")
   tMaxMs         Int             @map("t_max_ms")
+  /// Défi de débogage : code bogué montré au joueur, jamais la correction (FR-037).
+  buggyCode        String? @map("buggy_code")
+  /// Limite de lignes modifiées conservant le bonus temps (FR-038, A5).
+  maxModifiedLines Int?    @map("max_modified_lines")
+  /// Défi de décryptage : chiffrement et référence de graine (jamais la graine, FR-040).
+  cipher           String?
+  keySeedRef       String? @map("key_seed_ref")
   status         ChallengeStatus @default(draft)
   isEventOnly    Boolean         @default(false) @map("is_event_only")
   isBossPhase    Boolean         @default(false) @map("is_boss_phase")
@@ -317,6 +325,7 @@ model Challenge {
   author        User?                  @relation("ChallengeCreatedBy", fields: [createdBy], references: [id], onDelete: SetNull)
   versions      ChallengeVersion[]
   submissions    Submission[]
+  attempts       ChallengeAttempt[]
   bestScores    BestScore[]
   prerequisites ChallengePrerequisite[] @relation("ChallengePrerequisites")
   requiredFor   ChallengePrerequisite[] @relation("ChallengePrerequisiteRequirements")
@@ -371,10 +380,16 @@ model Submission {
   createdAt          DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
   startedAt          DateTime?        @map("started_at") @db.Timestamptz(6)
   finishedAt         DateTime?        @map("finished_at") @db.Timestamptz(6)
+  /// Déclenchement explicite de l'essai (A5) : jamais l'ouverture de la page.
+  attemptId          String?          @map("attempt_id") @db.Uuid
+  modifiedLines      Int?             @map("modified_lines")
+  hintsUsed          Int              @default(0) @map("hints_used")
+  verdictAt          DateTime?        @map("verdict_at") @db.Timestamptz(6)
 
   challenge Challenge        @relation(fields: [challengeId], references: [id], onDelete: Cascade)
   version   ChallengeVersion @relation(fields: [challengeVersionId], references: [id], onDelete: Restrict)
   user      User             @relation(fields: [userId], references: [id], onDelete: Restrict)
+  attempt   ChallengeAttempt? @relation(fields: [attemptId], references: [id], onDelete: Restrict)
   bestScore BestScore?
 
   @@index([challengeId, score(sort: Desc), createdAt(sort: Asc)])
@@ -382,6 +397,28 @@ model Submission {
   @@index([eventId, userId])
   @@index([teamId, challengeId])
   @@map("submissions")
+}
+
+/// Essai explicite d'un joueur sur un défi chronométré (FR-039, FR-062, A5).
+/// Une seule tentative par `(challenge, joueur)` est autorisée en v1.
+model ChallengeAttempt {
+  id            String    @id @db.Uuid
+  challengeId   String    @map("challenge_id") @db.Uuid
+  userId        String    @map("user_id") @db.Uuid
+  startedAt     DateTime  @map("started_at") @db.Timestamptz(6)
+  expiredAt     DateTime  @map("expired_at") @db.Timestamptz(6)
+  verdictAt     DateTime? @map("verdict_at") @db.Timestamptz(6)
+  hintsUsed     Int       @default(0) @map("hints_used")
+  modifiedLines Int?      @map("modified_lines")
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  challenge  Challenge    @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  submissions Submission[]
+
+  @@unique([challengeId, userId])
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("challenge_attempts")
 }
 
 /// Meilleur score conservé par sujet (T073, FR-033). Le score d'équipe est la

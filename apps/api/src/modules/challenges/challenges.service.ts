@@ -1,10 +1,14 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException
 } from '@nestjs/common';
+import type { AuthenticatedUser } from '../../common/auth/authenticated-user';
+import { uuidv7 } from '../../common/uuid';
 import { PrismaService } from '../../prisma/prisma.service';
+import type { DecryptionInstanceView } from './instance.service';
 import { PrerequisiteCheckService } from './prerequisite-check.service';
 
 export interface ChallengeSummary {
@@ -23,8 +27,23 @@ export interface ChallengeDetail extends ChallengeSummary {
   languages: string[];
   basePoints: number;
   perfMax: number;
+  currentVersion: number;
+  /** Défi de débogage : code à corriger, sans indication du bug ni correction. */
+  buggyCode: string | null;
+  maxModifiedLines: number | null;
+  /** Défi de décryptage : instance générée pour ce joueur (jamais la graine). */
+  cipher: string | null;
+  instance?: DecryptionInstanceView;
   hints: Array<{ id: string; priceBits: number; purchased: boolean }>;
   missingPrerequisites: string[];
+}
+
+export interface AttemptView {
+  id: string;
+  challengeId: string;
+  startedAt: string;
+  expiredAt: string;
+  verdictAt: string | null;
 }
 
 export interface CatalogQuery {
@@ -134,6 +153,10 @@ export class ChallengesService {
         languages: true,
         basePoints: true,
         perfMax: true,
+        currentVersion: true,
+        buggyCode: true,
+        maxModifiedLines: true,
+        cipher: true,
         theme: { select: { name: true } }
       }
     });
@@ -177,8 +200,78 @@ export class ChallengesService {
       languages: challenge.languages,
       basePoints: challenge.basePoints,
       perfMax: challenge.perfMax,
+      currentVersion: challenge.currentVersion,
+      // Aucun test caché, aucune correction et aucune graine ne sont exposés.
+      buggyCode: challenge.type === 'debugging' ? challenge.buggyCode : null,
+      maxModifiedLines: challenge.maxModifiedLines,
+      cipher: challenge.type === 'decryption' ? challenge.cipher : null,
       hints: [],
       missingPrerequisites: []
+    };
+  }
+
+  /**
+   * Démarre explicitement l'unique essai d'un joueur (FR-039, FR-062, A5).
+   * Le chrono part d'ici, jamais de l'ouverture de la page ni de la soumission.
+   */
+  async startAttempt(challengeId: string, user: AuthenticatedUser): Promise<AttemptView> {
+    if (user.status === 'pending') {
+      throw new ForbiddenException({
+        code: 'EMAIL_NOT_VERIFIED',
+        message: 'Confirmez votre adresse e-mail pour démarrer un essai'
+      });
+    }
+
+    const challenge = await this.prisma.challenge.findUnique({
+      where: { id: challengeId },
+      select: { id: true, status: true, tMaxMs: true }
+    });
+    if (!challenge) {
+      throw new NotFoundException({ code: 'CHALLENGE_NOT_FOUND', message: 'Défi introuvable' });
+    }
+    if (challenge.status !== 'published') {
+      throw new ForbiddenException({
+        code: 'CHALLENGE_LOCKED',
+        message: 'Ce défi n’est pas encore publié'
+      });
+    }
+
+    const evaluation = await this.prerequisiteCheck.evaluate(challengeId, user.id);
+    if (evaluation.status === 'locked') {
+      throw new ForbiddenException({
+        code: 'CHALLENGE_LOCKED',
+        message: 'Prérequis non satisfaits pour accéder à ce défi',
+        details: { missingPrerequisites: evaluation.missingPrerequisites }
+      });
+    }
+
+    const key = { challengeId_userId: { challengeId, userId: user.id } };
+    const existing = await this.prisma.challengeAttempt.findUnique({ where: key });
+    if (existing) {
+      // A5 : une seule tentative par défi est autorisée en v1.
+      throw new ConflictException({
+        code: 'ATTEMPT_ALREADY_STARTED',
+        message: 'Une seule tentative est autorisée pour ce défi'
+      });
+    }
+
+    const startedAt = new Date();
+    const attempt = await this.prisma.challengeAttempt.create({
+      data: {
+        id: uuidv7(),
+        challengeId,
+        userId: user.id,
+        startedAt,
+        expiredAt: new Date(startedAt.getTime() + challenge.tMaxMs)
+      }
+    });
+
+    return {
+      id: attempt.id,
+      challengeId: attempt.challengeId,
+      startedAt: attempt.startedAt.toISOString(),
+      expiredAt: attempt.expiredAt.toISOString(),
+      verdictAt: attempt.verdictAt?.toISOString() ?? null
     };
   }
 
@@ -196,6 +289,8 @@ export class ChallengesService {
     tMaxMs: number;
     languages: string[];
     type: string;
+    buggyCode: string | null;
+    maxModifiedLines: number | null;
   }> {
     const challenge = await this.prisma.challenge.findUnique({
       where: { id: challengeId },
@@ -208,7 +303,9 @@ export class ChallengesService {
         tOptMs: true,
         tMaxMs: true,
         languages: true,
-        type: true
+        type: true,
+        buggyCode: true,
+        maxModifiedLines: true
       }
     });
 

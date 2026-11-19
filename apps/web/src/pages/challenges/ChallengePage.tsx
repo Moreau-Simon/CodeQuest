@@ -176,6 +176,14 @@ export function ChallengePage(): JSX.Element {
           {challenge.theme} · {t(`challenge.type.${challenge.type}`)} ·{' '}
           {t('challenge.difficulty', { value: challenge.difficulty })}
         </p>
+        {challenge.type === 'debugging' ? (
+          <Link
+            to={`/challenges/${challengeId}/debug`}
+            className="mt-2 inline-block text-sm font-semibold"
+          >
+            {t('challenge.debugLink')}
+          </Link>
+        ) : null}
       </div>
 
       <section className="flex flex-col gap-2 rounded-xl bg-elevated p-4">

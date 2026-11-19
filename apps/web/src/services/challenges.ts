@@ -16,8 +16,28 @@ export interface ChallengeDetail extends ChallengeSummary {
   languages: string[];
   basePoints: number;
   perfMax: number;
+  currentVersion?: number;
+  buggyCode?: string | null;
+  maxModifiedLines?: number | null;
+  cipher?: string | null;
+  instance?: {
+    assetId: string;
+    seedFingerprint: string;
+    objectKey: string;
+    ciphertext: string;
+    sha256: string;
+    cached: boolean;
+  };
   hints: Array<{ id: string; priceBits: number; purchased: boolean }>;
   missingPrerequisites: string[];
+}
+
+export interface ChallengeAttempt {
+  id: string;
+  challengeId: string;
+  startedAt: string;
+  expiredAt: string;
+  verdictAt: string | null;
 }
 
 export interface Submission {
@@ -30,6 +50,9 @@ export interface Submission {
   cpuTimeMedianMs: number | null;
   verdictReason: string | null;
   createdAt: string;
+  attemptId?: string | null;
+  modifiedLines?: number | null;
+  hintsUsed?: number;
 }
 
 export interface CatalogFilters {
@@ -61,9 +84,14 @@ export function getChallenge(challengeId: string, signal?: AbortSignal): Promise
   return api.get<ChallengeDetail>(`/challenges/${encodeURIComponent(challengeId)}`, { signal });
 }
 
+/** Démarre explicitement l'unique essai chronométré (A5). */
+export function startAttempt(challengeId: string): Promise<ChallengeAttempt> {
+  return api.post<ChallengeAttempt>(`/challenges/${encodeURIComponent(challengeId)}/attempts`);
+}
+
 export function submitSolution(
   challengeId: string,
-  input: { language: 'python' | 'javascript'; code: string },
+  input: { language: 'python' | 'javascript'; code: string; attemptId?: string },
   idempotencyKey?: string
 ): Promise<Submission> {
   return api.post<Submission>(`/challenges/${encodeURIComponent(challengeId)}/submissions`, input, {

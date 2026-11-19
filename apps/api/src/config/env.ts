@@ -54,6 +54,11 @@ const schema = z.object({
   MINIO_BUCKET_AVATARS: z.string().default('codequest-avatars'),
   MINIO_BUCKET_SECRETS: z.string().default('codequest-secrets'),
 
+  // US7 (FR-040) : clé HMAC partagée avec le service assets pour dériver une
+  // graine unique par joueur, et URL interne de ce service (jamais exposée).
+  ASSETS_SEED_KEY: z.string().min(16).default('codequest-dev-seed-key-000000000000'),
+  ASSETS_SERVICE_URL: z.string().url().default('http://localhost:8001'),
+
   SMTP_HOST: z.string().default('localhost'),
   SMTP_PORT: z.coerce.number().int().positive().default(1025),
   SMTP_USER: z.string().optional(),
