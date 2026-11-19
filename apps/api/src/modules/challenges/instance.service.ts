@@ -1,6 +1,8 @@
 import {
+  Inject,
   Injectable,
   Logger,
+  Optional,
   ServiceUnavailableException
 } from '@nestjs/common';
 import { createHmac } from 'node:crypto';
@@ -28,6 +30,9 @@ export interface GenerateInstanceInput {
 
 type FetchLike = typeof globalThis.fetch;
 
+/** Jeton d'injection optionnel : permet de remplacer `fetch` dans les tests. */
+export const ASSETS_FETCH = Symbol('ASSETS_FETCH');
+
 /**
  * Génération d'instance par graine (T145, FR-040, FR-041).
  *
@@ -40,7 +45,13 @@ type FetchLike = typeof globalThis.fetch;
 export class InstanceService {
   private readonly logger = new Logger(InstanceService.name);
 
-  constructor(private readonly fetchImpl: FetchLike = globalThis.fetch) {}
+  // `FetchLike` est un alias de type fonction : sans @Inject explicite, Nest
+  // lit `Function` dans design:paramtypes et ne peut pas résoudre l'instance.
+  constructor(
+    @Optional()
+    @Inject(ASSETS_FETCH)
+    private readonly fetchImpl: FetchLike = globalThis.fetch
+  ) {}
 
   deriveSeed(
     challengeId: string,
