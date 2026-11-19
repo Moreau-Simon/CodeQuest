@@ -12,4 +12,5 @@ process.env.SESSION_SECRET ??= 'test-session-secret-at-least-32-characters';
 process.env.AES_KEY_BASE64 ??= 'dGVzdC1hZXMtMjU2LWtleS0zMi1ieXRlcy1sb25nISE=';
 process.env.AES_KEY_ID ??= 'v1';
 process.env.LIVEKIT_API_SECRET ??= 'test-livekit-secret';
+process.env.ASSETS_SEED_KEY ??= 'test-assets-seed-key-000000000000';
 process.env.LOG_LEVEL ??= 'silent';

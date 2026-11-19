@@ -13,6 +13,7 @@ import { QueueService } from '../../queue/queue.module';
 import { SubmissionsGateway } from '../../realtime/submissions.gateway';
 import { ChallengesService } from '../challenges/challenges.service';
 import { MAX_CODE_BYTES, SUBMISSION_LIMITS, type SubmissionJob } from './submissions.types';
+import { DiffService } from './diff.service';
 
 export interface SubmissionView {
   id: string;
@@ -24,6 +25,9 @@ export interface SubmissionView {
   cpuTimeMedianMs: number | null;
   verdictReason: string | null;
   createdAt: string;
+  attemptId: string | null;
+  modifiedLines: number | null;
+  hintsUsed: number;
 }
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -41,13 +45,14 @@ export class SubmissionsService {
     private readonly prisma: PrismaService,
     private readonly challenges: ChallengesService,
     private readonly queue: QueueService,
-    private readonly gateway: SubmissionsGateway
+    private readonly gateway: SubmissionsGateway,
+    private readonly diff: DiffService
   ) {}
 
   async create(
     challengeId: string,
     user: AuthenticatedUser,
-    input: { language: string; code: string },
+    input: { language: string; code: string; attemptId?: string },
     idempotencyKey?: string
   ): Promise<SubmissionView> {
     this.requireWritable(user);
@@ -63,6 +68,45 @@ export class SubmissionsService {
     }
 
     const challenge = await this.challenges.requirePlayable(challengeId, input.language, user.id);
+
+    // A5 (FR-039) : un défi chronométré exige un `start` explicite. Le chrono
+    // part de l'essai, jamais de l'ouverture de la page ni de la soumission.
+    const timed = challenge.type === 'debugging' || challenge.type === 'decryption';
+    let attempt: {
+      id: string;
+      userId: string;
+      challengeId: string;
+      startedAt: Date;
+      expiredAt: Date;
+      hintsUsed: number;
+    } | null = null;
+    if (timed) {
+      if (!input.attemptId || !UUID_PATTERN.test(input.attemptId)) {
+        throw new BadRequestException({
+          code: 'ATTEMPT_REQUIRED',
+          message: 'Démarrez explicitement un essai avant de soumettre'
+        });
+      }
+      attempt = await this.prisma.challengeAttempt.findUnique({ where: { id: input.attemptId } });
+      if (!attempt || attempt.userId !== user.id || attempt.challengeId !== challengeId) {
+        throw new ForbiddenException({
+          code: 'ATTEMPT_FORBIDDEN',
+          message: 'Cet essai n’appartient pas à ce défi'
+        });
+      }
+      if (attempt.expiredAt.getTime() <= Date.now()) {
+        throw new ConflictException({
+          code: 'ATTEMPT_EXPIRED',
+          message: 'Le temps imparti pour cet essai est écoulé'
+        });
+      }
+    }
+
+    const modifiedLines =
+      challenge.type === 'debugging' && challenge.buggyCode !== null
+        ? this.diff.countModifiedLines(challenge.buggyCode, input.code)
+        : null;
+
     const version = await this.prisma.challengeVersion.findUnique({
       where: {
         challengeId_version: { challengeId, version: challenge.currentVersion }
@@ -104,7 +148,11 @@ export class SubmissionsService {
         language: input.language,
         code: input.code,
         status: 'pending',
-        cpuTimesMs: []
+        cpuTimesMs: [],
+        attemptId: attempt?.id ?? null,
+        startedAt: attempt?.startedAt ?? null,
+        modifiedLines,
+        hintsUsed: attempt?.hintsUsed ?? 0
       }
     });
 
@@ -183,6 +231,9 @@ export class SubmissionsService {
     cpuTimeMedianMs: number | null;
     verdictReason: string | null;
     createdAt: Date;
+    attemptId: string | null;
+    modifiedLines: number | null;
+    hintsUsed: number;
   }): SubmissionView {
     return {
       id: submission.id,
@@ -193,7 +244,10 @@ export class SubmissionsService {
       testsTotal: submission.testsTotal,
       cpuTimeMedianMs: submission.cpuTimeMedianMs,
       verdictReason: submission.verdictReason,
-      createdAt: submission.createdAt.toISOString()
+      createdAt: submission.createdAt.toISOString(),
+      attemptId: submission.attemptId,
+      modifiedLines: submission.modifiedLines,
+      hintsUsed: submission.hintsUsed
     };
   }
 }
