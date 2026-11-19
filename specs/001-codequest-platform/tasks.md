@@ -335,8 +335,8 @@ lignes modifiées ; soumettre un code identique à l'original → échec.
 - [X] T144 [US7] Implémenter `apps/api/src/modules/scoring/resolution-scoring.service.ts` : score fondé sur le temps de résolution, plafonné, avec pénalité de lignes (FR-039)
 - [X] T145 [US7] Implémenter la génération d'instance de décryptage par graine dans `apps/api/src/modules/challenges/instance.service.ts` (appel au service d'assets, seed HMAC) (FR-040)
 - [X] T146 [US7] Exposer le bloc de code bogué dans `GET /challenges/{id}` sans révéler les bugs ni la solution (FR-028)
-- [ ] T147 [P] [US7] Créer `apps/web/src/pages/challenges/DebugChallengePage.tsx` (éditeur préchargé, surlignage des lignes modifiées, compteur de modifications)
-- [ ] T148 [US7] Vérifier `quickstart.md` § S2 (variante débogage) et l'absence de fuite de solution
+- [X] T147 [P] [US7] Créer `apps/web/src/pages/challenges/DebugChallengePage.tsx` (éditeur préchargé, surlignage des lignes modifiées, compteur de modifications) — route `/challenges/:id/debug`, `debug-diff.ts` et 5 tests Vitest
+- [X] T148 [US7] Vérifier `quickstart.md` § S2 (variante débogage) et l'absence de fuite de solution — variantes A/B documentées, contrôle graine/tests cachés (SC-007 + `debugging.spec.ts` + `test_determinism.py`)
 
 **Checkpoint**: US7 livrable seule.
 

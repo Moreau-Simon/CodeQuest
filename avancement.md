@@ -2,9 +2,9 @@
 
 **Date de session** : 18–19 novembre 2026
 **Feature** : `001-codequest-platform` (spécification couvrant toute la plateforme, 5 phases / 17 histoires)
-**Statut global** : workflow Spec Kit terminé (`analyze` inclus). **Implémentation en cours** : Phase 0, Phase 1, Phase 2, **US1 (Phase 3)**, **US2 (Phase 4)**, **US3 (Phase 5)**, **US4 (Phase 6)**, **US5 (Phase 7)** et **US6 (Phase 8)** terminées et vérifiées ; **Phase 9 / US7 démarrée**. Plateforme opérationnelle en environnement local (`pnpm dev` sur `http://localhost:5173`). Phases 9 → 20 restantes (T140–T278).
+**Statut global** : workflow Spec Kit terminé (`analyze` inclus). **Implémentation en cours** : Phase 0, Phase 1, Phase 2, **US1 (Phase 3)**, **US2 (Phase 4)**, **US3 (Phase 5)**, **US4 (Phase 6)**, **US5 (Phase 7)**, **US6 (Phase 8)** et **US7 (Phase 9)** terminées et vérifiées. Plateforme opérationnelle en environnement local (`pnpm dev` sur `http://localhost:5173`). Phases 10 → 20 restantes (T149–T278).
 
-**Dernière mise à jour** : 19 novembre 2026 — CI totale verte puis **fusionnée sur `main` (PR #2, `a32b3a7`)**. Clarification **A5 tranchée** (option recommandée) et consignée dans `spec.md`. Phase 9 / US7 démarrée en TDD : **T139** (15 tests de scoring), **T143** (`DiffService`) et **T144** (`ResolutionScoringService`) livrés → **142/280 tâches**. Branche dédiée `phase-9-us7` en cours. Vérifications 19 nov. : typecheck/lint API ✅, **123 tests unitaires API verts**, suite web 50 tests verts.
+**Dernière mise à jour** : 19 novembre 2026 — CI totale verte puis **fusionnée sur `main` (PR #2, `a32b3a7`)**. Clarification **A5 tranchée** (option recommandée) et consignée dans `spec.md`. **Phase 9 / US7 livrée en TDD** (T139–T148) : score de résolution, instances de décryptage par graine, essai explicite unique, page web de débogage et quickstart mis à jour → **149/280 tâches**. Branche dédiée `phase-9-us7`, commits en attente de PR. Vérifications 19 nov. : typecheck/lint API + web ✅, **123 tests unitaires API verts**, **55 tests web verts** (19 fichiers), **6 tests Python verts** + ruff ✅, OpenAPI parse OK (48 chemins / 28 schémas).
 
 ---
 
@@ -51,7 +51,7 @@ Contraintes actées :
 | `data-model.md` | 367 | **45 tables**, 15 enums, transitions d'état, règles d'intégrité, rétention |
 | `tasks.md` | 768 | **280 tâches** (T001–T280), 20 phases + Phase 0, 143 marquées `[P]` ; **142 cochées** |
 | `checklists/requirements.md` | — | **16/16** |
-| `contracts/openapi.yaml` | 1114 | Validé : parse OK, 47 chemins (dont `/lessons/*`), 27 schémas, `$ref` tous résolus |
+| `contracts/openapi.yaml` | 1160 | Validé : parse OK, **48 chemins** (dont `/lessons/*`, `/challenges/{id}/attempts`), **28 schémas**, `$ref` tous résolus |
 | `contracts/websocket-events.md` | 191 | Événements temps réel |
 | `contracts/runner-job.md` | 176 | Contrat job runner (isolation, mesures, propriété du score) |
 | `contracts/assets-service.md` | 168 | Contrat du service Python d'assets |
@@ -163,9 +163,9 @@ Détail complet : `specs/001-codequest-platform/versioning.md`, repris dans `pla
 | Couverture sémantique | **140/140 = 100 %** |
 | Tâches avec référence FR/SC explicite | 106/280 = 38 % |
 | Checks de format des tâches | 280/280 conformes |
-| Tâches cochées | **142/280** (Phase 0–2 + US1 → US7 partielle) |
+| Tâches cochées | **149/280** (Phase 0–2 + US1 → US7 complète) |
 | Liens relatifs cassés | 0 |
-| `openapi.yaml` | parse OK, 47 chemins |
+| `openapi.yaml` | parse OK, **48 chemins / 28 schémas** (ajout `/challenges/{id}/attempts`, `ChallengeAttempt`, champs US7) |
 
 ### Findings ouverts (à traiter)
 
@@ -210,14 +210,14 @@ Aucune violation. Les 5 principes sont **PASS** (IV et III désormais étayés p
 | Phase 6 — US4 | T101–T116 | ✅ fait et vérifié |
 | Phase 7 — US5 | T117–T128 | ✅ fait et vérifié |
 | Phase 8 — US6 | T129–T138 | ✅ fait et vérifié (CI verte, fusionnée en PR #2) |
-| Phase 9 — US7 (en cours) | T139–T148 | 🔄 T139, T143, T144 faits ; restent T140, T141, T142, T145–T148 |
+| Phase 9 — US7 | T139–T148 | ✅ faits : score A5, instances par graine, migration Prisma, essai unique, page web, quickstart |
 | Phases 10 → 20 | T149–T278 | ⏳ à faire |
 
-**142/280 tâches cochées.** Vérifications passées (19 nov. 2026) :
+**149/280 tâches cochées.** Vérifications passées (19 nov. 2026) :
 - `pnpm lint` : ✅ **vert** (3/3 packages). Le `.eslintrc.cjs` a été rapatrié dans la racine du dépôt (il était auparavant dans `Projet-delpech/`, hors du checkout CI) : ESLint résout désormais les plugins sans contournement.
 - `pnpm typecheck` (3 packages : 0 erreur) ; `pnpm --filter @codequest/api typecheck` + `lint` ✅.
 - `pnpm --filter @codequest/api test` (**123 tests**, 22 suites dont `debug-scoring.spec.ts` (15), `xp.spec.ts`, `aes-gcm-di.spec.ts` et le contrat des schémas US6).
-- `pnpm --filter @codequest/web test` (**50 tests**, 17 suites dont `lessons-page.test.tsx` et `lesson-page.test.tsx`).
+- `pnpm --filter @codequest/web test` (**55 tests**, 19 fichiers dont `debug-diff.test.ts` (4) et `debug-challenge.test.tsx` (1), `lessons-page.test.tsx`, `lesson-page.test.tsx`).
 - `pnpm --filter @codequest/runner test` (**9 tests**, 2 suites — 8 initiaux + 1 test de non-régression cgroup ajouté après échec CI).
 - `pnpm build` (3 packages compilés sans erreur : API NestJS, web Vite, runner).
 - `pnpm --filter @codequest/api test:integration` (intégrations déblocage et audit validées en Phase 7).
@@ -265,9 +265,12 @@ Déclencheurs : `push` et `pull_request` sur `main`, plus `workflow_dispatch` ; 
 | CI Phase 8 | Tous les jobs verts ; PR #2 fusionnée sur `main` (`a32b3a7`). Incidents #1–#9 résolus (voir § CI). |
 | Clarification A5 | Option recommandée retenue : chrono `start` → verdict `passed` / `expiredAt`, plafond `t_max_ms`, bonus sous condition de lignes, pénalités indices/lignes, une seule tentative en v1. Consignée dans `spec.md` (§ « Session 2026-11-19 »). |
 | Branche de travail | `phase-9-us7` créée depuis `main` (protégée). |
-| Phase 9 / US7 (TDD) | `debug-scoring.spec.ts` (T139, **15 tests verts**) écrit avant l'implémentation ; `DiffService` (T143, LCS normalisé) et `ResolutionScoringService` (T144, score temps + pénalités) implémentés ; providers/exports câblés dans `ScoringModule` et `SubmissionsModule`. |
-| Vérifications | typecheck ✅, lint ✅, 123 tests API verts ; `pnpm test` global : un test web flaky (`challenges.test.tsx`) a échoué une fois en exécution parallèle puis est passé en relance (17 fichiers / 50 tests verts) — aucun changement web effectué. |
-| Reste à faire (US7) | T140 intégration debugging, T141 déterminisme assets, T142 champs Prisma, T145 instance service, T146 exposition sûre, T147 page web, T148 variante quickstart S2. |
+| Phase 9 / US7 (TDD) — bloc 1 | `debug-scoring.spec.ts` (T139, **15 tests verts**) écrit avant l'implémentation ; `DiffService` (T143, LCS normalisé) et `ResolutionScoringService` (T144, score temps + pénalités) implémentés ; providers/exports câblés. Commit `21d13d5`. |
+| Phase 9 / US7 — bloc 2 | `test_determinism.py` (T141, **5 tests de déterminisme** + health) puis `instances.py` (HMAC-SHA256 + xoshiro128\*\*, endpoints `/generate` et `/verify` en temps constant) : ruff ✅, **6 tests Python verts**. Commit `33e08a7`. |
+| Phase 9 / US7 — bloc 3 | Migration `20261119150000_us7_debugging_decryption` et champs Prisma (T142), modèle `ChallengeAttempt` avec unique `(challengeId, userId)` ; `InstanceService` (T145, graine HMAC vérifiée par empreinte) ; exposition sûre du code bogué et endpoint `POST /challenges/{id}/attempts` (T146) ; essai obligatoire et score A5 dans `SubmissionsService`/`VerdictConsumer` ; `debugging.spec.ts` (T140) ; OpenAPI 48 chemins / 28 schémas. Commit `c406941`. |
+| Phase 9 / US7 — bloc 4 | `DebugChallengePage.tsx` (T147) : éditeur préchargé, essai explicite, compte/timer, surlignage via `debug-diff.ts`, route `/challenges/:id/debug` et lien depuis `ChallengePage` ; 5 tests Vitest. Quickstart § S2 (T148) : variantes A (sorting/CPU) et B (debugging/decryption/A5), contrôle de non-fuite (SC-007 + `debugging.spec.ts` + `test_determinism.py`), variables `ASSETS_SEED_KEY`/`ASSETS_SERVICE_URL` documentées. |
+| Vérifications finales US7 | typecheck + lint API et web ✅ ; **123 tests API** (22 suites) ; **55 tests web** (19 fichiers) ; **6 tests Python** + ruff ✅ ; Prisma `validate`/`generate` ✅ ; OpenAPI parse OK. Test web `challenges.test.tsx` flaky une fois en exécution parallèle avant les changements web, passé en relance et en suite complète. |
+| Reste à faire | T149–T278 (Phases 10 → 20) ; suites Testcontainers US7 (`debugging.spec.ts`) à valider en CI (Docker absent localement). |
 
 ### Journal de la session du 18 novembre 2026
 
@@ -405,8 +408,8 @@ b974532 Initial commit
    git commit -m "feat(lessons): cours, quiz, positionnement, XP/niveaux et analytics (US6)"
    ```
 2. **Vérifier les suites Testcontainers US6 en CI** : `pnpm test:integration` (regex `test/(integration|contract)/.*\.spec\.ts$`, couvre `lessons.spec.ts` et `lessons.contract.spec.ts`) et `pnpm --filter @codequest/api test:e2e` (SC-007) sont désormais câblées explicitement dans `.github/workflows/ci.yml` (job `integration-tests`). Non exécutables localement sans daemon Docker.
-3. **Phase 9 / US7 (T139–T148)** — Résoudre des défis de débogage et de décryptage (score au temps de résolution, diff de lignes, instances générées par graine).
-4. **A5** — Définir la formule exacte et les bornes de « resolution time » avant la Phase 9 (US7, FR-039).
+3. ~~**Phase 9 / US7 (T139–T148)** — Résoudre des défis de débogage et de décryptage~~ ✅ livrée le 19 nov. 2026 (score au temps de résolution, diff de lignes, instances générées par graine, page web et quickstart).
+4. ~~**A5** — Définir la formule exacte et les bornes de « resolution time »~~ ✅ tranchée (option recommandée, clarification 6).
 5. **D4** — Trancher l'unicité de la source de vérité pour `is_official` avant la Phase 11 (US8, T157).
 6. **T280** — Appliquer `infra/github/protect-main.sh` sur le remote `origin` désormais configuré.
 

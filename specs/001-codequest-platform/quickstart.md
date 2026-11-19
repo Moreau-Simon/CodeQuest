@@ -31,6 +31,12 @@ pnpm --filter @codequest/api prisma migrate deploy
 pnpm --filter @codequest/api seed        # rôles, thèmes, cours, défis de référence, boutique
 ```
 
+> Pour les défis de décryptage (US7), renseigner `ASSETS_SEED_KEY` (hexadécimal de 64 caractères ou
+> chaix brut d'au moins 16 caractères) dans l'environnement de l'API **et** du service assets : les deux
+> doivent utiliser la même clé, sinon `GET /challenges/{id}` renvoie `503 ASSETS_SEED_MISMATCH`.
+> `ASSETS_SERVICE_URL` (défaut `http://localhost:8001`) désigne le service assets, jamais exposé au
+> navigateur. La clé ne doit jamais être journalisée ni renvoyée au client.
+
 Services attendus :
 
 | Service | URL locale | Vérification |
@@ -71,6 +77,8 @@ k6 run infra/load/submissions.js     # charge : 100 soumissions/min
 
 ### S2 — Cycle de soumission et verdict (SC-002, SC-006, SC-011)
 
+**Variante A — défi `sorting` (score CPU)**
+
 1. Se connecter en `ada`, ouvrir un défi `sorting`, soumettre la solution de référence.
 2. **Attendu** : réponse `202` immédiate, verdict `passed` reçu en moins de 10 s (événement
    `submission.verdict` ou repli par interrogation).
@@ -78,6 +86,32 @@ k6 run infra/load/submissions.js     # charge : 100 soumissions/min
    dans `best_scores`, classement mis à jour en moins de 5 s (SC-009).
 4. Couper le temps réel (bloquer `/realtime` dans les DevTools) et soumettre à nouveau ; **attendu** :
    le verdict arrive quand même via le repli (FR-034).
+
+**Variante B — défi `debugging` / `decryption` (score de résolution, A5)**
+
+1. Ouvrir un défi `debugging` depuis le catalogue : la page « Espace de débogage » affiche l'énoncé et
+   le **code bogué préchargé** dans l'éditeur. **Attendu** : ni la correction, ni le bug, ni les tests
+   cachés ne sont visibles (le panneau latéral ne liste que les numéros de lignes modifiées).
+2. Soumettre avant d'avoir cliqué « Démarrer l'essai » ; **attendu** : `400 ATTEMPT_REQUIRED`. Le bouton
+   « Soumettre » est désactivé tant que l'essai n'a pas démarré ; le simple fait d'ouvrir la page ne
+   démarre aucun chrono (clarification 2, FR-062).
+3. Cliquer « Démarrer l'essai » : `POST /challenges/{id}/attempts` renvoie `201` avec `startedAt` et
+   `expiredAt`. Un second appel renvoie `409 ATTEMPT_ALREADY_STARTED` : **une seule tentative par
+   `(défi, joueur)` en v1** (clarification 6, A5).
+4. Modifier une ligne du code, constater le compteur « 1 ligne(s) modifiée(s) » et la surbrillance de
+   la ligne, puis soumettre avec `attemptId`. **Attendu** : la soumission `202` porte
+   `modifiedLines = 1` et `attemptId` ; le score est calculé sur `startedAt → verdictAt` (plafonné à
+   `t_max_ms`), avec bonus temps seulement si `modified_lines ≤ max_modified_lines` et pénalités
+   configurées au-delà (clarification 6).
+5. Pour un défi `decryption`, ouvrir le détail en tant que joueur connecté : `GET /challenges/{id}`
+   contient une `instance` avec `ciphertext` et `seedFingerprint`. **Attendu** : aucun champ `seed`,
+   aucune graine, aucune réponse attendue ; deux joueurs reçoivent des `ciphertext` et empreintes
+   différents. La vérification côté assets compare en temps constant et ne renvoie qu'un motif
+   générique en cas d'échec (FR-040, FR-041).
+6. **Contrôle de non-fuite** : la charge utile de `GET /challenges/{id}`, les événements temps réel et
+   la page web ne doivent contenir ni `referenceSolutionEncrypted`, ni `testsEncrypted`, ni la graine
+   HMAC (`ASSETS_SEED_KEY`). Le test d'intégration `apps/api/test/integration/debugging.spec.ts`
+   échoue si une solution de référence est exposée ; le test E2E SC-007 couvre le reste (S3).
 
 ### S3 — Non-fuite des tests cachés (SC-007)
 
@@ -208,5 +242,8 @@ constatée sur les classements reconstruits (SC-009).
 | Verdict bloqué en `pending` > 60 s | runner indisponible ou file saturée | `docker compose logs runner`, vérifier `runner_queue_depth` |
 | `403 CHALLENGE_LOCKED` | prérequis non satisfaits | consulter `missingPrerequisites` dans le détail du défi |
 | `409 ATTEMPT_CONSUMED` | essai d'event déjà démarré | comportement attendu, un seul essai par event |
+| `400 ATTEMPT_REQUIRED` | soumission debugging/decryption sans `start` explicite | appeler `POST /challenges/{id}/attempts` puis renvoyer `attemptId` |
+| `409 ATTEMPT_ALREADY_STARTED` | seconde tentative sur le même défi | comportement attendu (A5), une seule tentative en v1 |
+| `503 ASSETS_SEED_MISMATCH` | clés HMAC divergentes entre l'API et le service assets | aligner `ASSETS_SEED_KEY` des deux services puis relancer |
 | Images d'assets absentes | MinIO indisponible ou seed purgée | relancer `POST /generate`, la graine reproduit l'identique |
 | `runsc` introuvable | hôte non Linux | utiliser le profil `local-mock`, ignorer S4 |
