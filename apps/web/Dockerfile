@@ -1,9 +1,12 @@
 FROM node:20-alpine AS build
 RUN corepack enable
 WORKDIR /app
+RUN apk add --no-cache python3 make g++
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/api/package.json apps/api/
 COPY apps/web/package.json apps/web/
-RUN pnpm install --frozen-lockfile --filter @codequest/web...
+COPY services/runner/package.json services/runner/
+RUN CI=true pnpm install --frozen-lockfile --filter @codequest/web...
 COPY tsconfig.base.json ./
 COPY apps/web apps/web
 RUN pnpm --filter @codequest/web build

@@ -30,37 +30,45 @@ test('inscription, confirmation, connexion puis révocation de session', async (
   await page.route('**/api/v1/me', (route) =>
     route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(profile) })
   );
+  // État mutable : la révocation doit retirer la session du prochain GET, sinon
+  // l'invalidation TanStack Query réaffiche une liste figée (faux positif).
+  const activeSessions = [
+    {
+      id: 'session-1',
+      userAgent: 'Playwright / Chromium',
+      ipPrefix: '203.0.113.0/24',
+      createdAt: '2026-11-13T10:00:00.000Z',
+      lastUsedAt: '2026-11-13T12:00:00.000Z',
+      current: true
+    },
+    {
+      id: 'session-2',
+      userAgent: 'Autre appareil',
+      ipPrefix: '198.51.100.0/24',
+      createdAt: '2026-11-12T10:00:00.000Z',
+      lastUsedAt: '2026-11-12T12:00:00.000Z',
+      current: false
+    }
+  ];
+
   await page.route('**/api/v1/me/sessions/**', (route) => {
     if (route.request().method() === 'DELETE') {
+      const id = new URL(route.request().url()).pathname.split('/').pop();
+      const index = activeSessions.findIndex((session) => session.id === id);
+      if (index >= 0) activeSessions.splice(index, 1);
       return route.fulfill({ status: 204, body: '' });
     }
     return route.fulfill({ status: 200, body: '[]' });
   });
   await page.route('**/api/v1/me/sessions', (route) => {
     if (route.request().method() === 'DELETE') {
+      activeSessions.splice(0);
       return route.fulfill({ status: 204, body: '' });
     }
     return route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify([
-        {
-          id: 'session-1',
-          userAgent: 'Playwright / Chromium',
-          ipPrefix: '203.0.113.0/24',
-          createdAt: '2026-11-13T10:00:00.000Z',
-          lastUsedAt: '2026-11-13T12:00:00.000Z',
-          current: true
-        },
-        {
-          id: 'session-2',
-          userAgent: 'Autre appareil',
-          ipPrefix: '198.51.100.0/24',
-          createdAt: '2026-11-12T10:00:00.000Z',
-          lastUsedAt: '2026-11-12T12:00:00.000Z',
-          current: false
-        }
-      ])
+      body: JSON.stringify(activeSessions)
     });
   });
 

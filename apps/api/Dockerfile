@@ -3,9 +3,14 @@ RUN corepack enable
 WORKDIR /app
 
 FROM base AS deps
+# node-gyp peut être invoqué sur musl (argon2, msgpackr-extract) : prévoir l'outillage.
+RUN apk add --no-cache python3 make g++
+# Tous les manifests du workspace sont nécessaires à pnpm pour résoudre le graphe.
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/api/package.json apps/api/
-RUN pnpm install --frozen-lockfile --filter @codequest/api...
+COPY apps/web/package.json apps/web/
+COPY services/runner/package.json services/runner/
+RUN CI=true pnpm install --frozen-lockfile --filter @codequest/api...
 
 FROM deps AS build
 COPY tsconfig.base.json ./

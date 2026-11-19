@@ -236,6 +236,12 @@ Aucune violation. Les 5 principes sont **PASS** (IV et III désormais étayés p
 
 Déclencheurs : `push` et `pull_request` sur `main`, plus `workflow_dispatch` ; `concurrency` avec annulation des exécutions redondantes ; `permissions: contents: read`.
 
+**Incidents CI du 19 nov. 2026 (en cours de résolution)** :
+
+1. **`pnpm test` — runner (résolu, voir ci-dessous)**.
+2. **`web-e2e` — `e2e/auth.spec.ts` (résolu)** : le mock Playwright de `GET /me/sessions` était statique et renvoyait toujours les deux sessions après la révocation, alors que l'UI invalide bien la query et refetch. Le mock est désormais **stateful** (retrait de la session sur `DELETE`), comme le test unitaire `SessionsPage.test.tsx`. Vérifié localement : 1 test vert sur un preview CodeQuest.
+3. **`docker-builds` (diagnostic en cours)** : `pnpm install --frozen-lockfile --filter @codequest/api...` échoue sur `node:20-alpine`. Durcissement appliqué aux 3 Dockerfiles Node : copie de **tous les manifests du workspace** (root + api + web + runner) pour la résolution du graphe, ajout de `python3 make g++` pour d'éventuels builds natifs sur musl, et `CI=true`. Le log détaillé de l'étape reste nécessaire si l'échec persiste.
+
 **Incident CI du 19 nov. 2026 (résolu) — premier échec sur `pnpm test`** : `services/runner/test/escape.test.ts` (`ne trouve pas de cgroup pour un conteneur inexistant`) renvoyait `154943000` au lieu de `null` sur `ubuntu-latest`. Cause : `readCpuUsageUsec()` retombait sur `/sys/fs/cgroup/cpu.stat`, cgroup **de l'hôte/du runner**, absent de macOS (d'où un test vert en local) mais présent en CI — avec un risque réel de mesurer le CPU de la machine au lieu du code soumis (principe III). Correctif : suppression de ce fallback, ajout d'un paramètre `cgroupRoot` injectable et d'un test déterministe qui place un `cpu.stat` hostile à la racine temporaire et vérifie qu'il est ignoré au profit de `docker/<id>/cpu.stat`. `pnpm test` complet revérifié : **107 + 50 + 9 tests verts**.
 
 ### Journal de la session du 18 novembre 2026

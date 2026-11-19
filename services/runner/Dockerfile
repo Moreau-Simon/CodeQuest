@@ -3,9 +3,12 @@ RUN corepack enable
 WORKDIR /app
 
 FROM base AS deps
+RUN apk add --no-cache python3 make g++
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/api/package.json apps/api/
+COPY apps/web/package.json apps/web/
 COPY services/runner/package.json services/runner/
-RUN pnpm install --frozen-lockfile --filter @codequest/runner...
+RUN CI=true pnpm install --frozen-lockfile --filter @codequest/runner...
 
 FROM deps AS build
 COPY tsconfig.base.json ./
