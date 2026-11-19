@@ -80,6 +80,13 @@ jobs:
       - name: Generate Prisma Client
         run: pnpm --filter @codequest/api prisma:generate
 
+      # Testcontainers démarre une image par suite : sans pré-tirage, la
+      # première suite paie le téléchargement et peut dépasser son hook timeout.
+      - name: Pre-pull Testcontainers images
+        run: |
+          docker pull postgres:16-alpine
+          docker pull redis:7-alpine
+
       # RegExp du projet : test/(integration|contract)/.*\.spec\.ts$.
       # Couvre les suites Testcontainers US1–US6, dont :
       #   - test/integration/lessons.spec.ts       (progression, XP, lore, SC-010)

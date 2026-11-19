@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import request from 'supertest';
-import { AesGcmService } from '../../src/common/crypto/aes-gcm.service';
+import type { AesGcmService } from '../../src/common/crypto/aes-gcm.service';
 import { uuidv7 } from '../../src/common/uuid';
 import { createTestApp, tokenFromLink, type TestApp } from '../helpers/app';
 import { contractValidator, expectValidResponse } from '../helpers/contract';
@@ -41,7 +41,11 @@ describe('contrat des soumissions (T067)', () => {
 
     challengeId = uuidv7();
     const versionId = uuidv7();
-    const aes = new AesGcmService();
+    // Import différé : `AesGcmService` charge `src/config/env`. Un import
+    // statique figerait REDIS_URL/DATABASE_URL sur les valeurs par défaut de
+    // `test/env.ts`, avant que `createTestApp()` ne désigne les conteneurs.
+    const { AesGcmService: Aes } = await import('../../src/common/crypto/aes-gcm.service');
+    const aes: AesGcmService = new Aes();
     const tests = aes.encrypt(
       JSON.stringify({ cases: [{ input: [[2, 1]], expected: [1, 2] }] }),
       versionId
@@ -76,7 +80,7 @@ describe('contrat des soumissions (T067)', () => {
         }
       }
     });
-  }, 180_000);
+  }, 300_000);
 
   afterAll(async () => {
     await prisma?.$disconnect();

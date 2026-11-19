@@ -154,7 +154,10 @@ export class ChallengesService {
       throw new ForbiddenException({
         code: 'CHALLENGE_LOCKED',
         message: 'Prérequis non satisfaits pour accéder à ce défi',
-        missingPrerequisites: evaluation.missingPrerequisites
+        // Le filtre global normalise toutes les erreurs au format
+        // { code, message, details } (T026) : les motifs sont donc portés par
+        // `details`, et non par une clé racine qui serait perdue.
+        details: { missingPrerequisites: evaluation.missingPrerequisites }
       });
     }
 
@@ -224,7 +227,7 @@ export class ChallengesService {
       throw new ForbiddenException({
         code: 'CHALLENGE_LOCKED',
         message: 'Ce défi est verrouillé : prérequis non satisfaits',
-        missingPrerequisites: evaluation.missingPrerequisites
+        details: { missingPrerequisites: evaluation.missingPrerequisites }
       });
     }
 

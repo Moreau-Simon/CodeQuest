@@ -127,8 +127,9 @@ describe('contrat /challenges/* (T119)', () => {
       const response = await api.anonymous.get(`/api/v1/challenges/${lockedChallengeId}`);
       expect(response.status).toBe(403);
       expect(response.body.code).toBe('CHALLENGE_LOCKED');
-      expect(response.body.missingPrerequisites).toBeDefined();
-      expect(response.body.missingPrerequisites.length).toBeGreaterThan(0);
+      // Enveloppe d'erreur T026 : les motifs sont dans `details`.
+      expect(response.body.details.missingPrerequisites).toBeDefined();
+      expect(response.body.details.missingPrerequisites.length).toBeGreaterThan(0);
     });
 
     it('renvoie 404 si le défi n’existe pas', async () => {
