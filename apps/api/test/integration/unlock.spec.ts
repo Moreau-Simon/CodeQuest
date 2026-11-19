@@ -5,6 +5,54 @@ import type { PrismaService } from '../../src/prisma/prisma.service';
 import { startTestInfrastructure, type TestInfrastructure } from '../helpers/db';
 
 /**
+ * Enregistre une réussite complète (version + soumission + meilleur score) :
+ * `best_scores.submission_id` est une FK, un `submissionId` fictif suffit à
+ * faire échouer l'insertion en base d'intégration.
+ */
+async function seedPassingBestScore(
+  prisma: PrismaClient,
+  challengeId: string,
+  subjectId: string,
+  score: number
+): Promise<void> {
+  const versionId = uuidv7();
+  await prisma.challengeVersion.create({
+    data: {
+      id: versionId,
+      challengeId,
+      version: 1,
+      statementSnapshot: 'Défi de test'
+    }
+  });
+
+  const submissionId = uuidv7();
+  await prisma.submission.create({
+    data: {
+      id: submissionId,
+      challengeId,
+      challengeVersionId: versionId,
+      userId: subjectId,
+      language: 'python',
+      code: 'def solve(): pass',
+      status: 'passed',
+      cpuTimesMs: [100],
+      score
+    }
+  });
+
+  await prisma.bestScore.create({
+    data: {
+      id: uuidv7(),
+      challengeId,
+      subjectType: 'player',
+      subjectId,
+      score,
+      submissionId
+    }
+  });
+}
+
+/**
  * T118 [P] [US5] Tests d'intégration du déblocage de défis (FR-023, FR-025)
  * - Prérequis par niveau minimum (level)
  * - Prérequis par défi réussi (requiredChallenge)
@@ -136,16 +184,7 @@ describe('Déblocage des défis et évaluation des prérequis (T118)', () => {
     expect(evalLocked.missingPrerequisites).toContain('Défi « Défi A (Bases) » requis');
 
     // Le joueur valide le défi A avec un score > 0
-    await prisma.bestScore.create({
-      data: {
-        id: uuidv7(),
-        challengeId: challengeAId,
-        subjectType: 'player',
-        subjectId: userId,
-        score: 150,
-        submissionId: uuidv7()
-      }
-    });
+    await seedPassingBestScore(prisma, challengeAId, userId, 150);
 
     const evalUnlocked = await checkService.evaluate(challengeBId, userId);
     expect(evalUnlocked.status).toBe('available');
@@ -276,16 +315,7 @@ describe('Déblocage des défis et évaluation des prérequis (T118)', () => {
       }
     });
 
-    await prisma.bestScore.create({
-      data: {
-        id: uuidv7(),
-        challengeId,
-        subjectType: 'player',
-        subjectId: userId,
-        score: 180,
-        submissionId: uuidv7()
-      }
-    });
+    await seedPassingBestScore(prisma, challengeId, userId, 180);
 
     const result = await checkService.evaluate(challengeId, userId);
     expect(result.status).toBe('completed');

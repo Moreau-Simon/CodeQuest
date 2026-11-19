@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, Query } from '@nestjs/common';
 import { Type } from 'class-transformer';
 import { IsDefined, IsInt, IsObject, IsOptional, IsString, Max, Min } from 'class-validator';
 import type { AuthenticatedUser } from '../../common/auth/authenticated-user';
@@ -74,6 +74,7 @@ export class LessonsController {
 
   @Authenticated()
   @Post(':lessonId/start')
+  @HttpCode(HttpStatus.OK)
   start(
     @Param('lessonId') lessonId: string,
     @CurrentUser() user: AuthenticatedUser
@@ -83,6 +84,7 @@ export class LessonsController {
 
   @Authenticated()
   @Post(':lessonId/quiz')
+  @HttpCode(HttpStatus.OK)
   quiz(
     @Param('lessonId') lessonId: string,
     @Body() body: QuizAnswersDto,
@@ -93,6 +95,7 @@ export class LessonsController {
 
   @Authenticated()
   @Post(':lessonId/positioning')
+  @HttpCode(HttpStatus.OK)
   positioningAttempt(
     @Param('lessonId') lessonId: string,
     @Body() body: QuizAnswersDto,
@@ -103,6 +106,7 @@ export class LessonsController {
 
   @Authenticated()
   @Post(':lessonId/complete')
+  @HttpCode(HttpStatus.OK)
   complete(
     @Param('lessonId') lessonId: string,
     @Body() body: CompleteLessonDto,
