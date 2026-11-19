@@ -214,7 +214,7 @@ Aucune violation. Les 5 principes sont **PASS** (IV et III désormais étayés p
 **139/280 tâches cochées.** Vérifications passées (18 nov. 2026) :
 - `pnpm lint` : ✅ **vert** (3/3 packages). Le `.eslintrc.cjs` a été rapatrié dans la racine du dépôt (il était auparavant dans `Projet-delpech/`, hors du checkout CI) : ESLint résout désormais les plugins sans contournement.
 - `pnpm typecheck` (3 packages : 0 erreur).
-- `pnpm --filter @codequest/api test` (**107 tests**, 20 suites dont `xp.spec.ts` et le contrat des schémas US6).
+- `pnpm --filter @codequest/api test` (**108 tests**, 21 suites dont `xp.spec.ts`, `aes-gcm-di.spec.ts` et le contrat des schémas US6).
 - `pnpm --filter @codequest/web test` (**50 tests**, 17 suites dont `lessons-page.test.tsx` et `lesson-page.test.tsx`).
 - `pnpm --filter @codequest/runner test` (**9 tests**, 2 suites — 8 initiaux + 1 test de non-régression cgroup ajouté après échec CI).
 - `pnpm build` (3 packages compilés sans erreur : API NestJS, web Vite, runner).
@@ -228,7 +228,7 @@ Aucune violation. Les 5 principes sont **PASS** (IV et III désormais étayés p
 
 | Job | Portées | Détails |
 |---|---|---|
-| `node-checks` | lint, typecheck, tests unitaires, build | `pnpm lint` fonctionne en checkout propre grâce au `.eslintrc.cjs` racine ; `pnpm test` inclut `xp.spec.ts` (8) et la validation des schémas US6 |
+| `node-checks` | lint, typecheck, tests unitaires, build | `pnpm lint` fonctionne en checkout propre grâce au `.eslintrc.cjs` racine ; `pnpm test` inclut `xp.spec.ts` (8), `aes-gcm-di.spec.ts` et la validation des schémas US6 |
 | `integration-tests` | intégration + contrat + E2E API | `pnpm test:integration` (regex `test/(integration|contract)/.*\.spec\.ts$` → suites US1–US6, dont `lessons.spec.ts` et `lessons.contract.spec.ts`) puis `pnpm --filter @codequest/api test:e2e` (non-fuite SC-007). Docker natif de `ubuntu-latest` requis par Testcontainers |
 | `python-assets` | ruff + pytest | service Python 3.12 (`uv`) |
 | `web-e2e` | Playwright Chromium + axe-core | `--project=chromium-desktop` (T278 : extension aux 4 navigateurs à faire) |
@@ -242,7 +242,9 @@ Déclencheurs : `push` et `pull_request` sur `main`, plus `workflow_dispatch` ; 
 2. **`web-e2e` — `e2e/auth.spec.ts` (résolu)** : le mock Playwright de `GET /me/sessions` était statique et renvoyait toujours les deux sessions après la révocation, alors que l'UI invalide bien la query et refetch. Le mock est désormais **stateful** (retrait de la session sur `DELETE`), comme le test unitaire `SessionsPage.test.tsx`. Vérifié localement : 1 test vert sur un preview CodeQuest.
 3. **`docker-builds` (diagnostic en cours)** : `pnpm install --frozen-lockfile --filter @codequest/api...` échoue sur `node:20-alpine`. Durcissement appliqué aux 3 Dockerfiles Node : copie de **tous les manifests du workspace** (root + api + web + runner) pour la résolution du graphe, ajout de `python3 make g++` pour d'éventuels builds natifs sur musl, et `CI=true`. Le log détaillé de l'étape reste nécessaire si l'échec persiste.
 
-**Incident CI du 19 nov. 2026 (résolu) — premier échec sur `pnpm test`** : `services/runner/test/escape.test.ts` (`ne trouve pas de cgroup pour un conteneur inexistant`) renvoyait `154943000` au lieu de `null` sur `ubuntu-latest`. Cause : `readCpuUsageUsec()` retombait sur `/sys/fs/cgroup/cpu.stat`, cgroup **de l'hôte/du runner**, absent de macOS (d'où un test vert en local) mais présent en CI — avec un risque réel de mesurer le CPU de la machine au lieu du code soumis (principe III). Correctif : suppression de ce fallback, ajout d'un paramètre `cgroupRoot` injectable et d'un test déterministe qui place un `cpu.stat` hostile à la racine temporaire et vérifie qu'il est ignoré au profit de `docker/<id>/cpu.stat`. `pnpm test` complet revérifié : **107 + 50 + 9 tests verts**.
+4. **`test:integration` / contrat `challenges.contract.spec.ts` (résolu)** : `Nest can't resolve dependencies of the AesGcmService (?, String)` dès `Test.createTestingModule({ imports: [AppModule] }).compile()`. Cause : le constructeur de `AesGcmService` a deux paramètres `string` avec valeurs par défaut (`env.AES_KEY_BASE64`, `env.AES_KEY_ID`) ; `design:paramtypes` en déduit deux tokens primitifs `String` que Nest exigeait comme providers, y compris dans `AdminModule`. Correctif : `@Optional()` sur les deux paramètres (les défauts `env` s'appliquent alors) + test de non-régression `test/unit/aes-gcm-di.spec.ts` qui compile un module minimal. Vérifié : `AppModule` compile désormais sans Docker ; **108 tests API verts**.
+
+**Incident CI du 19 nov. 2026 (résolu) — premier échec sur `pnpm test`** : `services/runner/test/escape.test.ts` (`ne trouve pas de cgroup pour un conteneur inexistant`) renvoyait `154943000` au lieu de `null` sur `ubuntu-latest`. Cause : `readCpuUsageUsec()` retombait sur `/sys/fs/cgroup/cpu.stat`, cgroup **de l'hôte/du runner**, absent de macOS (d'où un test vert en local) mais présent en CI — avec un risque réel de mesurer le CPU de la machine au lieu du code soumis (principe III). Correctif : suppression de ce fallback, ajout d'un paramètre `cgroupRoot` injectable et d'un test déterministe qui place un `cpu.stat` hostile à la racine temporaire et vérifie qu'il est ignoré au profit de `docker/<id>/cpu.stat`. `pnpm test` complet revérifié : **108 + 50 + 9 tests verts**.
 
 ### Journal de la session du 18 novembre 2026
 

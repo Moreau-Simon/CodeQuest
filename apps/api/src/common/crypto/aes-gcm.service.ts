@@ -1,5 +1,5 @@
 import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import { env } from '../../config/env';
 
 const ALGORITHM = 'aes-256-gcm';
@@ -23,7 +23,13 @@ export class AesGcmService {
   private readonly key: Buffer;
   readonly keyId: string;
 
-  constructor(keyBase64: string = env.AES_KEY_BASE64, keyId: string = env.AES_KEY_ID) {
+  // Les valeurs par défaut proviennent de `env` (validé au démarrage). `@Optional()`
+  // est indispensable : sans lui Nest essaie d'injecter les tokens primitifs
+  // `String` déduits de `design:paramtypes` et le module refuse de se compiler.
+  constructor(
+    @Optional() keyBase64: string = env.AES_KEY_BASE64,
+    @Optional() keyId: string = env.AES_KEY_ID
+  ) {
     const key = Buffer.from(keyBase64, 'base64');
     if (key.length !== KEY_LENGTH) {
       throw new Error(
