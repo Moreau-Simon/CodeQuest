@@ -1,0 +1,83 @@
+import { Test } from '@nestjs/testing';
+import type { NestExpressApplication } from '@nestjs/platform-express';
+import request from 'supertest';
+import type TestAgent from 'supertest/lib/agent';
+import type { MailMessage } from '../../src/mail/mail.service';
+import type { TestInfrastructure } from './db';
+
+export interface TestApp {
+  readonly app: NestExpressApplication;
+  /** Agent supertest conservant les cookies de session. */
+  readonly agent: TestAgent;
+  /** Agent sans cookie, pour les routes anonymes. */
+  readonly anonymous: TestAgent;
+  /** Ferme l'application Nest (les conteneurs restent gérés par `db.ts`). */
+  close(): Promise<void>;
+  /** Attend qu'un e-mail soit mis en file et le renvoie. */
+  waitForEmail(
+    name: 'confirmation' | 'password-reset',
+    predicate?: (message: MailMessage) => boolean,
+    timeoutMs?: number
+  ): Promise<MailMessage>;
+}
+
+/**
+ * Démarre l'application Nest avec exactement le pipeline HTTP de production
+ * (`configureApp`) sur l'infrastructure éphémère.
+ *
+ * Les modules `src/` sont importés dynamiquement : `env` est validé à
+ * l'import, et les URLs des conteneurs ne sont connues qu'à l'exécution.
+ */
+export async function createTestApp(infra: TestInfrastructure): Promise<TestApp> {
+  process.env.DATABASE_URL = infra.databaseUrl;
+  process.env.REDIS_URL = infra.redisUrl;
+  process.env.LOG_LEVEL = 'silent';
+
+  const { AppModule } = await import('../../src/app.module');
+  const { configureApp } = await import('../../src/bootstrap');
+
+  const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
+  const app = moduleRef.createNestApplication<NestExpressApplication>({ logger: false });
+  configureApp(app);
+  await app.init();
+
+  // Rôles et permissions disponibles pour les comptes créés par les tests.
+  const { PrismaService } = await import('../../src/prisma/prisma.service');
+  const { seedRbac } = await import('../../prisma/seed/rbac');
+  await seedRbac(app.get(PrismaService));
+
+  const server = app.getHttpServer() as Parameters<typeof request.agent>[0];
+
+  return {
+    app,
+    agent: request.agent(server),
+    anonymous: request.agent(server),
+    async close() {
+      await app.close();
+    },
+    async waitForEmail(name, predicate, timeoutMs = 5_000) {
+      const { QueueService } = await import('../../src/queue/queue.module');
+      const queueService = app.get(QueueService);
+      const deadline = Date.now() + timeoutMs;
+
+      while (Date.now() < deadline) {
+        const jobs = await queueService.emails.getJobs(['waiting', 'delayed', 'paused', 'active']);
+        const found = jobs
+          .filter((job: { name: string }) => job.name === name)
+          .map((job: { data: unknown }) => job.data as MailMessage)
+          .find((message: MailMessage) => (predicate ? predicate(message) : true));
+        if (found) return found;
+        await new Promise((resolve) => setTimeout(resolve, 50));
+      }
+
+      throw new Error(`Aucun e-mail « ${name} » reçu en ${timeoutMs} ms`);
+    }
+  };
+}
+
+/** Extrait le paramètre `token` d'un lien envoyé par e-mail. */
+export function tokenFromLink(link: string): string {
+  const token = new URL(link).searchParams.get('token');
+  if (!token) throw new Error(`Lien sans jeton : ${link}`);
+  return token;
+}

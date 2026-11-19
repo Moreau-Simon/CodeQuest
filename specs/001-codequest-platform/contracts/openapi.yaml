@@ -1,0 +1,1114 @@
+openapi: 3.0.3
+info:
+  title: CodeQuest API
+  version: 1.0.0
+  description: |
+    API REST JSON versionnée de la plateforme CodeQuest.
+
+    - Authentification par cookies `HttpOnly` : `access_token` (JWT 15 min) et
+      `refresh_token` (opaque, rotation à chaque usage).
+    - Toutes les erreurs partagent le format `{ code, message, details }`.
+    - Pagination par curseur (`cursor`, `limit`), `limit` par défaut 20, maximum 100.
+    - Les opérations d'achat acceptent l'en-tête `Idempotency-Key`.
+    - Les permissions sont vérifiées côté serveur, refus par défaut.
+
+    Spécification source : `specs/001-codequest-platform/spec.md`.
+servers:
+  - url: /api/v1
+    description: Instance courante
+tags:
+  - name: Auth
+  - name: Me
+  - name: Challenges
+  - name: Leaderboards
+  - name: Lessons
+  - name: Teams
+  - name: Events
+  - name: Bosses
+  - name: Economy
+  - name: Lore
+  - name: Chat
+  - name: Admin
+
+paths:
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Créer un compte
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, pseudonym, password]
+              properties:
+                email: { type: string, format: email }
+                pseudonym: { type: string, minLength: 3, maxLength: 20, pattern: '^[a-zA-Z0-9_-]+$' }
+                password: { type: string, minLength: 12 }
+      responses:
+        '201': { description: Compte créé, e-mail de confirmation envoyé }
+        '400': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Se connecter (e-mail ou pseudo)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [identifier, password]
+              properties:
+                identifier: { type: string }
+                password: { type: string }
+      responses:
+        '200':
+          description: Sessions ouvertes ; cookies posés
+          headers:
+            Set-Cookie:
+              schema: { type: string }
+        '401': { $ref: '#/components/responses/Error' }
+        '423': { description: Compte temporairement bloqué (5 échecs) }
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Révoquer la session courante ou toutes les sessions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                all: { type: boolean, default: false }
+      responses:
+        '204': { description: Session(s) révoquée(s) }
+
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Rotation du refresh token
+      security: []
+      responses:
+        '204': { description: Nouveaux cookies émis }
+        '401': { description: Jeton invalide, réutilisé ou expiré }
+
+  /auth/forgot-password:
+    post:
+      tags: [Auth]
+      summary: Demander un lien de réinitialisation
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [identifier]
+              properties:
+                identifier: { type: string }
+      responses:
+        '202': { description: Réponse identique que le compte existe ou non }
+
+  /auth/reset-password:
+    post:
+      tags: [Auth]
+      summary: Consommer un jeton de réinitialisation
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, password]
+              properties:
+                token: { type: string }
+                password: { type: string, minLength: 12 }
+      responses:
+        '204': { description: Mot de passe changé, sessions révoquées }
+        '400': { $ref: '#/components/responses/Error' }
+
+  /auth/verify-email:
+    post:
+      tags: [Auth]
+      summary: Confirmer une adresse e-mail
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token: { type: string }
+      responses:
+        '204': { description: Adresse confirmée, compte activé }
+
+  /me:
+    get:
+      tags: [Me]
+      summary: Profil courant
+      responses:
+        '200':
+          description: Profil
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Profile' }
+    patch:
+      tags: [Me]
+      summary: Mettre à jour le profil et les préférences
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ProfilePatch' }
+      responses:
+        '200': { description: Profil mis à jour }
+    delete:
+      tags: [Me]
+      summary: Supprimer logiquement son compte
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [password]
+              properties:
+                password: { type: string }
+      responses:
+        '202': { description: Suppression logique, purge à J+30 }
+
+  /me/export:
+    get:
+      tags: [Me]
+      summary: Exporter ses données personnelles (RGPD)
+      responses:
+        '200':
+          description: Archive des données
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+
+  /me/sessions:
+    get:
+      tags: [Me]
+      summary: Lister les sessions actives
+      responses:
+        '200':
+          description: Sessions
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Session' }
+    delete:
+      tags: [Me]
+      summary: Révoquer toutes les sessions
+      responses:
+        '204': { description: Toutes les sessions révoquées }
+
+  /me/sessions/{sessionId}:
+    delete:
+      tags: [Me]
+      summary: Révoquer une session
+      parameters:
+        - { name: sessionId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '204': { description: Session révoquée }
+
+  /me/health:
+    get:
+      tags: [Bosses]
+      summary: Points de vie et état de KO
+      responses:
+        '200':
+          description: État de santé
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PlayerHealth' }
+
+  /me/wallet:
+    get:
+      tags: [Economy]
+      summary: Solde et dernières transactions
+      responses:
+        '200':
+          description: Portefeuille
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Wallet' }
+
+  /challenges:
+    get:
+      tags: [Challenges]
+      summary: Catalogue filtré
+      parameters:
+        - { name: theme, in: query, schema: { type: string } }
+        - { name: difficulty, in: query, schema: { type: integer, minimum: 1, maximum: 5 } }
+        - { name: type, in: query, schema: { $ref: '#/components/schemas/ChallengeType' } }
+        - { name: status, in: query, schema: { type: string, enum: [locked, available, completed] } }
+        - { name: cursor, in: query, schema: { type: string } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
+      responses:
+        '200':
+          description: Liste paginée
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/ChallengeSummary' }
+                  nextCursor: { type: string, nullable: true }
+
+  /challenges/{challengeId}:
+    get:
+      tags: [Challenges]
+      summary: Détail d'un défi et de ses prérequis
+      parameters:
+        - { name: challengeId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: Défi
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ChallengeDetail' }
+        '403': { description: Prérequis non satisfaits, motif détaillé }
+
+  /challenges/{challengeId}/submissions:
+    post:
+      tags: [Challenges]
+      summary: Soumettre une solution
+      parameters:
+        - { name: challengeId, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: Idempotency-Key, in: header, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [language, code]
+              properties:
+                language: { type: string, enum: [python, javascript] }
+                code: { type: string, maxLength: 131072 }
+      responses:
+        '202':
+          description: Soumission acceptée, verdict diffusé en temps réel
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Submission' }
+        '409': { description: Essai déjà consommé (event) ou event fermé }
+
+  /submissions/{submissionId}:
+    get:
+      tags: [Challenges]
+      summary: État et verdict d'une soumission (repli du temps réel)
+      parameters:
+        - { name: submissionId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: Soumission
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Submission' }
+
+  /leaderboards/players:
+    get:
+      tags: [Leaderboards]
+      summary: Classement des joueurs
+      parameters:
+        - { name: scope, in: query, schema: { type: string, enum: [global, theme, season, event, team] } }
+        - { name: scopeId, in: query, schema: { type: string, format: uuid } }
+        - { name: period, in: query, schema: { type: string, enum: [week, month, season, all] } }
+        - { name: cursor, in: query, schema: { type: string } }
+      responses:
+        '200':
+          description: Entrées classées
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/LeaderboardEntry' }
+                  nextCursor: { type: string, nullable: true }
+
+  /leaderboards/teams:
+    get:
+      tags: [Leaderboards]
+      summary: Classement des équipes
+      parameters:
+        - { name: period, in: query, schema: { type: string, enum: [week, month, season, all] } }
+        - { name: cursor, in: query, schema: { type: string } }
+      responses:
+        '200':
+          description: Entrées classées
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/LeaderboardEntry' }
+
+  /leaderboards/events/{eventId}:
+    get:
+      tags: [Leaderboards]
+      summary: Classement d'un événement
+      parameters:
+        - { name: eventId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: Classement dédié
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/LeaderboardEntry' }
+
+  /lessons:
+    get:
+      tags: [Lessons]
+      summary: Lister les cours et leur progression
+      parameters:
+        - { name: theme, in: query, required: false, schema: { type: string } }
+      responses:
+        '200':
+          description: Cours
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Lesson' }
+
+  /lessons/{lessonId}:
+    get:
+      tags: [Lessons]
+      summary: Lire le contenu d'une leçon et son mini-quiz (sans les réponses)
+      parameters:
+        - { name: lessonId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: Leçon
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Lesson' }
+        '404': { $ref: '#/components/responses/Error' }
+
+  /lessons/metrics/first-attempt:
+    get:
+      tags: [Lessons]
+      summary: Taux de réussite au premier essai après une leçon (SC-010)
+      parameters:
+        - { name: lessonId, in: query, required: false, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: Statistiques agrégées
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/FirstAttemptStats' }
+
+  /lessons/{lessonId}/start:
+    post:
+      tags: [Lessons]
+      summary: Marquer le début de lecture d'une leçon
+      parameters:
+        - { name: lessonId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: Progression
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LessonProgress' }
+        '401': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+
+  /lessons/{lessonId}/quiz:
+    post:
+      tags: [Lessons]
+      summary: Noter le mini-quiz d'une leçon sans la valider
+      parameters:
+        - { name: lessonId, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/QuizAnswers' }
+      responses:
+        '200':
+          description: Résultat du quiz
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/QuizResult' }
+        '400': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+
+  /lessons/{lessonId}/positioning:
+    post:
+      tags: [Lessons]
+      summary: Passer le test de positionnement et obtenir une dispense
+      parameters:
+        - { name: lessonId, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/QuizAnswers' }
+      responses:
+        '200':
+          description: Résultat du positionnement
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PositioningResult' }
+        '400': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+
+  /lessons/{lessonId}/complete:
+    post:
+      tags: [Lessons]
+      summary: Marquer un cours terminé après réussite du quiz
+      parameters:
+        - { name: lessonId, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [quizScore]
+              properties:
+                quizScore: { type: integer, minimum: 0, maximum: 100 }
+                answers: { $ref: '#/components/schemas/QuizAnswers' }
+      responses:
+        '200':
+          description: Progression enregistrée et XP éventuelle
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LessonCompletion' }
+        '400': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+
+  /teams:
+    post:
+      tags: [Teams]
+      summary: Créer une équipe
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, tag]
+              properties:
+                name: { type: string, minLength: 3, maxLength: 40 }
+                tag: { type: string, minLength: 2, maxLength: 6 }
+                description: { type: string, maxLength: 500 }
+      responses:
+        '201': { description: Équipe créée, créateur capitaine }
+
+  /teams/{teamId}:
+    get:
+      tags: [Teams]
+      summary: Détail d'une équipe
+      parameters:
+        - { name: teamId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200': { description: Équipe et membres }
+
+  /teams/{teamId}/invitations:
+    post:
+      tags: [Teams]
+      summary: Inviter un membre par pseudo
+      parameters:
+        - { name: teamId, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                pseudonym: { type: string }
+      responses:
+        '201': { description: Invitation créée }
+        '409': { description: Équipe pleine ou joueur déjà engagé }
+
+  /teams/{teamId}/members:
+    post:
+      tags: [Teams]
+      summary: Accepter une invitation / rejoindre
+      parameters:
+        - { name: teamId, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token: { type: string }
+      responses:
+        '201': { description: Membre ajouté }
+
+  /teams/{teamId}/members/{userId}:
+    delete:
+      tags: [Teams]
+      summary: Exclure un membre (capitaine) ou quitter l'équipe
+      parameters:
+        - { name: teamId, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: userId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '204': { description: Membre retiré, scores acquis conservés }
+
+  /teams/{teamId}/official-submission:
+    post:
+      tags: [Teams]
+      summary: Désigner la soumission officielle de l'équipe (capitaine)
+      parameters:
+        - { name: teamId, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [challengeId, submissionId]
+              properties:
+                challengeId: { type: string, format: uuid }
+                submissionId: { type: string, format: uuid }
+      responses:
+        '200': { description: Soumission officielle retenue ; le dernier désigné remplace le précédent }
+
+  /events:
+    get:
+      tags: [Events]
+      summary: Lister les événements visibles
+      responses:
+        '200':
+          description: Événements
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Event' }
+
+  /events/{eventId}/join:
+    post:
+      tags: [Events]
+      summary: S'inscrire à un événement
+      parameters:
+        - { name: eventId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '201': { description: Inscription enregistrée }
+
+  /events/{eventId}/start:
+    post:
+      tags: [Events]
+      summary: Démarrer explicitement l'unique essai
+      parameters:
+        - { name: eventId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200': { description: Essai consommé, chronomètre démarré côté serveur }
+        '409': { description: Essai déjà consommé ou event fermé }
+
+  /bosses:
+    get:
+      tags: [Bosses]
+      summary: Lister les boss et leur état
+      responses:
+        '200':
+          description: Boss
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Boss' }
+
+  /bosses/{bossId}/phases/{phaseId}/submissions:
+    post:
+      tags: [Bosses]
+      summary: Soumettre une phase de boss
+      parameters:
+        - { name: bossId, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: phaseId, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [language, code]
+              properties:
+                language: { type: string, enum: [python, javascript] }
+                code: { type: string, maxLength: 131072 }
+      responses:
+        '202': { description: Soumission de phase acceptée }
+        '403': { description: KO en cours, PV insuffisants ou phase non atteinte }
+
+  /shop:
+    get:
+      tags: [Economy]
+      summary: Catalogue de la boutique
+      responses:
+        '200':
+          description: Objets disponibles
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/ShopItem' }
+
+  /shop/{itemId}/purchase:
+    post:
+      tags: [Economy]
+      summary: Acheter un objet
+      parameters:
+        - { name: itemId, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: Idempotency-Key, in: header, required: true, schema: { type: string } }
+      responses:
+        '201': { description: Achat enregistré une seule fois }
+        '402': { description: Solde insuffisant }
+        '409': { description: Achat interdit (indice en event ou sur boss) }
+
+  /lore/chapters:
+    get:
+      tags: [Lore]
+      summary: Chapitres de lore débloqués et état de lecture
+      responses:
+        '200':
+          description: Chapitres
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/LoreChapter' }
+
+  /channels/{channelId}/messages:
+    get:
+      tags: [Chat]
+      summary: Historique d'un canal
+      parameters:
+        - { name: channelId, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: cursor, in: query, schema: { type: string } }
+      responses:
+        '200':
+          description: Messages
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/ChatMessage' }
+
+  /admin/users:
+    get:
+      tags: [Admin]
+      summary: Lister et administrer les utilisateurs
+      parameters:
+        - { name: cursor, in: query, schema: { type: string } }
+      responses:
+        '200': { description: Utilisateurs }
+        '403': { description: Permission `user:write` requise }
+
+  /admin/challenges:
+    post:
+      tags: [Admin]
+      summary: Créer un défi en brouillon
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ChallengeDraft' }
+      responses:
+        '201': { description: Défi créé en brouillon }
+
+  /admin/challenges/{challengeId}/validate:
+    post:
+      tags: [Admin]
+      summary: Valider un défi (solution de référence, tests, calibrage)
+      parameters:
+        - { name: challengeId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200': { description: Validation réussie, bornes calibrées }
+        '422': { description: Validation échouée, test fautif identifié }
+
+  /admin/events:
+    post:
+      tags: [Admin]
+      summary: Créer un événement
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/EventDraft' }
+      responses:
+        '201': { description: Événement créé en brouillon }
+
+  /admin/audit-logs:
+    get:
+      tags: [Admin]
+      summary: Consulter le journal d'audit
+      parameters:
+        - { name: actorId, in: query, schema: { type: string, format: uuid } }
+        - { name: cursor, in: query, schema: { type: string } }
+      responses:
+        '200': { description: Entrées d'audit }
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: access_token
+
+  responses:
+    Error:
+      description: Erreur normalisée
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+
+  schemas:
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code: { type: string, example: CHALLENGE_LOCKED }
+        message: { type: string }
+        details: { type: object, additionalProperties: true }
+
+    Profile:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        pseudonym: { type: string }
+        email: { type: string, format: email }
+        emailVerified: { type: boolean }
+        level: { type: integer }
+        xp: { type: integer }
+        avatarUrl: { type: string, nullable: true }
+        preferredLanguage: { type: string, enum: [python, javascript] }
+        preferences: { type: object, additionalProperties: true }
+        badges:
+          type: array
+          items: { type: string }
+
+    ProfilePatch:
+      type: object
+      properties:
+        pseudonym: { type: string, minLength: 3, maxLength: 20 }
+        preferredLanguage: { type: string, enum: [python, javascript] }
+        preferences: { type: object, additionalProperties: true }
+        avatarKey: { type: string }
+
+    Session:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        userAgent: { type: string }
+        ipPrefix: { type: string }
+        createdAt: { type: string, format: date-time }
+        lastUsedAt: { type: string, format: date-time }
+        current: { type: boolean }
+
+    PlayerHealth:
+      type: object
+      properties:
+        hp: { type: integer, minimum: 0, maximum: 100 }
+        maxHp: { type: integer, example: 100 }
+        koUntil: { type: string, format: date-time, nullable: true }
+        nextRegenAt: { type: string, format: date-time, nullable: true }
+
+    Wallet:
+      type: object
+      properties:
+        balance: { type: integer, minimum: 0 }
+        recentTransactions:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string, format: uuid }
+              amount: { type: integer }
+              reason: { type: string }
+              createdAt: { type: string, format: date-time }
+
+    ChallengeType:
+      type: string
+      enum: [sorting, debugging, decryption, steganography, qr_code]
+
+    ChallengeSummary:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        title: { type: string }
+        theme: { type: string }
+        type: { $ref: '#/components/schemas/ChallengeType' }
+        difficulty: { type: integer, minimum: 1, maximum: 5 }
+        status: { type: string, enum: [locked, available, completed] }
+        bestScore: { type: number, nullable: true }
+
+    ChallengeDetail:
+      allOf:
+        - $ref: '#/components/schemas/ChallengeSummary'
+        - type: object
+          properties:
+            statement: { type: string }
+            languages: { type: array, items: { type: string } }
+            basePoints: { type: integer }
+            perfMax: { type: integer }
+            hints:
+              type: array
+              items:
+                type: object
+                properties:
+                  id: { type: string, format: uuid }
+                  priceBits: { type: integer }
+                  purchased: { type: boolean }
+            missingPrerequisites:
+              type: array
+              items: { type: string }
+
+    Submission:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        challengeId: { type: string, format: uuid }
+        status:
+          type: string
+          enum: [pending, running, passed, failed, error, timeout, rejected]
+        score: { type: number, nullable: true }
+        testsPassed: { type: integer, nullable: true }
+        testsTotal: { type: integer, nullable: true }
+        cpuTimeMedianMs: { type: integer, nullable: true }
+        verdictReason: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+
+    LeaderboardEntry:
+      type: object
+      properties:
+        rank: { type: integer }
+        subjectId: { type: string, format: uuid }
+        displayName: { type: string }
+        score: { type: number }
+        achievedAt: { type: string, format: date-time }
+
+    Lesson:
+      type: object
+      required: [id, title, theme, order, status, positioningTestAvailable]
+      properties:
+        id: { type: string, format: uuid }
+        title: { type: string }
+        theme: { type: string }
+        order: { type: integer }
+        estimatedMinutes: { type: integer }
+        status: { type: string, enum: [not_started, in_progress, completed] }
+        positioningTestAvailable: { type: boolean }
+        contentMd: { type: string }
+        quiz: { $ref: '#/components/schemas/Quiz' }
+        applicationChallenge:
+          type: object
+          nullable: true
+          properties:
+            id: { type: string, format: uuid }
+            title: { type: string }
+        progress: { $ref: '#/components/schemas/LessonProgress' }
+
+    QuizQuestion:
+      type: object
+      required: [id, prompt, choices]
+      properties:
+        id: { type: string }
+        prompt: { type: string }
+        choices:
+          type: array
+          items: { type: string }
+
+    Quiz:
+      type: object
+      required: [passScore, questions]
+      properties:
+        passScore: { type: integer, minimum: 0, maximum: 100 }
+        questions:
+          type: array
+          items: { $ref: '#/components/schemas/QuizQuestion' }
+
+    QuizAnswers:
+      type: object
+      additionalProperties: { type: integer, minimum: 0 }
+      description: Réponses indexées par identifiant de question
+
+    QuizResult:
+      type: object
+      required: [score, correct, total, passed]
+      properties:
+        score: { type: integer, minimum: 0, maximum: 100 }
+        correct: { type: integer, minimum: 0 }
+        total: { type: integer, minimum: 0 }
+        passed: { type: boolean }
+
+    PositioningResult:
+      type: object
+      required: [score, passed, exempted, source]
+      properties:
+        score: { type: integer, minimum: 0, maximum: 100 }
+        passed: { type: boolean }
+        exempted: { type: boolean }
+        source: { type: string, enum: [positioning, null], nullable: true }
+
+    LessonProgress:
+      type: object
+      required: [status]
+      properties:
+        status: { type: string, enum: [not_started, in_progress, completed] }
+        quizScore: { type: integer, minimum: 0, maximum: 100, nullable: true }
+        completedAt: { type: string, format: date-time, nullable: true }
+
+    LessonCompletion:
+      type: object
+      required: [lessonId, status, quizScore, completedAt, xp, level]
+      properties:
+        lessonId: { type: string, format: uuid }
+        status: { type: string, enum: [not_started, in_progress, completed] }
+        quizScore: { type: integer, minimum: 0, maximum: 100 }
+        completedAt: { type: string, format: date-time }
+        xp: { type: integer, minimum: 0 }
+        level: { type: integer, minimum: 1 }
+        applicationChallenge:
+          type: object
+          nullable: true
+          properties:
+            id: { type: string, format: uuid }
+            title: { type: string }
+
+    FirstAttemptStats:
+      type: object
+      required: [attempts, successes, rate]
+      properties:
+        attempts: { type: integer, minimum: 0 }
+        successes: { type: integer, minimum: 0 }
+        rate: { type: number, minimum: 0, maximum: 1 }
+
+    Event:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        title: { type: string }
+        timezone: { type: string, example: Europe/Paris }
+        startsAt: { type: string, format: date-time }
+        endsAt: { type: string, format: date-time }
+        status: { type: string, enum: [draft, scheduled, open, finished, archived] }
+        type: { type: string, enum: [standard, battle_royale] }
+        maxAttempts: { type: integer, enum: [1], description: "v1 : un seul essai par participant (FR-065)" }
+        joined: { type: boolean }
+        attemptConsumed: { type: boolean }
+
+    Boss:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        maxHp: { type: integer }
+        chapter: { type: string }
+        phases:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string, format: uuid }
+              order: { type: integer }
+              completed: { type: boolean }
+        hpRemaining: { type: integer, nullable: true }
+        defeated: { type: boolean }
+
+    ShopItem:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        sku: { type: string }
+        name: { type: string }
+        kind:
+          type: string
+          enum: [hint, potion, avatar, title, editor_theme, early_access]
+        priceBits: { type: integer, minimum: 0 }
+        available: { type: boolean }
+
+    LoreChapter:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        slug: { type: string }
+        title: { type: string }
+        requiredLevel: { type: integer }
+        unlocked: { type: boolean }
+        read: { type: boolean }
+
+    ChatMessage:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        channelId: { type: string, format: uuid }
+        authorName: { type: string }
+        body: { type: string }
+        createdAt: { type: string, format: date-time }
+        deleted: { type: boolean }
+
+    ChallengeDraft:
+      type: object
+      required: [themeId, type, difficulty, title, statement, languages, basePoints]
+      properties:
+        themeId: { type: string, format: uuid }
+        type: { $ref: '#/components/schemas/ChallengeType' }
+        difficulty: { type: integer, minimum: 1, maximum: 5 }
+        title: { type: string, maxLength: 120 }
+        statement: { type: string }
+        languages: { type: array, items: { type: string, enum: [python, javascript] } }
+        basePoints: { type: integer, minimum: 0 }
+        perfMax: { type: integer, minimum: 0 }
+        prerequisites:
+          type: array
+          items:
+            type: object
+            properties:
+              requiredChallengeId: { type: string, format: uuid }
+              requiredLevel: { type: integer }
+              requiredLessonId: { type: string, format: uuid }
+              requiredLoreChapterId: { type: string, format: uuid }
+
+    EventDraft:
+      type: object
+      required: [title, timezone, startsAt, endsAt, type]
+      properties:
+        title: { type: string }
+        timezone: { type: string, example: Europe/Paris }
+        startsAt: { type: string, format: date-time }
+        endsAt: { type: string, format: date-time }
+        type: { type: string, enum: [standard, battle_royale] }
+        challengeIds:
+          type: array
+          items: { type: string, format: uuid }
+        minParticipants: { type: integer, minimum: 2, default: 8 }
+        rewards: { type: object, additionalProperties: true }
+
+security:
+  - cookieAuth: []

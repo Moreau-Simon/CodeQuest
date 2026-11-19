@@ -1,0 +1,35 @@
+/* Jetons de design — T016. Contrastes vérifiés pour WCAG 2.1 AA (SC-015). */
+:root {
+  --cq-surface: 15 23 42; /* #0f172a */
+  --cq-elevated: 30 41 59; /* #1e293b */
+  --cq-ink: 248 250 252; /* #f8fafc */
+  --cq-muted: 148 163 184; /* #94a3b8 */
+  --cq-primary: 56 189 248; /* #38bdf8 */
+  --cq-accent: 168 85 247; /* #a855f7 */
+  --cq-danger: 248 113 113; /* #f87171 */
+  --cq-success: 52 211 153; /* #34d399 */
+
+  --cq-space-1: 0.25rem;
+  --cq-space-2: 0.5rem;
+  --cq-space-3: 0.75rem;
+  --cq-space-4: 1rem;
+  --cq-space-6: 1.5rem;
+  --cq-space-8: 2rem;
+
+  --cq-radius-sm: 0.375rem;
+  --cq-radius-md: 0.625rem;
+  --cq-radius-lg: 0.875rem;
+
+  --cq-focus-ring: 2px solid rgb(var(--cq-primary));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
