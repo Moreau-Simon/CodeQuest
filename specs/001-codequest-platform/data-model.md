@@ -176,9 +176,15 @@ conservé (FR-033).
 `designated_at`. **UNIQUE `(team_id, challenge_id)`** : le dernier désigné remplace le précédent ;
 aucune agrégation des membres (clarification 1, FR-046).
 
-Règle : à chaque désignation, `best_scores(subject_type = 'team', subject_id = team_id,
-challenge_id)` est recalculé depuis la soumission désignée, puis le ZSET `team:<team_id>` est réécrit
-dans la même transaction. Une révocation de désignation supprime l'entrée correspondante.
+Règle (arbitrage du 20 nov. 2026) : à chaque désignation, `team_official_submissions` est la source
+de vérité ; `submissions.is_official` est son miroir transactionnel et
+`best_scores(subject_type = 'team', subject_id = team_id, challenge_id)` est recalculé dans la même
+transaction PostgreSQL. Le ZSET du classement d'équipe (`lb:global:<scope_id>:team`, ainsi que les
+portées theme/season) est réécrit **après commit** via `LeaderboardService.recordTeamScore()`, comme
+pour les scores individuels ; la reconstruction périodique garantit la cohérence (SC-009).
+Attention : `team:<team_id>` désigne une **room Socket.IO** et `lb:team:<team_id>:player` le classement
+interne (avec agrégation des joueurs), qui n'est pas le classement d'équipe. Une révocation supprime
+la désignation, le miroir et l'entrée `best_scores` correspondante.
 
 ### `seasons`
 `id`, `name`, `slug` UNIQUE, `starts_at`, `ends_at`. Sert de portée de classement (FR-045).

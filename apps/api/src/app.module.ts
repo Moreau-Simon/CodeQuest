@@ -18,6 +18,7 @@ import { LessonsModule } from './modules/lessons/lessons.module';
 import { RbacGuard } from './modules/rbac/rbac.guard';
 import { RbacModule } from './modules/rbac/rbac.module';
 import { SubmissionsModule } from './modules/submissions/submissions.module';
+import { TeamsModule } from './modules/teams/teams.module';
 import { UsersModule } from './modules/users/users.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { QueueModule } from './queue/queue.module';
@@ -41,6 +42,7 @@ import { StorageModule } from './storage/storage.module';
     ChallengesModule,
     SubmissionsModule,
     LeaderboardsModule,
+    TeamsModule,
     LessonsModule,
     HealthModule,
     RealtimeModule,
