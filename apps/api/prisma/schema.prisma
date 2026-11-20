@@ -80,6 +80,8 @@ model User {
   invitedToTeams      TeamInvitation[]         @relation("TeamInvitationInvitedUser")
   createdInvitations  TeamInvitation[]         @relation("TeamInvitationCreator")
   officialDesignations TeamOfficialSubmission[] @relation("OfficialSubmissionDesignator")
+  contributionEvents  ContributionEvent[]
+  contributionScores  ContributionScore[]
 
   @@map("users")
 }
@@ -267,6 +269,16 @@ enum SubjectType {
   @@map("subject_type")
 }
 
+/// Nature d'un événement de contribution individuelle (FR-059). Les lignes
+/// conservées et les réussites ont un poids plein, l'assistance un poids réduit.
+enum ContributionEventKind {
+  kept_line
+  success
+  assistance
+
+  @@map("contribution_event_kind")
+}
+
 /// Portée d'un classement (FR-045). `global` utilise l'UUID sentinelle
 /// `00000000-0000-0000-0000-000000000000` comme `scope_id` : cela évite les
 /// doublons d'unicité que PostgreSQL autoriserait avec `NULL`.
@@ -341,6 +353,8 @@ model Challenge {
   attempts       ChallengeAttempt[]
   bestScores    BestScore[]
   officialTeamSubmissions TeamOfficialSubmission[]
+  collaborativeDocuments  CollaborativeDocument[]
+  contributionEvents      ContributionEvent[]
   prerequisites ChallengePrerequisite[] @relation("ChallengePrerequisites")
   requiredFor   ChallengePrerequisite[] @relation("ChallengePrerequisiteRequirements")
 
@@ -408,6 +422,7 @@ model Submission {
   /// D4 : `TeamOfficialSubmission` est la source de vérité de la désignation ;
   /// ce booléen en est le miroir, maintenu dans la même transaction.
   officialTeamSubmissions TeamOfficialSubmission[] @relation("OfficialTeamSubmission")
+  contributionEvents      ContributionEvent[]      @relation("ContributionSubmission")
 
   @@index([challengeId, score(sort: Desc), createdAt(sort: Asc)])
   @@index([userId, createdAt(sort: Desc)])
@@ -615,6 +630,9 @@ model Team {
   members             TeamMember[]
   invitations         TeamInvitation[]
   officialSubmissions TeamOfficialSubmission[]
+  collaborativeDocuments CollaborativeDocument[]
+  contributionEvents      ContributionEvent[]
+  contributionScores      ContributionScore[]
 
   @@index([disbandedAt])
   @@map("teams")
@@ -680,4 +698,65 @@ model TeamOfficialSubmission {
 
   @@unique([teamId, challengeId])
   @@map("team_official_submissions")
+}
+
+/// Document Yjs persisté pour une équipe sur un défi (FR-057). `state` est
+/// l'état encodé par `Y.encodeStateAsUpdate` : la compaction consiste à
+/// remplacer ce blob à chaque flush, sans journal de deltas. Aucun `userId`
+/// n'y figure : la purge RGPD (FR-013) n'a donc rien à anonymiser ici.
+model CollaborativeDocument {
+  id          String   @id @db.Uuid
+  teamId      String   @map("team_id") @db.Uuid
+  challengeId String   @map("challenge_id") @db.Uuid
+  state       Bytes
+  version     Int      @default(0)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  team      Team      @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  challenge Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, challengeId])
+  @@map("collaborative_documents")
+}
+
+/// Événements de contribution individuelle (FR-059). Sources : lignes conservées
+/// d'une soumission, réussites retenues, assistance apportée aux coéquipiers.
+model ContributionEvent {
+  id           String                @id @db.Uuid
+  teamId       String                @map("team_id") @db.Uuid
+  challengeId  String                @map("challenge_id") @db.Uuid
+  userId       String                @map("user_id") @db.Uuid
+  kind         ContributionEventKind
+  weight       Int                   @default(1)
+  submissionId String?               @map("submission_id") @db.Uuid
+  createdAt    DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  team       Team        @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  challenge  Challenge   @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  submission Submission? @relation("ContributionSubmission", fields: [submissionId], references: [id], onDelete: SetNull)
+
+  @@index([teamId, userId])
+  @@index([challengeId, userId])
+  @@map("contribution_events")
+}
+
+/// Score de contribution agrégé, avec le coefficient réduit appliqué au
+/// classement des joueurs (FR-059). Recalculé à chaque nouvel événement.
+model ContributionScore {
+  teamId      String   @map("team_id") @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  keptLines   Int      @default(0) @map("kept_lines")
+  successes   Int      @default(0)
+  assistance  Int      @default(0)
+  coefficient Decimal  @default(0.5) @db.Decimal(3, 2)
+  score       Int      @default(0)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([teamId, userId])
+  @@map("contribution_scores")
 }

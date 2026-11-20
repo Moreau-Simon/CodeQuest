@@ -760,6 +760,11 @@ export interface paths {
                          * @description Essai démarré explicitement, obligatoire en débogage/décryptage (A5)
                          */
                         attemptId?: string;
+                        /**
+                         * Format: uuid
+                         * @description Équipe au titre de laquelle la soumission contribue (FR-060, membre actif requis)
+                         */
+                        teamId?: string;
                     };
                 };
             };
@@ -1605,6 +1610,45 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/teams/{teamId}/contributions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Classement des contributions individuelles d'une équipe (FR-059) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    teamId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Contributions agrégées, du meilleur au moins bon */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ContributionScore"][];
+                    };
+                };
+                404: components["responses"]["Error"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/events": {
         parameters: {
             query?: never;
@@ -2232,6 +2276,17 @@ export interface components {
             designatedBy?: string | null;
             /** Format: date-time */
             designatedAt: string;
+        };
+        ContributionScore: {
+            /** Format: uuid */
+            teamId: string;
+            /** Format: uuid */
+            userId: string;
+            keptLines: number;
+            successes: number;
+            assistance: number;
+            coefficient: number;
+            score: number;
         };
         Profile: {
             /** Format: uuid */

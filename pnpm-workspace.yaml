@@ -3,3 +3,9 @@ packages:
   - 'apps/web'
   - 'services/runner'
   # services/assets est un projet Python (pyproject.toml), hors workspace pnpm.
+
+# y-monaco importe `monaco-editor/esm/vs/editor/editor.api.js`, un sous-chemin
+# que les `exports` de monaco-editor 0.57 ne résolvent plus. 0.55.1 est aussi
+# la version chargée par le loader CDN d'@monaco-editor/react.
+overrides:
+  monaco-editor: 0.55.1

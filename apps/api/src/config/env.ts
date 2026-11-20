@@ -70,6 +70,10 @@ const schema = z.object({
   LIVEKIT_API_SECRET: z.string().min(1),
   LIVEKIT_TOKEN_TTL_SECONDS: z.coerce.number().int().positive().default(3600),
 
+  // US8 (FR-057) : persistance périodique des documents Yjs et limite de taille.
+  YJS_FLUSH_INTERVAL_MS: z.coerce.number().int().positive().default(30_000),
+  YJS_MAX_DOC_BYTES: z.coerce.number().int().positive().default(65_536),
+
   QUEUE_SUBMISSIONS: z.string().default('submissions'),
   QUEUE_EMAILS: z.string().default('emails'),
   QUEUE_ASSETS: z.string().default('assets'),

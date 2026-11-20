@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { t } from '../../i18n';
+import { useCollaborativeDoc } from '../../hooks/useCollaborativeDoc';
 import { useSubmissionVerdict } from '../../hooks/useSubmissionVerdict';
 import { ApiError } from '../../services/api-client';
 import { getChallenge, submitSolution, type Submission } from '../../services/challenges';
@@ -101,6 +102,8 @@ function VerdictPanel({
  */
 export function ChallengePage(): JSX.Element {
   const { challengeId = '' } = useParams<{ challengeId: string }>();
+  const [searchParams] = useSearchParams();
+  const teamId = searchParams.get('teamId') ?? undefined;
   const authenticated = useSessionStore(selectIsAuthenticated);
   const user = useSessionStore((state) => state.user);
 
@@ -125,9 +128,20 @@ export function ChallengePage(): JSX.Element {
   }, [detail.data, language]);
 
   const verdict = useSubmissionVerdict(submissionId);
+  const collaborative = useCollaborativeDoc({
+    teamId,
+    challengeId,
+    initialCode: DEFAULT_CODE[language],
+    enabled: Boolean(teamId) && authenticated
+  });
 
   const submit = useMutation({
-    mutationFn: () => submitSolution(challengeId, { language, code }, crypto.randomUUID()),
+    mutationFn: () =>
+      submitSolution(
+        challengeId,
+        { language, code: collaborative.doc ? collaborative.text : code, teamId },
+        crypto.randomUUID()
+      ),
     onSuccess: (submission) => {
       setError(null);
       setSubmissionId(submission.id);
@@ -239,7 +253,34 @@ export function ChallengePage(): JSX.Element {
         </p>
       ) : null}
 
-      <CodeEditor value={code} language={language} onChange={setCode} />
+      {collaborative.doc ? (
+        <div className="flex flex-wrap items-center gap-3 text-sm text-muted">
+          <span data-testid="collab-status">
+            {collaborative.connected ? t('collab.connected') : t('collab.disconnected')}
+          </span>
+          {collaborative.cursors.length > 0 ? (
+            <ul data-testid="remote-cursors" className="flex flex-wrap gap-2">
+              {collaborative.cursors.map((cursor) => (
+                <li
+                  key={cursor.userId}
+                  data-testid="remote-cursor"
+                  className="rounded-full bg-elevated px-2 py-1 text-xs"
+                >
+                  {t('collab.cursor', { line: cursor.line + 1, ch: cursor.ch + 1 })}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
+      ) : null}
+
+      <CodeEditor
+        value={collaborative.doc ? collaborative.text : code}
+        language={language}
+        onChange={collaborative.doc ? undefined : setCode}
+        sharedDoc={collaborative.doc}
+        onCursor={collaborative.sendCursor}
+      />
 
       {submissionId ? <VerdictPanel submission={verdict.submission} error={verdict.error} /> : null}
     </section>

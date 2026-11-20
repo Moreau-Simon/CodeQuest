@@ -1,4 +1,4 @@
-import { Injectable, type OnApplicationShutdown } from '@nestjs/common';
+import { ForbiddenException, Inject, Injectable, forwardRef, type OnApplicationShutdown } from '@nestjs/common';
 import {
   WebSocketGateway,
   SubscribeMessage,
@@ -25,10 +25,12 @@ import {
 import {
   REALTIME_NAMESPACE,
   REALTIME_REVOKE_CHANNEL,
+  documentRoom,
   type RealtimeRevocation
 } from './realtime.constants';
 import { RealtimeSessions } from './realtime.sessions';
 import { parseCookieHeader, type RealtimeSocket } from './realtime.sessions';
+import { YjsProvider } from './yjs.provider';
 
 class RealtimeAuthError extends Error {
   constructor(readonly code: 'UNAUTHENTICATED' | 'SESSION_REVOKED') {
@@ -37,6 +39,28 @@ class RealtimeAuthError extends Error {
 }
 
 const UUID_V4_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function parseDocId(value: unknown): { teamId: string; challengeId: string } | null {
+  if (typeof value !== 'string') return null;
+  const [teamId, challengeId] = value.split(':');
+  if (
+    typeof teamId !== 'string' ||
+    typeof challengeId !== 'string' ||
+    !UUID_V4_PATTERN.test(teamId) ||
+    !UUID_V4_PATTERN.test(challengeId)
+  ) {
+    return null;
+  }
+  return { teamId, challengeId };
+}
+
+function docErrorCode(error: unknown): string {
+  if (error instanceof ForbiddenException) {
+    const response = error.getResponse() as { code?: string };
+    return response.code ?? 'FORBIDDEN';
+  }
+  return 'DOC_ERROR';
+}
 
 /**
  * Gateway temps réel (T033) : authentification par cookie au handshake,
@@ -60,7 +84,9 @@ export class RealtimeGateway
     private readonly sessions: RealtimeSessions,
     private readonly prisma: PrismaService,
     private readonly redis: RedisService,
-    private readonly metrics: MetricsService
+    private readonly metrics: MetricsService,
+    @Inject(forwardRef(() => YjsProvider))
+    private readonly yjs: YjsProvider
   ) {}
 
   async afterInit(server: Namespace): Promise<void> {
@@ -160,6 +186,73 @@ export class RealtimeGateway
     const room = leaderboardRoom(scope, scopeId, subjectType, period);
     void socket.join(room);
     return { ok: true, room };
+  }
+
+  /**
+   * Édition collaborative (T151/T160, FR-057) : l'update binaire est appliqué
+   * par le provider après contrôle d'appartenance, puis diffusé à la room du
+   * document. Le socket rejoint la room seulement après validation.
+   */
+  @SubscribeMessage('doc.update')
+  async onDocumentUpdate(
+    @ConnectedSocket() socket: Socket,
+    @MessageBody() payload: unknown
+  ): Promise<{ ok: boolean; version?: number; code?: string }> {
+    const data = (payload ?? {}) as { docId?: unknown; update?: unknown };
+    const parsed = parseDocId(data.docId);
+    const userId = (socket.data as { userId?: string }).userId;
+    if (!parsed || typeof data.update !== 'string' || !userId) {
+      return { ok: false, code: 'INVALID_PAYLOAD' };
+    }
+
+    try {
+      const result = await this.yjs.applyUpdate(
+        parsed.teamId,
+        parsed.challengeId,
+        userId,
+        data.update
+      );
+      void socket.join(documentRoom(parsed.teamId, parsed.challengeId));
+      return { ok: true, version: result.version };
+    } catch (error) {
+      return { ok: false, code: docErrorCode(error) };
+    }
+  }
+
+  /** Présence (curseur) : jamais persistée, toujours limitée à la room. */
+  @SubscribeMessage('doc.awareness')
+  async onDocumentAwareness(
+    @ConnectedSocket() socket: Socket,
+    @MessageBody() payload: unknown
+  ): Promise<{ ok: boolean; code?: string }> {
+    const data = (payload ?? {}) as { docId?: unknown; cursor?: unknown };
+    const parsed = parseDocId(data.docId);
+    const userId = (socket.data as { userId?: string }).userId;
+    const cursor = data.cursor as { line?: unknown; ch?: unknown } | undefined;
+    if (
+      !parsed ||
+      !userId ||
+      !cursor ||
+      !Number.isInteger(cursor.line) ||
+      !Number.isInteger(cursor.ch) ||
+      (cursor.line as number) < 0 ||
+      (cursor.ch as number) < 0
+    ) {
+      return { ok: false, code: 'INVALID_PAYLOAD' };
+    }
+
+    try {
+      // Le provider valide l'appartenance ; on ne fait pas confiance au docId.
+      await this.yjs.assertMembership(parsed.teamId, parsed.challengeId, userId);
+      void socket.join(documentRoom(parsed.teamId, parsed.challengeId));
+      this.yjs.setAwareness(parsed.teamId, parsed.challengeId, userId, {
+        line: cursor.line as number,
+        ch: cursor.ch as number
+      });
+      return { ok: true };
+    } catch (error) {
+      return { ok: false, code: docErrorCode(error) };
+    }
   }
 
   /**

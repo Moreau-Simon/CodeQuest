@@ -19,6 +19,8 @@ import { LeaderboardPage } from './pages/leaderboards/LeaderboardPage';
 import { LessonPage } from './pages/lessons/LessonPage';
 import { LessonsPage } from './pages/lessons/LessonsPage';
 import { ProfilePage } from './pages/settings/ProfilePage';
+import { TeamPage } from './pages/teams/TeamPage';
+import { TeamSettingsPage } from './pages/teams/TeamSettingsPage';
 import { SessionsPage } from './pages/settings/SessionsPage';
 
 function HomePage(): JSX.Element {
@@ -74,7 +76,8 @@ export function App(): JSX.Element {
         <Route path="lessons" element={<LessonsPage />} />
         <Route path="lessons/:lessonId" element={<LessonPage />} />
         <Route path="leaderboards" element={<LeaderboardPage />} />
-        <Route path="teams" element={<PlaceholderPage title={t('nav.teams')} />} />
+        <Route path="teams" element={<TeamPage />} />
+        <Route path="teams/:teamId" element={<TeamSettingsPage />} />
         <Route path="events" element={<PlaceholderPage title={t('nav.events')} />} />
 
         <Route element={<RequireAuth />}>
