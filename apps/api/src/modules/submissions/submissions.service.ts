@@ -12,6 +12,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { QueueService } from '../../queue/queue.module';
 import { SubmissionsGateway } from '../../realtime/submissions.gateway';
 import { ChallengesService } from '../challenges/challenges.service';
+import { MembershipService } from '../teams/membership.service';
 import { MAX_CODE_BYTES, SUBMISSION_LIMITS, type SubmissionJob } from './submissions.types';
 import { DiffService } from './diff.service';
 
@@ -46,13 +47,14 @@ export class SubmissionsService {
     private readonly challenges: ChallengesService,
     private readonly queue: QueueService,
     private readonly gateway: SubmissionsGateway,
-    private readonly diff: DiffService
+    private readonly diff: DiffService,
+    private readonly membership: MembershipService
   ) {}
 
   async create(
     challengeId: string,
     user: AuthenticatedUser,
-    input: { language: string; code: string; attemptId?: string },
+    input: { language: string; code: string; attemptId?: string; teamId?: string },
     idempotencyKey?: string
   ): Promise<SubmissionView> {
     this.requireWritable(user);
@@ -65,6 +67,13 @@ export class SubmissionsService {
         code: 'CODE_TOO_LARGE',
         message: 'Le code dépasse la taille maximale autorisée'
       });
+    }
+
+    // US8 (FR-060) : une soumission au titre d'une équipe exige d'en être
+    // membre actif. Les scores déjà acquis restent, seules les nouvelles
+    // contributions sont refusées (code NOT_TEAM_MEMBER).
+    if (input.teamId) {
+      await this.membership.assertCanContribute(input.teamId, user.id);
     }
 
     const challenge = await this.challenges.requirePlayable(challengeId, input.language, user.id);
@@ -145,6 +154,7 @@ export class SubmissionsService {
         challengeId,
         challengeVersionId: version.id,
         userId: user.id,
+        teamId: input.teamId ?? null,
         language: input.language,
         code: input.code,
         status: 'pending',

@@ -16,6 +16,11 @@ export class CreateSubmissionDto {
   @IsOptional()
   @IsUUID('7')
   attemptId?: string;
+
+  /** US8 (FR-060) : contribuer au titre d'une équipe dont on est membre actif. */
+  @IsOptional()
+  @IsUUID()
+  teamId?: string;
 }
 
 /** Soumissions (T077) : `202` à la création, lecture de repli du temps réel. */

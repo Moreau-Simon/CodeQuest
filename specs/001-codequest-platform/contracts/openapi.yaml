@@ -320,6 +320,10 @@ paths:
                   type: string
                   format: uuid
                   description: Essai démarré explicitement, obligatoire en débogage/décryptage (A5)
+                teamId:
+                  type: string
+                  format: uuid
+                  description: Équipe au titre de laquelle la soumission contribue (FR-060, membre actif requis)
       responses:
         '400': { description: Essai requis (ATTEMPT_REQUIRED) }
         '202':
@@ -687,6 +691,22 @@ paths:
         '403': { $ref: '#/components/responses/Error' }
         '404': { $ref: '#/components/responses/Error' }
 
+  /teams/{teamId}/contributions:
+    get:
+      tags: [Teams]
+      summary: Classement des contributions individuelles d'une équipe (FR-059)
+      parameters:
+        - { name: teamId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: Contributions agrégées, du meilleur au moins bon
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/ContributionScore' }
+        '404': { $ref: '#/components/responses/Error' }
+
   /events:
     get:
       tags: [Events]
@@ -932,6 +952,18 @@ components:
         score: { type: number }
         designatedBy: { type: string, format: uuid, nullable: true }
         designatedAt: { type: string, format: date-time }
+
+    ContributionScore:
+      type: object
+      required: [teamId, userId, keptLines, successes, assistance, coefficient, score]
+      properties:
+        teamId: { type: string, format: uuid }
+        userId: { type: string, format: uuid }
+        keptLines: { type: integer }
+        successes: { type: integer }
+        assistance: { type: integer }
+        coefficient: { type: number }
+        score: { type: integer }
 
     Profile:
       type: object

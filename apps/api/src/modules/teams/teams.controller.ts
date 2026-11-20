@@ -17,6 +17,7 @@ import {
 } from 'class-validator';
 import type { AuthenticatedUser } from '../../common/auth/authenticated-user';
 import { Authenticated, CurrentUser, Public } from '../rbac/rbac.constants';
+import { ContributionService, type ContributionView } from './contribution.service';
 import { OfficialSubmissionService, type OfficialSubmissionView } from './official-submission.service';
 import { TeamsService, type InvitationView, type TeamView } from './teams.service';
 
@@ -74,7 +75,8 @@ export class DesignateOfficialDto {
 export class TeamsController {
   constructor(
     private readonly teams: TeamsService,
-    private readonly official: OfficialSubmissionService
+    private readonly official: OfficialSubmissionService,
+    private readonly contributionService: ContributionService
   ) {}
 
   @Post()
@@ -133,6 +135,13 @@ export class TeamsController {
     @Body() dto: DesignateOfficialDto
   ): Promise<OfficialSubmissionView> {
     return this.official.designate(user.id, teamId, dto.challengeId, dto.submissionId);
+  }
+
+  /** FR-059 : classement des contributions individuelles d'une équipe. */
+  @Public()
+  @Get(':teamId/contributions')
+  contributions(@Param('teamId') teamId: string): Promise<ContributionView[]> {
+    return this.contributionService.leaderboard(teamId);
   }
 
   @Delete(':teamId/official-submission/:challengeId')

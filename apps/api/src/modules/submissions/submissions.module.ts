@@ -8,12 +8,13 @@ import { ScoringModule } from '../scoring/scoring.module';
 import { DiffService } from './diff.service';
 import { SubmissionsController } from './submissions.controller';
 import { SubmissionsService } from './submissions.service';
+import { MembershipService } from '../teams/membership.service';
 import { VerdictConsumer } from './verdict.consumer';
 
 @Module({
   imports: [ChallengesModule, LeaderboardsModule, LessonsModule, RealtimeModule, ScoringModule],
   controllers: [SubmissionsController],
-  providers: [SubmissionsService, SubmissionsGateway, VerdictConsumer, DiffService],
+  providers: [SubmissionsService, SubmissionsGateway, VerdictConsumer, DiffService, MembershipService],
   exports: [SubmissionsService, DiffService]
 })
 export class SubmissionsModule {}

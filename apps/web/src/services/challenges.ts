@@ -91,7 +91,7 @@ export function startAttempt(challengeId: string): Promise<ChallengeAttempt> {
 
 export function submitSolution(
   challengeId: string,
-  input: { language: 'python' | 'javascript'; code: string; attemptId?: string },
+  input: { language: 'python' | 'javascript'; code: string; attemptId?: string; teamId?: string },
   idempotencyKey?: string
 ): Promise<Submission> {
   return api.post<Submission>(`/challenges/${encodeURIComponent(challengeId)}/submissions`, input, {
