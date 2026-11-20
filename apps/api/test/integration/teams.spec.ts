@@ -149,7 +149,7 @@ describe('équipes — taille, engagement unique et capitainerie (T149)', () => 
     const stillAllowed = await players[1]!.agent
       .post(`/api/v1/teams/${teamA.id}/invitations`)
       .send({ pseudonym: players[6]!.pseudonym });
-    expect(stillAllowed.status).toBe(200);
+    expect(stillAllowed.status).toBe(201);
 
     const transferred = await players[1]!.agent
       .patch(`/api/v1/teams/${teamA.id}/captain`)

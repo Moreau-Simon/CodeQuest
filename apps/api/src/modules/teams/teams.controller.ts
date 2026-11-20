@@ -126,6 +126,7 @@ export class TeamsController {
   }
 
   @Post(':teamId/official-submission')
+  @HttpCode(200)
   designate(
     @CurrentUser() user: AuthenticatedUser,
     @Param('teamId') teamId: string,
