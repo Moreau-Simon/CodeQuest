@@ -21,6 +21,9 @@ export interface CodeEditorProps {
  * plein écran, sélection de police lisible et zone de secours sans Monaco.
  * En mode équipe, `sharedDoc` active le binding Yjs et la publication du curseur.
  */
+type MonacoEditor = Parameters<OnMount>[0];
+type MonacoModel = NonNullable<ReturnType<MonacoEditor['getModel']>>;
+
 export function CodeEditor({
   value,
   language,
@@ -32,36 +35,49 @@ export function CodeEditor({
   onCursor
 }: CodeEditorProps): JSX.Element {
   const [fullscreen, setFullscreen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [bound, setBound] = useState(false);
+  const editorRef = useRef<MonacoEditor | null>(null);
+  const modelRef = useRef<MonacoModel | null>(null);
   const binding = useRef<{ destroy(): void } | null>(null);
-  const active = useRef(true);
 
+  // `sharedDoc` peut arriver après le montage de Monaco (authentification
+  // asynchrone) : le binding doit donc être créé ici, pas dans `onMount`.
   useEffect(() => {
-    active.current = true;
+    if (!mounted || !sharedDoc || !editorRef.current || !modelRef.current) return;
+    let cancelled = false;
+    // Chargement à la demande : Monaco n'alourdit le bundle initial que
+    // lorsque le joueur rejoint réellement une session collaborative.
+    void import('y-monaco').then(({ MonacoBinding }) => {
+      if (cancelled || !editorRef.current || !modelRef.current) return;
+      binding.current = new MonacoBinding(
+        sharedDoc.getText('code'),
+        modelRef.current,
+        new Set([editorRef.current])
+      );
+      setBound(true);
+    });
     return () => {
-      active.current = false;
+      cancelled = true;
       binding.current?.destroy();
       binding.current = null;
+      setBound(false);
     };
-  }, [sharedDoc]);
+  }, [mounted, sharedDoc]);
 
   const handleMount: OnMount = (editor, monaco) => {
     void monaco;
-    const model = editor.getModel();
-    if (sharedDoc && model) {
-      // Chargement à la demande : Monaco n'alourdit le bundle initial que
-      // lorsque le joueur rejoint réellement une session collaborative.
-      void import('y-monaco').then(({ MonacoBinding }) => {
-        if (!active.current) return;
-        binding.current = new MonacoBinding(sharedDoc.getText('code'), model, new Set([editor]));
-      });
-    }
+    editorRef.current = editor;
+    modelRef.current = editor.getModel();
+    setMounted(true);
     editor.onDidChangeCursorPosition((event) => {
-      onCursor?.({ line: event.position.lineNumber, ch: event.position.column - 1 });
+      onCursor?.({ line: event.position.lineNumber - 1, ch: event.position.column - 1 });
     });
   };
 
   return (
     <div
+      data-collab-bound={bound ? 'true' : 'false'}
       className={cn(
         'flex flex-col gap-2 rounded-xl border border-elevated bg-surface',
         fullscreen && 'fixed inset-0 z-50 m-0 rounded-none border-0 p-4'

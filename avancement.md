@@ -299,7 +299,8 @@ Déclencheurs : `push` et `pull_request` sur `main`, plus `workflow_dispatch` ; 
 | E2E T152 | `apps/web/e2e/team-collab.spec.ts` : deux onglets, stub Socket.IO et Monaco injectés par `page.addInitScript`, updates partagés via `BroadcastChannel`. Convergence dans les deux sens et affichage du curseur distant vérifiés sans backend. |
 | Contrat | Nouveaux éléments OpenAPI : `teamId` sur la soumission et réponse `403 NOT_TEAM_MEMBER`, `GET /teams/{teamId}/contributions`, schéma `ContributionScore` → **51 chemins / 33 schémas**. Types web régénérés. |
 | Portes locales | `pnpm lint`, `pnpm typecheck`, `pnpm test` (**124 API + 58 web + 9 runner**), `pnpm build` ✅. `prisma validate`/`generate` ✅. Suites Testcontainers et Playwright non exécutables localement (Docker et navigateurs absents) → validation en CI. |
-| En attente | Commit/poussée de `phase-10-us8-collab`, ouverture de la PR, review de `Moreau-Simon` (notre compte est auteur et ne peut pas s'auto-approuver), surveillance de la CI puis fusion via API. |
+| PR #7 fusionnée | Commit `657f89d` poussé, PR #7 ouverte, review approbatrice de `Moreau-Simon` obtenue, fusion via API GitHub en commit de merge **`32ffabf`** ; `main` local et `origin/main` alignés. |
+| Incident CI PR #7 (résolu) | Le job `Web E2E (Chromium)` a échoué : le binding `MonacoBinding` n'était créé que dans `onMount`, alors que `sharedDoc` arrive après l'authentification asynchrone — l'édition collaborative ne fonctionnait donc pas en conditions réelles. Correction : création du binding dans un `useEffect` réactif à `[mounted, sharedDoc]`, exposition de `data-collab-bound` pour synchroniser l'E2E, conversion 0-based de la ligne du curseur (décalage d'une ligne), et ajout de `monaco.Selection`/`monaco.Range` au stub. E2E validé localement sur le build de production (3 exécutions consécutives). Correctif livré via PR #8. |
 
 ### Journal de la session du 19 novembre 2026
 
