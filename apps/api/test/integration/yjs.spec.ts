@@ -101,13 +101,13 @@ describe('Yjs — convergence, persistance et autorisation (T151)', () => {
     const update = Buffer.from(Y.encodeStateAsUpdate(doc)).toString('base64');
     await expect(
       provider.applyUpdate(teamId, challengeId, outsider.id, update)
-    ).rejects.toMatchObject({ code: 'NOT_TEAM_MEMBER' });
+    ).rejects.toMatchObject({ response: { code: 'NOT_TEAM_MEMBER' } });
   });
 
   it('refuse une mise à jour qui dépasse la taille maximale du document', async () => {
     const oversized = Buffer.from('A'.repeat(70 * 1024)).toString('base64');
     await expect(
       provider.applyUpdate(teamId, challengeId, captain.id, oversized)
-    ).rejects.toMatchObject({ code: 'DOC_TOO_LARGE' });
+    ).rejects.toMatchObject({ response: { code: 'DOC_TOO_LARGE' } });
   });
 });

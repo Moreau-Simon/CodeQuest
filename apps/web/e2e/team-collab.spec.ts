@@ -50,6 +50,21 @@ function installCollaborationStub(): void {
   let lastDocId = '';
   let cursor = { line: 0, ch: 0 };
 
+  // `MonacoBinding` construit ses ranges avec `new monaco.Selection(...)` et
+  // `new monaco.Range(...)` : le stub doit fournir ces deux constructeurs.
+  class MonacoRange {
+    startLineNumber: number;
+    startColumn: number;
+    endLineNumber: number;
+    endColumn: number;
+    constructor(a: number, b: number, c: number, d: number) {
+      this.startLineNumber = a;
+      this.startColumn = b;
+      this.endLineNumber = c;
+      this.endColumn = d;
+    }
+  }
+
   const host = window as unknown as {
     monaco: unknown;
     __codequestSocketFactory: () => unknown;
@@ -223,6 +238,8 @@ function installCollaborationStub(): void {
         return { path, toString: () => path };
       }
     },
+    Range: MonacoRange,
+    Selection: MonacoRange,
     editor: {
       EditorOption: { readOnly: 1 },
       createModel(value: string) {
@@ -332,6 +349,8 @@ test('deux onglets convergent sur le même document collaboratif', async ({ brow
 
   await expect(first.getByTestId('collab-status')).toContainText('Édition collaborative active');
   await expect(second.getByTestId('collab-status')).toContainText('Édition collaborative active');
+  await expect(first.locator('[data-collab-bound="true"]')).toBeVisible();
+  await expect(second.locator('[data-collab-bound="true"]')).toBeVisible();
   await expect.poll(() => editorValue(second)).toContain('return values');
 
   await first.evaluate(() =>
@@ -343,7 +362,7 @@ test('deux onglets convergent sur le même document collaboratif', async ({ brow
   await first.evaluate(() =>
     (window as unknown as CollabWindow).__codequestSetCursor({ line: 1, ch: 4 })
   );
-  await expect(second.getByTestId('remote-cursor')).toContainText('ligne 2');
+  await expect(second.getByTestId('remote-cursors')).toContainText('ligne 2');
 
   await second.evaluate(() =>
     (window as unknown as CollabWindow).__codequestSetEditorValue('def solve(values):\n    return list(reversed(values))\n')
