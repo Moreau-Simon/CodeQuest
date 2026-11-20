@@ -37,7 +37,7 @@ Contraintes actées :
 | Dossiers générés | `.specify/` (memory, scripts, templates), `.opencode/commands/speckit.*.md` |
 | `.specify/extensions.yml` | **Absent** → tous les hooks `before_*` / `after_*` sont silencieusement ignorés (signalé dans chaque rapport) |
 | `.specify/feature.json` | `{"feature_directory":"specs/001-codequest-platform"}` |
-| Dépôt git | Initialisé ; commits Conventional Commits ; remote `origin` = `https://github.com/Moreau-Simon/CodeQuest` (T280 : protection distante de `main` encore à appliquer) |
+| Dépôt git | Initialisé ; commits Conventional Commits ; remote `origin` = `https://github.com/Moreau-Simon/CodeQuest` (T280 : ruleset distant actif sur `main` — suppression, non-fast-forward, 1 approbation ; CODEOWNERS et checks requis à finaliser) |
 | OS / shell | macOS (darwin), zsh |
 
 ---
@@ -51,7 +51,7 @@ Contraintes actées :
 | `plan.md` | 194 | Technical Context, Constitution Check (avant + après conception), structure monorepo, Complexity Tracking |
 | `research.md` | 259 | Décisions **R1–R20** + table des constantes d'équilibrage (courbe XP ajoutée en Phase 8) |
 | `data-model.md` | 367 | **45 tables**, 15 enums, transitions d'état, règles d'intégrité, rétention |
-| `tasks.md` | 768 | **280 tâches** (T001–T280), 20 phases + Phase 0, 143 marquées `[P]` ; **142 cochées** |
+| `tasks.md` | 768 | **280 tâches** (T001–T280), 20 phases + Phase 0, 143 marquées `[P]` ; **156 cochées** |
 | `checklists/requirements.md` | — | **16/16** |
 | `contracts/openapi.yaml` | ~1230 | Validé : parse OK, **50 chemins** (dont `/teams/*`, `/teams/{id}/captain`, `/teams/{id}/official-submission/{challengeId}`), **32 schémas**, `$ref` tous résolus |
 | `contracts/websocket-events.md` | 191 | Événements temps réel |
@@ -203,7 +203,7 @@ Aucune violation. Les 5 principes sont **PASS** (IV et III désormais étayés p
 
 | Phase | Tâches | État |
 |---|---|---|
-| Phase 0 — Gouvernance | T279 | ✅ fait (T280 partiel : protection distante en attente d'un remote) |
+| Phase 0 — Gouvernance | T279 | ✅ fait (T280 partiel : ruleset distant actif — 1 approbation ; CODEOWNERS et checks requis à finaliser) |
 | Phase 1 — Setup | T001–T018 | ✅ fait et vérifié (lint, typecheck, tests, build) |
 | Phase 2 — Foundational | T019–T044 | ✅ fait et vérifié |
 | Phase 3 — US1 | T045–T066 | ✅ fait et vérifié |
@@ -213,7 +213,7 @@ Aucune violation. Les 5 principes sont **PASS** (IV et III désormais étayés p
 | Phase 7 — US5 | T117–T128 | ✅ fait et vérifié |
 | Phase 8 — US6 | T129–T138 | ✅ fait et vérifié (CI verte, fusionnée en PR #2) |
 | Phase 9 — US7 | T139–T148 | ✅ faits : score A5, instances par graine, migration Prisma, essai unique, page web, quickstart |
-| Phase 10 — US8 (bloc API) | T149, T150, T153–T157 | ✅ faits : équipes/invitations/capitainerie, soumission officielle unique, classement d'équipe recalculé, OpenAPI 50 chemins / 32 schémas |
+| Phase 10 — US8 (bloc API) | T149, T150, T153–T157 | ✅ faits et vérifiés : équipes/invitations/capitainerie, soumission officielle unique, classement d'équipe recalculé, OpenAPI 50 chemins / 32 schémas — PR #5 fusionnée (CI 8/8 verte, `a95ac6f`) |
 | Phase 10 — US8 (reste) | T151, T152, T158–T162 | ⏳ à faire : Yjs, contribution, conservation détaillée, pages web et E2E collaboratif |
 | Phases 11 → 20 | T163–T278 | ⏳ à faire |
 
@@ -280,6 +280,8 @@ Déclencheurs : `push` et `pull_request` sur `main`, plus `workflow_dispatch` ; 
 | Module API | `TeamsModule` câblé dans `AppModule` : `TeamsService` (création, invitations SHA-256, adhésion verrouillée avec limite configurable `team.max_size`, départ, transfert), `CaptaincyService` (départ/FR-014 ; la suppression de compte reste gérée en SQL par `account-deletion.service.ts`), `OfficialSubmissionService`, `TeamsController` (8 routes). Exceptions métier 400/403/404/409 avec codes `TEAM_FULL`, `ALREADY_IN_TEAM`, `NOT_CAPTAIN`… |
 | Contrat | OpenAPI enrichi : routes `/teams/{id}/captain` et `DELETE /teams/{id}/official-submission/{challengeId}`, schémas `Team`, `TeamMember`, `TeamInvitation`, `TeamOfficialSubmission`, champs `teamId`/`isOfficial` sur `Submission` ; 50 chemins / 32 schémas. Types web régénérés. |
 | Vérifications locales | lint/typecheck/tests unitaires (124)/build API ✅ ; Prisma `generate` ✅ ; suites Testcontainers T149/T150 non exécutables localement (Docker indisponible) → validation en CI. |
+| Correctifs de statuts HTTP | 1ᵉʳ run CI (`44740359673`) : 4 échecs d'intégration, uniquement des statuts (`Expected: 200`, `Received: 201`). Correctifs : `@HttpCode(200)` sur `POST /teams/:id/official-submission` (upsert, cohérent avec l'OpenAPI) et attente `201` sur `POST /teams/:id/invitations` (défaut NestJS, cohérent avec l'OpenAPI). Commit `8bdc5b1`. |
+| CI et fusion PR #5 | 2ᵉ run (`44741390340`) sur `8bdc5b1` : **8/8 jobs verts** (dont `API integration, contract and E2E tests` avec T149/T150). Ruleset `main` (= 1 review approbatrice) : review demandée puis obtenue de `Moreau-Simon` ; fusion via API GitHub en commit de merge **`a95ac6f`**. `origin/main` aligné sur `a95ac6f`. |
 
 ### Journal de la session du 19 novembre 2026
 
@@ -534,11 +536,11 @@ EOF
 
 - **I1 est résolu** : ne pas réintroduire `max_attempts ≥ 1` — la contrainte est `= 1` en v1 (FR-065).
 - `.specify/extensions.yml` est absent : ne pas s'attendre à des hooks automatiques ; les rapports doivent le mentionner.
-- Remote **distant configuré** (`origin` → `https://github.com/Moreau-Simon/CodeQuest`) : T280 (protection de `main`, CODEOWNERS, checks requis, 1 à 2 approbations) reste à appliquer côté GitHub.
+- Remote **distant configuré** (`origin` → `https://github.com/Moreau-Simon/CodeQuest`) : T280 partiel — ruleset de `main` actif (suppression, non-fast-forward, 1 approbation, vérifié lors de la fusion PR #5) ; CODEOWNERS et checks requis distants restent à configurer.
 - Architecture de fichiers à respecter : `apps/web`, `apps/api`, `services/runner`, `services/assets`, `infra/`, `docs/` — **sans `packages/`** (voir `versioning.md`).
 - `plan.md` doit conserver l'ordre des titres du gabarit ; les artefacts sont référencés par chemins relatifs.
 - La spec mélange prose FR et FR/SC en anglais : décision de style (finding T1) non tranchée, sans impact d'exécution.
-- Les 280 tâches sont suivies dans `tasks.md` (**139 cochées**, 141 restantes).
+- Les 280 tâches sont suivies dans `tasks.md` (**156 cochées**, 124 restantes).
 - **Propriété du score** : seul `ScoringService` calcule ; le runner renvoie des mesures brutes. Aucun test réussi ⇒ score `0` (les golden tests le figent).
 - **Fin de vie Socket.IO** : ne pas quitter les clients Redis de l'adaptateur dans `onModuleDestroy` (Nest ferme Socket.IO ensuite) — utiliser `onApplicationShutdown`.
 - **Suppression de compte** : `submissions.user_id` est `NOT NULL` ; l'anonymat est assuré par le tombeau pseudonyme à J+30, pas par un `UPDATE ... NULL`.
