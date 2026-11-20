@@ -85,23 +85,26 @@ export class YjsProvider implements OnModuleDestroy {
     const key = documentKey(teamId, challengeId);
     const current = this.documents.get(key);
 
-    // Applique d'abord sur un candidat : un update trop volumineux ne doit
+    // Valide d'abord sur un candidat : un update trop volumineux ne doit
     // jamais corrompre l'état en mémoire (Yjs ne permet pas de désappliquer).
     const candidate = new Y.Doc();
     if (current) {
       Y.applyUpdate(candidate, Y.encodeStateAsUpdate(current));
     }
     Y.applyUpdate(candidate, new Uint8Array(bytes));
-    const state = Y.encodeStateAsUpdate(candidate);
-    if (state.byteLength > env.YJS_MAX_DOC_BYTES) {
+    if (Y.encodeStateAsUpdate(candidate).byteLength > env.YJS_MAX_DOC_BYTES) {
       throw new ForbiddenException({
         code: 'DOC_TOO_LARGE',
         message: 'Le document dépasse la taille maximale autorisée'
       });
     }
 
-    const doc = current ?? candidate;
-    if (!current) this.documents.set(key, doc);
+    // L'update est valide : il doit être appliqué au document *conservé*, pas
+    // seulement au candidat, sinon les updates suivants repartiraient d'un état
+    // périmé et la convergence échouerait après le deuxième client.
+    const doc = this.getOrCreate(key);
+    Y.applyUpdate(doc, new Uint8Array(bytes));
+    const state = Y.encodeStateAsUpdate(doc);
     const version = (this.versions.get(key) ?? 0) + 1;
     this.versions.set(key, version);
     this.dirty.add(key);

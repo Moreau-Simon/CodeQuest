@@ -30,8 +30,10 @@ describe('contribution — score individuel à coefficient réduit (T159)', () =
     const { ContributionService } = await import('../../src/modules/teams/contribution.service');
     contribution = api.app.get(ContributionService);
 
-    captain = await createTestPlayer(api, prisma, 'capitaine-contribution');
-    member = await createTestPlayer(api, prisma, 'membre-contribution');
+    // `RegisterDto.pseudonym` plafonne à 20 caractères : au-delà, l'inscription
+    // est refusée (400) et aucun e-mail de confirmation n'est mis en file.
+    captain = await createTestPlayer(api, prisma, 'capitaine-contrib');
+    member = await createTestPlayer(api, prisma, 'membre-contrib');
     teamId = (await createTeam(captain.agent, 'Les Contributeurs', 'TRIB')).id;
     const token = await createInvitation(captain.agent, teamId, member.pseudonym);
     const joined = await member.agent.post(`/api/v1/teams/${teamId}/members`).send({ token });
