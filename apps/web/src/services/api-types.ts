@@ -676,6 +676,58 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/challenges/{challengeId}/attempts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Démarrer explicitement l'unique essai d'un défi chronométré (A5) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    challengeId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Essai démarré ; le chrono part de startedAt */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ChallengeAttempt"];
+                    };
+                };
+                /** @description Compte non confirmé ou prérequis non satisfaits */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Une seule tentative autorisée (ATTEMPT_ALREADY_STARTED) */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/challenges/{challengeId}/submissions": {
         parameters: {
             query?: never;
@@ -703,6 +755,11 @@ export interface paths {
                         /** @enum {string} */
                         language: "python" | "javascript";
                         code: string;
+                        /**
+                         * Format: uuid
+                         * @description Essai démarré explicitement, obligatoire en débogage/décryptage (A5)
+                         */
+                        attemptId?: string;
                     };
                 };
             };
@@ -715,6 +772,13 @@ export interface paths {
                     content: {
                         "application/json": components["schemas"]["Submission"];
                     };
+                };
+                /** @description Essai requis (ATTEMPT_REQUIRED) */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
                 };
                 /** @description Essai déjà consommé (event) ou event fermé */
                 409: {
@@ -904,7 +968,9 @@ export interface paths {
         /** Lister les cours et leur progression */
         get: {
             parameters: {
-                query?: never;
+                query?: {
+                    theme?: string;
+                };
                 header?: never;
                 path?: never;
                 cookie?: never;
@@ -924,6 +990,212 @@ export interface paths {
         };
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/lessons/{lessonId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lire le contenu d'une leçon et son mini-quiz (sans les réponses) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    lessonId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Leçon */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Lesson"];
+                    };
+                };
+                404: components["responses"]["Error"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/lessons/metrics/first-attempt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Taux de réussite au premier essai après une leçon (SC-010) */
+        get: {
+            parameters: {
+                query?: {
+                    lessonId?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Statistiques agrégées */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["FirstAttemptStats"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/lessons/{lessonId}/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Marquer le début de lecture d'une leçon */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    lessonId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Progression */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["LessonProgress"];
+                    };
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/lessons/{lessonId}/quiz": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Noter le mini-quiz d'une leçon sans la valider */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    lessonId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["QuizAnswers"];
+                };
+            };
+            responses: {
+                /** @description Résultat du quiz */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["QuizResult"];
+                    };
+                };
+                400: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/lessons/{lessonId}/positioning": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Passer le test de positionnement et obtenir une dispense */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    lessonId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["QuizAnswers"];
+                };
+            };
+            responses: {
+                /** @description Résultat du positionnement */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PositioningResult"];
+                    };
+                };
+                400: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -953,6 +1225,7 @@ export interface paths {
                 content: {
                     "application/json": {
                         quizScore: number;
+                        answers?: components["schemas"]["QuizAnswers"];
                     };
                 };
             };
@@ -962,8 +1235,13 @@ export interface paths {
                     headers: {
                         [name: string]: unknown;
                     };
-                    content?: never;
+                    content: {
+                        "application/json": components["schemas"]["LessonCompletion"];
+                    };
                 };
+                400: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
             };
         };
         delete?: never;
@@ -981,7 +1259,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Créer une équipe */
+        /** Créer une équipe (le créateur en devient capitaine) */
         post: {
             parameters: {
                 query?: never;
@@ -995,17 +1273,22 @@ export interface paths {
                         name: string;
                         tag: string;
                         description?: string;
+                        logo?: string;
                     };
                 };
             };
             responses: {
-                /** @description Équipe créée */
+                /** @description Équipe créée, créateur capitaine */
                 201: {
                     headers: {
                         [name: string]: unknown;
                     };
-                    content?: never;
+                    content: {
+                        "application/json": components["schemas"]["Team"];
+                    };
                 };
+                400: components["responses"]["Error"];
+                409: components["responses"]["Error"];
             };
         };
         delete?: never;
@@ -1021,7 +1304,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Détail d'une équipe */
+        /** Détail d'une équipe et de ses membres actifs */
         get: {
             parameters: {
                 query?: never;
@@ -1038,8 +1321,11 @@ export interface paths {
                     headers: {
                         [name: string]: unknown;
                     };
-                    content?: never;
+                    content: {
+                        "application/json": components["schemas"]["Team"];
+                    };
                 };
+                404: components["responses"]["Error"];
             };
         };
         put?: never;
@@ -1059,7 +1345,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Inviter un membre par pseudo */
+        /** Inviter un membre par pseudo, ou créer un lien nu */
         post: {
             parameters: {
                 query?: never;
@@ -1077,20 +1363,17 @@ export interface paths {
                 };
             };
             responses: {
-                /** @description Invitation créée */
+                /** @description Invitation créée (jeton renvoyé une seule fois) */
                 201: {
                     headers: {
                         [name: string]: unknown;
                     };
-                    content?: never;
-                };
-                /** @description Équipe pleine ou joueur déjà engagé */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
+                    content: {
+                        "application/json": components["schemas"]["TeamInvitation"];
                     };
-                    content?: never;
                 };
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
             };
         };
         delete?: never;
@@ -1108,7 +1391,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Accepter une invitation / rejoindre */
+        /** Accepter une invitation / rejoindre l'équipe */
         post: {
             parameters: {
                 query?: never;
@@ -1131,8 +1414,14 @@ export interface paths {
                     headers: {
                         [name: string]: unknown;
                     };
-                    content?: never;
+                    content: {
+                        "application/json": components["schemas"]["Team"];
+                    };
                 };
+                400: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+                409: components["responses"]["Error"];
             };
         };
         delete?: never;
@@ -1171,11 +1460,60 @@ export interface paths {
                     };
                     content?: never;
                 };
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
             };
         };
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/teams/{teamId}/captain": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Transférer la capitainerie à un membre actif */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    teamId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        userId: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Capitainerie transférée */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Team"];
+                    };
+                };
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+            };
+        };
         trace?: never;
     };
     "/teams/{teamId}/official-submission": {
@@ -1208,16 +1546,60 @@ export interface paths {
                 };
             };
             responses: {
-                /** @description Soumission officielle retenue ; le dernier désigné remplace le précédent */
+                /** @description Soumission officielle retenue ; le dernier désigné remplace le précédent, sans agrégation */
                 200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TeamOfficialSubmission"];
+                    };
+                };
+                400: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/teams/{teamId}/official-submission/{challengeId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Révoquer la désignation officielle (capitaine) */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    teamId: string;
+                    challengeId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Désignation révoquée */
+                204: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content?: never;
                 };
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
             };
         };
-        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -1803,6 +2185,54 @@ export interface components {
                 [key: string]: unknown;
             };
         };
+        TeamMember: {
+            /** Format: uuid */
+            userId: string;
+            pseudonym: string;
+            /** @enum {string} */
+            role: "captain" | "member";
+            /** Format: date-time */
+            joinedAt: string;
+        };
+        Team: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            tag: string;
+            description?: string | null;
+            logoKey?: string | null;
+            /** Format: uuid */
+            captainId: string | null;
+            members: components["schemas"]["TeamMember"][];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            disbandedAt?: string | null;
+        };
+        TeamInvitation: {
+            token: string;
+            /** Format: uri */
+            inviteUrl: string;
+            /** Format: uuid */
+            teamId: string;
+            /** Format: date-time */
+            expiresAt: string;
+        };
+        TeamOfficialSubmission: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            teamId: string;
+            /** Format: uuid */
+            challengeId: string;
+            /** Format: uuid */
+            submissionId: string;
+            score: number;
+            /** Format: uuid */
+            designatedBy?: string | null;
+            /** Format: date-time */
+            designatedAt: string;
+        };
         Profile: {
             /** Format: uuid */
             id?: string;
@@ -1878,6 +2308,14 @@ export interface components {
             languages?: string[];
             basePoints?: number;
             perfMax?: number;
+            currentVersion?: number;
+            /** @description Code bogué du défi de débogage, sans indication du bug ni correction */
+            buggyCode?: string | null;
+            /** @description Limite de lignes modifiées conservant le bonus temps (FR-038) */
+            maxModifiedLines?: number | null;
+            cipher?: string | null;
+            /** @description Instance de décryptage générée pour ce joueur, sans graine ni réponse attendue */
+            instance?: Record<string, never> | null;
             hints?: {
                 /** Format: uuid */
                 id?: string;
@@ -1900,6 +2338,25 @@ export interface components {
             verdictReason?: string | null;
             /** Format: date-time */
             createdAt?: string;
+            /** Format: uuid */
+            attemptId?: string | null;
+            modifiedLines?: number | null;
+            hintsUsed?: number;
+            /** Format: uuid */
+            teamId?: string | null;
+            isOfficial?: boolean;
+        };
+        ChallengeAttempt: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            challengeId?: string;
+            /** Format: date-time */
+            startedAt?: string;
+            /** Format: date-time */
+            expiredAt?: string;
+            /** Format: date-time */
+            verdictAt?: string | null;
         };
         LeaderboardEntry: {
             rank?: number;
@@ -1912,13 +2369,76 @@ export interface components {
         };
         Lesson: {
             /** Format: uuid */
-            id?: string;
-            title?: string;
-            theme?: string;
-            order?: number;
+            id: string;
+            title: string;
+            theme: string;
+            order: number;
+            estimatedMinutes?: number;
             /** @enum {string} */
-            status?: "not_started" | "in_progress" | "completed";
-            positioningTestAvailable?: boolean;
+            status: "not_started" | "in_progress" | "completed";
+            positioningTestAvailable: boolean;
+            contentMd?: string;
+            quiz?: components["schemas"]["Quiz"];
+            applicationChallenge?: {
+                /** Format: uuid */
+                id?: string;
+                title?: string;
+            } | null;
+            progress?: components["schemas"]["LessonProgress"];
+        };
+        QuizQuestion: {
+            id: string;
+            prompt: string;
+            choices: string[];
+        };
+        Quiz: {
+            passScore: number;
+            questions: components["schemas"]["QuizQuestion"][];
+        };
+        /** @description Réponses indexées par identifiant de question */
+        QuizAnswers: {
+            [key: string]: number;
+        };
+        QuizResult: {
+            score: number;
+            correct: number;
+            total: number;
+            passed: boolean;
+        };
+        PositioningResult: {
+            score: number;
+            passed: boolean;
+            exempted: boolean;
+            /** @enum {string|null} */
+            source: "positioning" | null;
+        };
+        LessonProgress: {
+            /** @enum {string} */
+            status: "not_started" | "in_progress" | "completed";
+            quizScore?: number | null;
+            /** Format: date-time */
+            completedAt?: string | null;
+        };
+        LessonCompletion: {
+            /** Format: uuid */
+            lessonId: string;
+            /** @enum {string} */
+            status: "not_started" | "in_progress" | "completed";
+            quizScore: number;
+            /** Format: date-time */
+            completedAt: string;
+            xp: number;
+            level: number;
+            applicationChallenge?: {
+                /** Format: uuid */
+                id?: string;
+                title?: string;
+            } | null;
+        };
+        FirstAttemptStats: {
+            attempts: number;
+            successes: number;
+            rate: number;
         };
         Event: {
             /** Format: uuid */

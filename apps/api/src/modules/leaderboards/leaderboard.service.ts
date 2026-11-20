@@ -237,6 +237,41 @@ export class LeaderboardService {
     }
   }
 
+  /**
+   * US8 (T150) : répercute la soumission officielle désignée par le capitaine
+   * sur les classements d'équipe. Contrairement au classement interne
+   * `lb:team:<id>:player`, aucune agrégation n'est faite : la source est
+   * `best_scores(subject_type = 'team', subject_id = teamId)`.
+   * Appelé après le commit PostgreSQL, comme `recordRetainedScore`.
+   */
+  async recordTeamScore(input: { teamId: string; challengeId: string; achievedAt: Date }): Promise<void> {
+    const challenge = await this.prisma.challenge.findUnique({
+      where: { id: input.challengeId },
+      select: { themeId: true }
+    });
+    if (!challenge) return;
+
+    const scopes: ScopeRef[] = [
+      { type: 'global', id: GLOBAL_SCOPE_ID, subjectType: 'team' },
+      { type: 'theme', id: challenge.themeId, subjectType: 'team' }
+    ];
+
+    const season = await this.activeSeasonAt(input.achievedAt);
+    if (season) scopes.push({ type: 'season', id: season.id, subjectType: 'team' });
+
+    for (const scope of scopes) {
+      try {
+        await this.upsertSubject(scope, input.teamId);
+      } catch (error) {
+        this.logger.error(
+          `Mise à jour du classement d'équipe ${scope.type}:${scope.id} impossible : ${
+            error instanceof Error ? error.message : String(error)
+          }`
+        );
+      }
+    }
+  }
+
   // -------------------------------------------------------------------------
   // Reconstruction et vérification (T098, SC-009)
   // -------------------------------------------------------------------------

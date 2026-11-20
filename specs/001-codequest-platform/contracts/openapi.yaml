@@ -528,7 +528,7 @@ paths:
   /teams:
     post:
       tags: [Teams]
-      summary: Créer une équipe
+      summary: Créer une équipe (le créateur en devient capitaine)
       requestBody:
         required: true
         content:
@@ -540,22 +540,34 @@ paths:
                 name: { type: string, minLength: 3, maxLength: 40 }
                 tag: { type: string, minLength: 2, maxLength: 6 }
                 description: { type: string, maxLength: 500 }
+                logo: { type: string }
       responses:
-        '201': { description: Équipe créée, créateur capitaine }
+        '201':
+          description: Équipe créée, créateur capitaine
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Team' }
+        '400': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
 
   /teams/{teamId}:
     get:
       tags: [Teams]
-      summary: Détail d'une équipe
+      summary: Détail d'une équipe et de ses membres actifs
       parameters:
         - { name: teamId, in: path, required: true, schema: { type: string, format: uuid } }
       responses:
-        '200': { description: Équipe et membres }
+        '200':
+          description: Équipe et membres
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Team' }
+        '404': { $ref: '#/components/responses/Error' }
 
   /teams/{teamId}/invitations:
     post:
       tags: [Teams]
-      summary: Inviter un membre par pseudo
+      summary: Inviter un membre par pseudo, ou créer un lien nu
       parameters:
         - { name: teamId, in: path, required: true, schema: { type: string, format: uuid } }
       requestBody:
@@ -565,15 +577,20 @@ paths:
             schema:
               type: object
               properties:
-                pseudonym: { type: string }
+                pseudonym: { type: string, minLength: 3, maxLength: 20 }
       responses:
-        '201': { description: Invitation créée }
-        '409': { description: Équipe pleine ou joueur déjà engagé }
+        '201':
+          description: Invitation créée (jeton renvoyé une seule fois)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TeamInvitation' }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
 
   /teams/{teamId}/members:
     post:
       tags: [Teams]
-      summary: Accepter une invitation / rejoindre
+      summary: Accepter une invitation / rejoindre l'équipe
       parameters:
         - { name: teamId, in: path, required: true, schema: { type: string, format: uuid } }
       requestBody:
@@ -586,7 +603,15 @@ paths:
               properties:
                 token: { type: string }
       responses:
-        '201': { description: Membre ajouté }
+        '201':
+          description: Membre ajouté
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Team' }
+        '400': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
 
   /teams/{teamId}/members/{userId}:
     delete:
@@ -597,6 +622,32 @@ paths:
         - { name: userId, in: path, required: true, schema: { type: string, format: uuid } }
       responses:
         '204': { description: Membre retiré, scores acquis conservés }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+
+  /teams/{teamId}/captain:
+    patch:
+      tags: [Teams]
+      summary: Transférer la capitainerie à un membre actif
+      parameters:
+        - { name: teamId, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userId]
+              properties:
+                userId: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Capitainerie transférée
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Team' }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
 
   /teams/{teamId}/official-submission:
     post:
@@ -615,7 +666,26 @@ paths:
                 challengeId: { type: string, format: uuid }
                 submissionId: { type: string, format: uuid }
       responses:
-        '200': { description: Soumission officielle retenue ; le dernier désigné remplace le précédent }
+        '200':
+          description: Soumission officielle retenue ; le dernier désigné remplace le précédent, sans agrégation
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TeamOfficialSubmission' }
+        '400': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+
+  /teams/{teamId}/official-submission/{challengeId}:
+    delete:
+      tags: [Teams]
+      summary: Révoquer la désignation officielle (capitaine)
+      parameters:
+        - { name: teamId, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: challengeId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '204': { description: Désignation révoquée, classement d'équipe recalculé }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
 
   /events:
     get:
@@ -817,6 +887,52 @@ components:
         message: { type: string }
         details: { type: object, additionalProperties: true }
 
+    TeamMember:
+      type: object
+      required: [userId, pseudonym, role, joinedAt]
+      properties:
+        userId: { type: string, format: uuid }
+        pseudonym: { type: string }
+        role: { type: string, enum: [captain, member] }
+        joinedAt: { type: string, format: date-time }
+
+    Team:
+      type: object
+      required: [id, name, tag, captainId, members, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string, minLength: 3, maxLength: 40 }
+        tag: { type: string, minLength: 2, maxLength: 6 }
+        description: { type: string, nullable: true }
+        logoKey: { type: string, nullable: true }
+        captainId: { type: string, format: uuid, nullable: true }
+        members:
+          type: array
+          items: { $ref: '#/components/schemas/TeamMember' }
+        createdAt: { type: string, format: date-time }
+        disbandedAt: { type: string, format: date-time, nullable: true }
+
+    TeamInvitation:
+      type: object
+      required: [token, inviteUrl, teamId, expiresAt]
+      properties:
+        token: { type: string }
+        inviteUrl: { type: string, format: uri }
+        teamId: { type: string, format: uuid }
+        expiresAt: { type: string, format: date-time }
+
+    TeamOfficialSubmission:
+      type: object
+      required: [id, teamId, challengeId, submissionId, score, designatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        teamId: { type: string, format: uuid }
+        challengeId: { type: string, format: uuid }
+        submissionId: { type: string, format: uuid }
+        score: { type: number }
+        designatedBy: { type: string, format: uuid, nullable: true }
+        designatedAt: { type: string, format: date-time }
+
     Profile:
       type: object
       properties:
@@ -940,6 +1056,8 @@ components:
         attemptId: { type: string, format: uuid, nullable: true }
         modifiedLines: { type: integer, nullable: true }
         hintsUsed: { type: integer }
+        teamId: { type: string, format: uuid, nullable: true }
+        isOfficial: { type: boolean }
 
     ChallengeAttempt:
       type: object

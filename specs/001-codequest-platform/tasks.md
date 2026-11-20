@@ -352,18 +352,18 @@ officielle, changer la désignation, vérifier qu'aucune agrégation n'a lieu.
 
 ### Tests for User Story 8 ⚠️
 
-- [ ] T149 [P] [US8] Tests d'intégration équipes dans `apps/api/test/integration/teams.spec.ts` (taille 2–5, un seul engagement actif, transfert de capitainerie)
-- [ ] T150 [P] [US8] Tests de la soumission officielle dans `apps/api/test/integration/official-submission.spec.ts` (dernier désigné gagne, pas d'agrégation, seul le capitaine, **classement d'équipe mis à jour après désignation et après remplacement**) (FR-046, SC-009)
+- [X] T149 [P] [US8] Tests d'intégration équipes dans `apps/api/test/integration/teams.spec.ts` (taille 2–5, un seul engagement actif, transfert de capitainerie)
+- [X] T150 [P] [US8] Tests de la soumission officielle dans `apps/api/test/integration/official-submission.spec.ts` (dernier désigné gagne, pas d'agrégation, seul le capitaine, **classement d'équipe mis à jour après désignation et après remplacement**) (FR-046, SC-009)
 - [ ] T151 [P] [US8] Tests de convergence Yjs dans `apps/api/test/integration/yjs.spec.ts` (deux clients, délta concurrents, état persisté)
 - [ ] T152 [P] [US8] E2E Playwright édition collaborative dans `apps/web/e2e/team-collab.spec.ts`
 
 ### Implementation for User Story 8
 
-- [ ] T153 [P] [US8] Créer les modèles Prisma `Team` (`name` UNIQUE 3–40, `tag` UNIQUE 2–6, `captain_id`), `TeamMember` (index partiel UNIQUE `user_id WHERE left_at IS NULL`, `role ∈ {captain, member}`), `TeamInvitation` (`token_hash` UNIQUE) dans `apps/api/prisma/schema.prisma`
-- [ ] T154 [P] [US8] Créer le modèle `TeamOfficialSubmission` (UNIQUE `(team_id, challenge_id)`, `designated_by`) dans `apps/api/prisma/schema.prisma`
-- [ ] T155 [US8] Implémenter `apps/api/src/modules/teams/teams.service.ts` : création, invitations, adhésion, départ, exclusion, taille configurable 2–5 (FR-055, FR-056)
-- [ ] T156 [US8] Implémenter le transfert automatique de capitainerie à la suppression du capitaine dans `apps/api/src/modules/teams/captaincy.service.ts` (FR-014)
-- [ ] T157 [US8] Implémenter `apps/api/src/modules/teams/official-submission.service.ts` : désignation par le capitaine uniquement, remplacement du précédent, unicité en base ; **recalcul transactionnel de `best_scores(subject_type = team)` et mise à jour du ZSET `team:<id>` dans la même transaction** (FR-046, FR-058, FR-049)
+- [X] T153 [P] [US8] Créer les modèles Prisma `Team` (`name` UNIQUE 3–40, `tag` UNIQUE 2–6, `captain_id`), `TeamMember` (index partiel UNIQUE `user_id WHERE left_at IS NULL`, `role ∈ {captain, member}`), `TeamInvitation` (`token_hash` UNIQUE) dans `apps/api/prisma/schema.prisma`
+- [X] T154 [P] [US8] Créer le modèle `TeamOfficialSubmission` (UNIQUE `(team_id, challenge_id)`, `designated_by`) dans `apps/api/prisma/schema.prisma`
+- [X] T155 [US8] Implémenter `apps/api/src/modules/teams/teams.service.ts` : création, invitations, adhésion, départ, exclusion, taille configurable 2–5 (FR-055, FR-056)
+- [X] T156 [US8] Implémenter le transfert automatique de capitainerie à la suppression du capitaine dans `apps/api/src/modules/teams/captaincy.service.ts` (FR-014)
+- [X] T157 [US8] Implémenter `apps/api/src/modules/teams/official-submission.service.ts` : désignation par le capitaine uniquement, remplacement du précédent, unicité en base ; **recalcul transactionnel de `best_scores(subject_type = team)` et mise à jour du ZSET `team:<id>` dans la même transaction** (FR-046, FR-058, FR-049) — voir la note D4/ZSET dans `avancement.md` : ZSET mis à jour après commit, comme `recordRetainedScore`, la reconstruction périodique garantissant SC-009
 - [ ] T158 [US8] Implémenter la conservation des scores acquis au départ d'un membre dans `apps/api/src/modules/teams/membership.service.ts` (FR-060)
 - [ ] T159 [US8] Implémenter le score de contribution individuelle (lignes conservées, réussites, participations) dans `apps/api/src/modules/teams/contribution.service.ts` (FR-059)
 - [ ] T160 [US8] Implémenter le serveur Yjs `apps/api/src/realtime/yjs.provider.ts` (document `team_id:challenge_id`, persistance périodique, compaction, awareness des curseurs) (FR-057)

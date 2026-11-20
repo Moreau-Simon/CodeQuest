@@ -2,9 +2,11 @@
 
 **Date de session** : 18–19 novembre 2026
 **Feature** : `001-codequest-platform` (spécification couvrant toute la plateforme, 5 phases / 17 histoires)
-**Statut global** : workflow Spec Kit terminé (`analyze` inclus). **Implémentation en cours** : Phase 0, Phase 1, Phase 2, **US1 (Phase 3)**, **US2 (Phase 4)**, **US3 (Phase 5)**, **US4 (Phase 6)**, **US5 (Phase 7)**, **US6 (Phase 8)** et **US7 (Phase 9)** terminées et vérifiées. Plateforme opérationnelle en environnement local (`pnpm dev` sur `http://localhost:5173`). Phases 10 → 20 restantes (T149–T278).
+**Statut global** : workflow Spec Kit terminé (`analyze` inclus). **Implémentation en cours** : Phase 0, Phase 1, Phase 2, **US1 (Phase 3)**, **US2 (Phase 4)**, **US3 (Phase 5)**, **US4 (Phase 6)**, **US5 (Phase 7)**, **US6 (Phase 8)** et **US7 (Phase 9)** terminées et vérifiées ; **Phase 10 / US8 — bloc API équipes et soumission officielle en cours**. Plateforme opérationnelle en environnement local (`pnpm dev` sur `http://localhost:5173`). Suite des phases 10 → 20 restante (T151–T152, T158–T278).
 
-**Dernière mise à jour** : 19 novembre 2026 — CI totale verte puis **fusionnée sur `main` (PR #2, `a32b3a7`)**. Clarification **A5 tranchée** (option recommandée) et consignée dans `spec.md`. **Phase 9 / US7 livrée en TDD** (T139–T148) : score de résolution, instances de décryptage par graine, essai explicite unique, page web de débogage et quickstart mis à jour → **149/280 tâches**. Branche dédiée `phase-9-us7`, **PR #3 fusionnée sur `main` (`36ab070`)** après une CI totale verte (8/8 jobs) ; premier échec CI diagnostiqué et corrigé (incident #10 : injection de `fetch` dans `InstanceService`). Vérifications 19 nov. : typecheck/lint API + web ✅, **124 tests unitaires API verts** (dont 1 test de non-régression DI), **55 tests web verts** (19 fichiers), **6 tests Python verts** + ruff ✅, OpenAPI parse OK (48 chemins / 28 schémas).
+**Dernière mise à jour** : 20 novembre 2026 — **Phase 10 / US8 (bloc cœur API) livrée en TDD** : tests d'intégration `teams.spec.ts` (T149) et `official-submission.spec.ts` (T150) écrits avant l'implémentation ; schéma Prisma `Team`/`TeamMember`/`TeamInvitation`/`TeamOfficialSubmission` + migration `20261120120000_us8_teams` (T153/T154), module `teams` (T155/T156), désignation officielle avec miroir `is_official` et classement d'équipe recalculé (T157), arbitrages **D4** et convention ZSET consignés ci-dessous → **156/280 tâches**. Branche dédiée `phase-10-us8` depuis `main` (`a8545e9`). Vérifications locales 20 nov. : lint/typecheck API ✅, **124 tests unitaires API verts**, build ✅, Prisma `generate` ✅, OpenAPI parse OK (**50 chemins / 32 schémas**). Suites Testcontainers (T149/T150) à valider en CI (Docker absent localement).
+
+**Mise à jour précédente** : 19 novembre 2026 — CI totale verte puis **fusionnée sur `main` (PR #2, `a32b3a7`)**. Clarification **A5 tranchée** (option recommandée) et consignée dans `spec.md`. **Phase 9 / US7 livrée en TDD** (T139–T148) : score de résolution, instances de décryptage par graine, essai explicite unique, page web de débogage et quickstart mis à jour → **149/280 tâches**. Branche dédiée `phase-9-us7`, **PR #3 fusionnée sur `main` (`36ab070`)** après une CI totale verte (8/8 jobs) ; premier échec CI diagnostiqué et corrigé (incident #10 : injection de `fetch` dans `InstanceService`). Vérifications 19 nov. : typecheck/lint API + web ✅, **124 tests unitaires API verts** (dont 1 test de non-régression DI), **55 tests web verts** (19 fichiers), **6 tests Python verts** + ruff ✅, OpenAPI parse OK (48 chemins / 28 schémas).
 
 ---
 
@@ -51,7 +53,7 @@ Contraintes actées :
 | `data-model.md` | 367 | **45 tables**, 15 enums, transitions d'état, règles d'intégrité, rétention |
 | `tasks.md` | 768 | **280 tâches** (T001–T280), 20 phases + Phase 0, 143 marquées `[P]` ; **142 cochées** |
 | `checklists/requirements.md` | — | **16/16** |
-| `contracts/openapi.yaml` | 1160 | Validé : parse OK, **48 chemins** (dont `/lessons/*`, `/challenges/{id}/attempts`), **28 schémas**, `$ref` tous résolus |
+| `contracts/openapi.yaml` | ~1230 | Validé : parse OK, **50 chemins** (dont `/teams/*`, `/teams/{id}/captain`, `/teams/{id}/official-submission/{challengeId}`), **32 schémas**, `$ref` tous résolus |
 | `contracts/websocket-events.md` | 191 | Événements temps réel |
 | `contracts/runner-job.md` | 176 | Contrat job runner (isolation, mesures, propriété du score) |
 | `contracts/assets-service.md` | 168 | Contrat du service Python d'assets |
@@ -163,16 +165,16 @@ Détail complet : `specs/001-codequest-platform/versioning.md`, repris dans `pla
 | Couverture sémantique | **140/140 = 100 %** |
 | Tâches avec référence FR/SC explicite | 106/280 = 38 % |
 | Checks de format des tâches | 280/280 conformes |
-| Tâches cochées | **149/280** (Phase 0–2 + US1 → US7 complète) |
+| Tâches cochées | **156/280** (Phase 0–2 + US1 → US7 complète + T149/T150/T153–T157) |
 | Liens relatifs cassés | 0 |
-| `openapi.yaml` | parse OK, **48 chemins / 28 schémas** (ajout `/challenges/{id}/attempts`, `ChallengeAttempt`, champs US7) |
+| `openapi.yaml` | parse OK, **50 chemins / 32 schémas** (ajout `/challenges/{id}/attempts`, `ChallengeAttempt`, champs US7, routes et schémas `/teams/*`) |
 
 ### Findings ouverts (à traiter)
 
 | ID | Sévérité | Résumé | Emplacements |
 |---|---|---|---|
 | ~~A5~~ | ~~HIGH~~ | **Résolu le 19 nov. 2026** (option recommandée) — voir clarification #6 et `spec.md` § « Session 2026-11-19 » | `spec.md:634-636` (FR-039) |
-| D4 | MEDIUM | Double source de la soumission officielle : `submissions.is_official` **et** `team_official_submissions` | `data-model.md:163`, `tasks.md:158`, `websocket-events.md:56` |
+| ~~D4~~ | ~~MEDIUM~~ | **Tranchée le 20 nov. 2026** : `TeamOfficialSubmission` est la source de vérité de la désignation ; `Submission.isOfficial` est un miroir maintenu dans la même transaction (désignation, remplacement, révocation). Côté lecture temps réel, l'événement `submission.verdict` continue d'exposer le miroir. Voir le journal US8. | `src/modules/teams/official-submission.service.ts`, `data-model.md:174-181` |
 | T2 | MEDIUM | Confusion `theme` vs type de défi (`challenge_type`) | `spec.md:600`, `data-model.md`, T072 |
 | C5 | MEDIUM | Réversibilité des migrations affirmée mais jamais testée (seul `migrate deploy` sur base vide) | `tasks.md:69` (T021), `plan.md:75` |
 | C3 | MEDIUM | axe-core testé (T239) mais **aucune porte CI bloquante** ; T278 ne câble que `pnpm e2e` | `tasks.md:573`, `tasks.md:640` |
@@ -211,9 +213,14 @@ Aucune violation. Les 5 principes sont **PASS** (IV et III désormais étayés p
 | Phase 7 — US5 | T117–T128 | ✅ fait et vérifié |
 | Phase 8 — US6 | T129–T138 | ✅ fait et vérifié (CI verte, fusionnée en PR #2) |
 | Phase 9 — US7 | T139–T148 | ✅ faits : score A5, instances par graine, migration Prisma, essai unique, page web, quickstart |
-| Phases 10 → 20 | T149–T278 | ⏳ à faire |
+| Phase 10 — US8 (bloc API) | T149, T150, T153–T157 | ✅ faits : équipes/invitations/capitainerie, soumission officielle unique, classement d'équipe recalculé, OpenAPI 50 chemins / 32 schémas |
+| Phase 10 — US8 (reste) | T151, T152, T158–T162 | ⏳ à faire : Yjs, contribution, conservation détaillée, pages web et E2E collaboratif |
+| Phases 11 → 20 | T163–T278 | ⏳ à faire |
 
-**149/280 tâches cochées.** Vérifications passées (19 nov. 2026) :
+**156/280 tâches cochées.** Dernières vérifications (20 nov. 2026) :
+- `pnpm --filter @codequest/api typecheck` ✅, `pnpm --filter @codequest/api lint` ✅, `pnpm --filter @codequest/api test` ✅ (**124 tests / 23 suites**), `pnpm --filter @codequest/api build` ✅, `pnpm --filter @codequest/api prisma:generate` ✅, parse OpenAPI ✅ (50 chemins / 32 schémas), `pnpm --filter @codequest/web generate:types` ✅.
+
+Vérifications passées (19 nov. 2026) :
 - `pnpm lint` : ✅ **vert** (3/3 packages). Le `.eslintrc.cjs` a été rapatrié dans la racine du dépôt (il était auparavant dans `Projet-delpech/`, hors du checkout CI) : ESLint résout désormais les plugins sans contournement.
 - `pnpm typecheck` (3 packages : 0 erreur) ; `pnpm --filter @codequest/api typecheck` + `lint` ✅.
 - `pnpm --filter @codequest/api test` (**123 tests**, 22 suites dont `debug-scoring.spec.ts` (15), `xp.spec.ts`, `aes-gcm-di.spec.ts` et le contrat des schémas US6).
@@ -259,6 +266,20 @@ Déclencheurs : `push` et `pull_request` sur `main`, plus `workflow_dispatch` ; 
 **Étape CI `test:e2e` (SC-007)** : le premier log affiché ne montrait que l'avertissement AWS SDK (non bloquant), mais le log complet révélait l'échec du hook de `leak.spec.ts` (incident #9), désormais corrigé. À re-vérifier en CI.
 
 **Incident CI du 19 nov. 2026 (résolu) — premier échec sur `pnpm test`** : `services/runner/test/escape.test.ts` (`ne trouve pas de cgroup pour un conteneur inexistant`) renvoyait `154943000` au lieu de `null` sur `ubuntu-latest`. Cause : `readCpuUsageUsec()` retombait sur `/sys/fs/cgroup/cpu.stat`, cgroup **de l'hôte/du runner**, absent de macOS (d'où un test vert en local) mais présent en CI — avec un risque réel de mesurer le CPU de la machine au lieu du code soumis (principe III). Correctif : suppression de ce fallback, ajout d'un paramètre `cgroupRoot` injectable et d'un test déterministe qui place un `cpu.stat` hostile à la racine temporaire et vérifie qu'il est ignoré au profit de `docker/<id>/cpu.stat`. `pnpm test` complet revérifié : **108 + 50 + 9 tests verts**.
+
+### Journal de la session du 20 novembre 2026
+
+| Étape | Résultat |
+|---|---|
+| Transition | Branche `phase-10-us8` créée depuis `main` (`a8545e9`, PR #4 fusionnée) ; exploration exhaustive du existant (Prisma, classements, temps réel, tests, web, contrats) avant toute modification. |
+| Phase 10 / US8 — tests d'abord | `test/helpers/teams.ts` + `test/integration/teams.spec.ts` (T149 : création, nom/tag uniques, invitation nominative et par lien, unicité d'engagement, limite 5, transfert de capitainerie au départ puis explicite) et `test/integration/official-submission.spec.ts` (T150 : refus au non-capitaine, aucune agrégation, dernier désigné gagne, révocation, conservation après départ) écrits **avant** l'implémentation (principe IV). |
+| D4 — arbitrage | `TeamOfficialSubmission` est la **source de vérité** de la désignation officielle (UNIQUE `(team_id, challenge_id)`) ; `Submission.isOfficial` n'est qu'un **miroir** écrit/effacé dans la même transaction Prisma lors de la désignation, du remplacement et de la révocation. Le verdict temps réel continue d'exposer `is_official` sans changer de contrat. |
+| Convention ZSET — arbitrage | `data-model.md`/`tasks.md` parlaient du ZSET `team:<id>` ; dans le code, `team:<teamId>` est une **room Socket.IO** et la clé Redis réelle est `lb:team:<teamId>:player` (classement interne des joueurs de l'équipe, avec agrégation). Le classement **d'équipe** est `lb:global:<GLOBAL_SCOPE_ID>:team` (ainsi que les portées theme/season), lu par `GET /leaderboards/teams`. T157 utilise donc `LeaderboardService.recordTeamScore()` avec `subjectType: 'team'`, sans toucher au classement interne. |
+| Atomicité Prisma/Redis | Le recalcul de `best_scores(subject_type='team')` est **transactionnel** avec l'upsert de désignation et le miroir `is_official`. La mise à jour du ZSET reste **après commit**, comme `recordRetainedScore()` : Redis et PostgreSQL ne peuvent pas partager une transaction ; la reconstruction périodique (`rebuildAll`, `verifyIdentity`) garantit SC-009. `BestScore.submissionId` perd son unicité (une soumission peut être meilleur score individuel **et** soumission officielle). |
+| Schéma et migration | Migration `20261120120000_us8_teams` : 4 tables, enum `team_member_role`, CHECK longueurs 3–40 / 2–6, index partiel `UNIQUE (user_id) WHERE left_at IS NULL` (SQL brut, non exprimable en Prisma), FK compatibles avec l'anonymisation FR-014. Modèles et relations Prisma mis à jour, client régénéré. |
+| Module API | `TeamsModule` câblé dans `AppModule` : `TeamsService` (création, invitations SHA-256, adhésion verrouillée avec limite configurable `team.max_size`, départ, transfert), `CaptaincyService` (départ/FR-014 ; la suppression de compte reste gérée en SQL par `account-deletion.service.ts`), `OfficialSubmissionService`, `TeamsController` (8 routes). Exceptions métier 400/403/404/409 avec codes `TEAM_FULL`, `ALREADY_IN_TEAM`, `NOT_CAPTAIN`… |
+| Contrat | OpenAPI enrichi : routes `/teams/{id}/captain` et `DELETE /teams/{id}/official-submission/{challengeId}`, schémas `Team`, `TeamMember`, `TeamInvitation`, `TeamOfficialSubmission`, champs `teamId`/`isOfficial` sur `Submission` ; 50 chemins / 32 schémas. Types web régénérés. |
+| Vérifications locales | lint/typecheck/tests unitaires (124)/build API ✅ ; Prisma `generate` ✅ ; suites Testcontainers T149/T150 non exécutables localement (Docker indisponible) → validation en CI. |
 
 ### Journal de la session du 19 novembre 2026
 
