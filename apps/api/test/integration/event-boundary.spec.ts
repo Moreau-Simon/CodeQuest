@@ -1,7 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import type { AuthenticatedUser } from '../../src/common/auth/authenticated-user';
-import { EventsService } from '../../src/modules/events/events.service';
-import { QueueService } from '../../src/queue/queue.module';
+import type { EventsService as EventsServiceType } from '../../src/modules/events/events.service';
 import { createTestApp, type TestApp } from '../helpers/app';
 import { FrozenClock } from '../helpers/clock';
 import { startTestInfrastructure, type TestInfrastructure } from '../helpers/db';
@@ -26,12 +25,14 @@ describe('US9 — frontières temporelles des événements (T164)', () => {
   let player: TestPlayer;
   let admin: AuthenticatedUser;
   let challengeId: string;
-  let events: EventsService;
+  let events: EventsServiceType;
 
   beforeAll(async () => {
     infra = await startTestInfrastructure();
     clock = new FrozenClock(new Date('2026-03-29T01:00:00.000Z'));
     api = await createTestApp(infra, { clock });
+    // Import différé : `src/config/env` doit d'abord lire les URLs des conteneurs.
+    const { EventsService } = await import('../../src/modules/events/events.service');
     prisma = new PrismaClient({ datasources: { db: { url: infra.databaseUrl } } });
     await prisma.$connect();
 
@@ -127,6 +128,7 @@ describe('US9 — frontières temporelles des événements (T164)', () => {
     const row = await prisma.submission.findUniqueOrThrow({ where: { id: response.body.id } });
     expect(row.eventId).toBe(eventId);
 
+    const { QueueService } = await import('../../src/queue/queue.module');
     const job = await api.app.get(QueueService).submissions.getJob(response.body.id);
     expect(job?.opts.priority).toBe(1);
   });

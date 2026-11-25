@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
+import type { AttemptExpiryJob as AttemptExpiryJobType } from '../../src/modules/events/attempt-expiry.job';
 import { uuidv7 } from '../../src/common/uuid';
-import { AttemptExpiryJob } from '../../src/modules/events/attempt-expiry.job';
 import { createTestApp, type TestApp } from '../helpers/app';
 import { FrozenClock } from '../helpers/clock';
 import { startTestInfrastructure, type TestInfrastructure } from '../helpers/db';
@@ -27,11 +27,16 @@ describe('US9 — essai unique d’événement (T163)', () => {
   let clock: FrozenClock;
   let player: TestPlayer;
   let challengeId: string;
+  let AttemptExpiryJobClass: typeof AttemptExpiryJobType;
 
   beforeAll(async () => {
     infra = await startTestInfrastructure();
     clock = new FrozenClock(NOW);
     api = await createTestApp(infra, { clock });
+    // Import après création de l'app : `src/config/env` est alors initialisé
+    // avec les URLs des conteneurs, pas celles par défaut de `test/env.ts`.
+    AttemptExpiryJobClass = (await import('../../src/modules/events/attempt-expiry.job'))
+      .AttemptExpiryJob;
     prisma = new PrismaClient({ datasources: { db: { url: infra.databaseUrl } } });
     await prisma.$connect();
 
@@ -139,7 +144,7 @@ describe('US9 — essai unique d’événement (T163)', () => {
     // Le joueur ferme la page avant de confirmer : aucun « pause » n'est
     // prévu, la fenêtre serveur continue et le job clôt l'essai à ends_at.
     clock.set(new Date(ENDS_AT.getTime() + 1_000));
-    await api.app.get(AttemptExpiryJob).sweep();
+    await api.app.get(AttemptExpiryJobClass).sweep();
 
     const row = await participant(eventId);
     expect(row.attemptStartedAt).toBeNull();
@@ -158,7 +163,7 @@ describe('US9 — essai unique d’événement (T163)', () => {
     // Le navigateur est fermé : le job atteint la fin de la fenêtre et clôt
     // l'essai, exactement comme une soumission abandonnée.
     clock.set(new Date(ENDS_AT.getTime() + 1_000));
-    await api.app.get(AttemptExpiryJob).sweep();
+    await api.app.get(AttemptExpiryJobClass).sweep();
 
     const row = await participant(eventId);
     expect(row.attemptConsumedAt).not.toBeNull();

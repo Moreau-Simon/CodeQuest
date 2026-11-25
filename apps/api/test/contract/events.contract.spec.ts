@@ -1,5 +1,4 @@
 import { PrismaClient } from '@prisma/client';
-import { AesGcmService } from '../../src/common/crypto/aes-gcm.service';
 import { uuidv7 } from '../../src/common/uuid';
 import { createTestApp, type TestApp } from '../helpers/app';
 import { FrozenClock } from '../helpers/clock';
@@ -29,6 +28,8 @@ describe('contrat /events/* (T165)', () => {
     infra = await startTestInfrastructure();
     clock = new FrozenClock(NOW);
     api = await createTestApp(infra, { clock });
+    // Import différé : `env` est déjà initialisé avec les URLs des conteneurs.
+    const { AesGcmService } = await import('../../src/common/crypto/aes-gcm.service');
     prisma = new PrismaClient({ datasources: { db: { url: infra.databaseUrl } } });
     await prisma.$connect();
 
