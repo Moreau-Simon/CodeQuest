@@ -60,6 +60,12 @@ describe('US9 — frontières temporelles des événements (T164)', () => {
     await infra?.stop();
   });
 
+  beforeEach(() => {
+    // Chaque scénario repart dans la fenêtre : un test précédent peut avoir
+    // avancé l'horloge jusqu'à `ends_at` et rendre le `join()` suivant invalide.
+    clock.set(new Date('2026-03-29T01:00:00.000Z'));
+  });
+
   async function openEvent(slug: string, endsAt: Date = DST_END): Promise<string> {
     const created = await events.create(
       {
