@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ChallengesModule } from '../challenges/challenges.module';
+import { EventsModule } from '../events/events.module';
 import { LeaderboardsModule } from '../leaderboards/leaderboards.module';
 import { LessonsModule } from '../lessons/lessons.module';
 import { RealtimeModule } from '../../realtime/realtime.module';
@@ -12,7 +13,14 @@ import { MembershipService } from '../teams/membership.service';
 import { VerdictConsumer } from './verdict.consumer';
 
 @Module({
-  imports: [ChallengesModule, LeaderboardsModule, LessonsModule, RealtimeModule, ScoringModule],
+  imports: [
+    ChallengesModule,
+    EventsModule,
+    LeaderboardsModule,
+    LessonsModule,
+    RealtimeModule,
+    ScoringModule
+  ],
   controllers: [SubmissionsController],
   providers: [SubmissionsService, SubmissionsGateway, VerdictConsumer, DiffService, MembershipService],
   exports: [SubmissionsService, DiffService]

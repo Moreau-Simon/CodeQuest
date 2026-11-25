@@ -104,6 +104,26 @@ export async function seedScore(prisma: PrismaClient, input: SeedScoreInput): Pr
   const submissionId = uuidv7();
   const score = input.score.toFixed(2);
 
+  // US9 : `submissions.event_id` référence désormais `events.id` (FK). Les
+  // classements d'événement utilisent un identifiant synthétique : créer la
+  // ligne d'événement correspondante garde le helper auto-suffisant.
+  if (input.eventId) {
+    await prisma.event.upsert({
+      where: { id: input.eventId },
+      create: {
+        id: input.eventId,
+        slug: `event-score-${input.eventId.slice(0, 8)}`,
+        title: 'Événement de test',
+        timezone: 'Europe/Paris',
+        startsAt: new Date(input.achievedAt.getTime() - 3_600_000),
+        endsAt: new Date(input.achievedAt.getTime() + 3_600_000),
+        status: 'finished',
+        type: 'standard'
+      },
+      update: {}
+    });
+  }
+
   await prisma.submission.create({
     data: {
       id: submissionId,

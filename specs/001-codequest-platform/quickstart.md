@@ -144,11 +144,20 @@ fork, allocation mémoire massive. **Attendu** : `status = rejected` pour les qu
 
 ### S6 — Event à essai unique (SC-011)
 
-1. S'inscrire à l'event `standard`, ouvrir la page du défi **sans** démarrer.
-2. **Attendu** : aucun chronomètre actif, `attempt_started_at` reste nul (clarification 2, FR-062).
-3. Cliquer « Démarrer l'essai » → `POST /start` renvoie `200`, un second appel renvoie `409`.
-4. Soumettre après `ends_at` via un client HTTP direct → **attendu** : refus `409`, aucune soumission
-   enregistrée.
+1. S'inscrire à l'event `standard` (`POST /api/v1/events/{id}/join` → `201`), ouvrir la page du
+   défi **sans** démarrer.
+2. **Attendu** : aucun chronomètre actif, `attempt_started_at` et `attempt_consumed_at` restent nuls
+   (clarification 2, FR-062). Le compte à rebours affiché est calculé depuis `serverNow`, renvoyé par
+   `GET /events` : l'horloge du navigateur ne fait pas foi.
+3. Cocher la confirmation puis cliquer « Démarrer l'essai » → `POST /api/v1/events/{id}/start` renvoie
+   `200` et pose les deux horodatages ; un second appel renvoie `409 ATTEMPT_ALREADY_CONSUMED`.
+4. Soumettre après `ends_at` via un client HTTP direct (`POST /challenges/{id}/submissions` avec
+   `eventId`) → **attendu** : refus `409 EVENT_CLOSED`, aucune soumission enregistrée. Une seconde
+   soumission dans la fenêtre est également refusée (`409 EVENT_ATTEMPT_ALREADY_USED`).
+5. Fermer le navigateur après avoir démarré : il n'existe **aucune pause**. Le job
+   `events-attempt-expiry` clôt l'essai à la fin de la fenêtre, le marque consommé et refuse toute
+   reprise ; les résultats et les corrigés sont alors publiés
+   (`GET /events/{id}/results`, `GET /events/{id}/challenges/{challengeId}/solution`).
 
 ### S7 — Boss, PV et KO (FR-067 → FR-070)
 

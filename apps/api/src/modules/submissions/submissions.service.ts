@@ -12,6 +12,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { QueueService } from '../../queue/queue.module';
 import { SubmissionsGateway } from '../../realtime/submissions.gateway';
 import { ChallengesService } from '../challenges/challenges.service';
+import { AttemptService } from '../events/attempt.service';
 import { MembershipService } from '../teams/membership.service';
 import { MAX_CODE_BYTES, SUBMISSION_LIMITS, type SubmissionJob } from './submissions.types';
 import { DiffService } from './diff.service';
@@ -48,13 +49,14 @@ export class SubmissionsService {
     private readonly queue: QueueService,
     private readonly gateway: SubmissionsGateway,
     private readonly diff: DiffService,
-    private readonly membership: MembershipService
+    private readonly membership: MembershipService,
+    private readonly eventAttempts: AttemptService
   ) {}
 
   async create(
     challengeId: string,
     user: AuthenticatedUser,
-    input: { language: string; code: string; attemptId?: string; teamId?: string },
+    input: { language: string; code: string; attemptId?: string; teamId?: string; eventId?: string },
     idempotencyKey?: string
   ): Promise<SubmissionView> {
     this.requireWritable(user);
@@ -77,6 +79,29 @@ export class SubmissionsService {
     }
 
     const challenge = await this.challenges.requirePlayable(challengeId, input.language, user.id);
+
+    // US9 (FR-061/FR-062/FR-065) : une soumission d'événement exige un essai
+    // explicitement démarré, une fenêtre ouverte et un défi rattaché à l'event.
+    // Tout refus intervenant **avant** l'insertion : aucune soumission n'est
+    // enregistrée, même si le client envoie une clé d'idempotence valide.
+    if (input.eventId) {
+      if (!UUID_PATTERN.test(input.eventId)) {
+        throw new BadRequestException({
+          code: 'INVALID_EVENT_ID',
+          message: 'Identifiant d’événement invalide'
+        });
+      }
+      await this.eventAttempts.assertCanSubmit(input.eventId, user.id);
+      const link = await this.prisma.eventChallenge.findUnique({
+        where: { eventId_challengeId: { eventId: input.eventId, challengeId } }
+      });
+      if (!link) {
+        throw new ForbiddenException({
+          code: 'EVENT_CHALLENGE_FORBIDDEN',
+          message: 'Ce défi ne fait pas partie de l’événement'
+        });
+      }
+    }
 
     // A5 (FR-039) : un défi chronométré exige un `start` explicite. Le chrono
     // part de l'essai, jamais de l'ouverture de la page ni de la soumission.
@@ -155,6 +180,7 @@ export class SubmissionsService {
         challengeVersionId: version.id,
         userId: user.id,
         teamId: input.teamId ?? null,
+        eventId: input.eventId ?? null,
         language: input.language,
         code: input.code,
         status: 'pending',
@@ -185,13 +211,17 @@ export class SubmissionsService {
       context: {
         subjectType: 'player',
         subjectId: user.id,
-        eventId: null,
-        isEventAttempt: false
+        eventId: input.eventId ?? null,
+        isEventAttempt: Boolean(input.eventId)
       },
       enqueuedAt: new Date().toISOString()
     };
 
-    await this.queue.enqueueSubmission(id, job as unknown as Record<string, unknown>, 'standard');
+    await this.queue.enqueueSubmission(
+      id,
+      job as unknown as Record<string, unknown>,
+      input.eventId ? 'event' : 'standard'
+    );
     this.gateway.queued(user.id, id, challengeId, 1);
 
     return this.toView(submission);

@@ -765,6 +765,11 @@ export interface paths {
                          * @description Équipe au titre de laquelle la soumission contribue (FR-060, membre actif requis)
                          */
                         teamId?: string;
+                        /**
+                         * Format: uuid
+                         * @description Événement à essai unique au titre duquel la soumission est faite (FR-062)
+                         */
+                        eventId?: string;
                     };
                 };
             };
@@ -1711,8 +1716,11 @@ export interface paths {
                     headers: {
                         [name: string]: unknown;
                     };
-                    content?: never;
+                    content: {
+                        "application/json": components["schemas"]["EventParticipation"];
+                    };
                 };
+                409: components["responses"]["Error"];
             };
         };
         delete?: never;
@@ -1742,22 +1750,99 @@ export interface paths {
             };
             requestBody?: never;
             responses: {
-                /** @description Essai consommé */
+                /** @description Essai consommé, chronomètre démarré côté serveur */
                 200: {
                     headers: {
                         [name: string]: unknown;
                     };
-                    content?: never;
+                    content: {
+                        "application/json": components["schemas"]["EventAttempt"];
+                    };
                 };
-                /** @description Essai déjà consommé ou event fermé */
-                409: {
+                409: components["responses"]["Error"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/{eventId}/results": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Résultats publiés et récompenses après clôture */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    eventId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Classement figé, récompenses et corrigés disponibles */
+                200: {
                     headers: {
                         [name: string]: unknown;
                     };
-                    content?: never;
+                    content: {
+                        "application/json": components["schemas"]["EventResults"];
+                    };
                 };
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
             };
         };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/{eventId}/challenges/{challengeId}/solution": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Corrigé d'un défi d'événement, disponible après clôture */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    eventId: string;
+                    challengeId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Solution de référence déchiffrée */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["EventSolution"];
+                    };
+                };
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+            };
+        };
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2497,25 +2582,72 @@ export interface components {
         };
         Event: {
             /** Format: uuid */
-            id?: string;
-            title?: string;
+            id: string;
+            title: string;
             /** @example Europe/Paris */
-            timezone?: string;
+            timezone: string;
             /** Format: date-time */
-            startsAt?: string;
+            startsAt: string;
             /** Format: date-time */
-            endsAt?: string;
+            endsAt: string;
             /** @enum {string} */
-            status?: "draft" | "scheduled" | "open" | "finished" | "archived";
+            status: "draft" | "scheduled" | "open" | "finished" | "archived";
             /** @enum {string} */
-            type?: "standard" | "battle_royale";
+            type: "standard" | "battle_royale";
             /**
              * @description v1 : un seul essai par participant (FR-065)
              * @enum {integer}
              */
-            maxAttempts?: 1;
-            joined?: boolean;
-            attemptConsumed?: boolean;
+            maxAttempts: 1;
+            challengeIds: string[];
+            joined: boolean;
+            attemptConsumed: boolean;
+            /**
+             * Format: date-time
+             * @description Horloge serveur UTC, référence des comptes à rebours (FR-061)
+             */
+            serverNow: string;
+        };
+        EventParticipation: {
+            /** Format: uuid */
+            eventId: string;
+            joined: boolean;
+        };
+        EventAttempt: {
+            /** Format: uuid */
+            eventId: string;
+            /** Format: date-time */
+            attemptStartedAt: string;
+            /** Format: date-time */
+            attemptConsumedAt: string;
+        };
+        EventResults: {
+            /** Format: uuid */
+            eventId: string;
+            /** @enum {string} */
+            status: "finished" | "archived";
+            published: boolean;
+            /** Format: date-time */
+            publishedAt?: string | null;
+            rewards: {
+                [key: string]: unknown;
+            } | null;
+            leaderboard: {
+                items: components["schemas"]["LeaderboardEntry"][];
+                nextCursor: string | null;
+            };
+            solutions: {
+                /** Format: uuid */
+                challengeId: string;
+                unlocked: boolean;
+            }[];
+        };
+        EventSolution: {
+            /** Format: uuid */
+            eventId: string;
+            /** Format: uuid */
+            challengeId: string;
+            solution: string;
         };
         Boss: {
             /** Format: uuid */

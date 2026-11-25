@@ -5,6 +5,11 @@ import type TestAgent from 'supertest/lib/agent';
 import type { MailMessage } from '../../src/mail/mail.service';
 import type { TestInfrastructure } from './db';
 
+export interface CreateTestAppOptions {
+  /** Remplace l'horloge serveur (scénarios temporels US9, FR-061/FR-062). */
+  readonly clock?: import('../../src/common/clock').Clock;
+}
+
 export interface TestApp {
   readonly app: NestExpressApplication;
   /** Agent supertest conservant les cookies de session. */
@@ -28,7 +33,10 @@ export interface TestApp {
  * Les modules `src/` sont importés dynamiquement : `env` est validé à
  * l'import, et les URLs des conteneurs ne sont connues qu'à l'exécution.
  */
-export async function createTestApp(infra: TestInfrastructure): Promise<TestApp> {
+export async function createTestApp(
+  infra: TestInfrastructure,
+  options: CreateTestAppOptions = {}
+): Promise<TestApp> {
   process.env.DATABASE_URL = infra.databaseUrl;
   process.env.REDIS_URL = infra.redisUrl;
   process.env.LOG_LEVEL = 'silent';
@@ -36,7 +44,12 @@ export async function createTestApp(infra: TestInfrastructure): Promise<TestApp>
   const { AppModule } = await import('../../src/app.module');
   const { configureApp } = await import('../../src/bootstrap');
 
-  const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
+  const builder = Test.createTestingModule({ imports: [AppModule] });
+  if (options.clock) {
+    const { Clock } = await import('../../src/common/clock');
+    builder.overrideProvider(Clock).useValue(options.clock);
+  }
+  const moduleRef = await builder.compile();
   const app = moduleRef.createNestApplication<NestExpressApplication>({ logger: false });
   configureApp(app);
   await app.init();

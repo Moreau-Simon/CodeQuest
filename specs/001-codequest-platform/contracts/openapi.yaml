@@ -324,6 +324,10 @@ paths:
                   type: string
                   format: uuid
                   description: Équipe au titre de laquelle la soumission contribue (FR-060, membre actif requis)
+                eventId:
+                  type: string
+                  format: uuid
+                  description: Événement à essai unique au titre duquel la soumission est faite (FR-062)
       responses:
         '400': { description: Essai requis (ATTEMPT_REQUIRED) }
         '202':
@@ -727,7 +731,12 @@ paths:
       parameters:
         - { name: eventId, in: path, required: true, schema: { type: string, format: uuid } }
       responses:
-        '201': { description: Inscription enregistrée }
+        '201':
+          description: Inscription enregistrée
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EventParticipation' }
+        '409': { $ref: '#/components/responses/Error' }
 
   /events/{eventId}/start:
     post:
@@ -736,8 +745,43 @@ paths:
       parameters:
         - { name: eventId, in: path, required: true, schema: { type: string, format: uuid } }
       responses:
-        '200': { description: Essai consommé, chronomètre démarré côté serveur }
-        '409': { description: Essai déjà consommé ou event fermé }
+        '200':
+          description: Essai consommé, chronomètre démarré côté serveur
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EventAttempt' }
+        '409': { $ref: '#/components/responses/Error' }
+
+  /events/{eventId}/results:
+    get:
+      tags: [Events]
+      summary: Résultats publiés et récompenses après clôture
+      parameters:
+        - { name: eventId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: Classement figé, récompenses et corrigés disponibles
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EventResults' }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+
+  /events/{eventId}/challenges/{challengeId}/solution:
+    get:
+      tags: [Events]
+      summary: Corrigé d'un défi d'événement, disponible après clôture
+      parameters:
+        - { name: eventId, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: challengeId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: Solution de référence déchiffrée
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EventSolution' }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
 
   /bosses:
     get:
@@ -1207,6 +1251,7 @@ components:
 
     Event:
       type: object
+      required: [id, title, timezone, startsAt, endsAt, status, type, maxAttempts, challengeIds, joined, attemptConsumed, serverNow]
       properties:
         id: { type: string, format: uuid }
         title: { type: string }
@@ -1216,8 +1261,64 @@ components:
         status: { type: string, enum: [draft, scheduled, open, finished, archived] }
         type: { type: string, enum: [standard, battle_royale] }
         maxAttempts: { type: integer, enum: [1], description: "v1 : un seul essai par participant (FR-065)" }
+        challengeIds:
+          type: array
+          items: { type: string, format: uuid }
         joined: { type: boolean }
         attemptConsumed: { type: boolean }
+        serverNow:
+          type: string
+          format: date-time
+          description: Horloge serveur UTC, référence des comptes à rebours (FR-061)
+
+    EventParticipation:
+      type: object
+      required: [eventId, joined]
+      properties:
+        eventId: { type: string, format: uuid }
+        joined: { type: boolean }
+
+    EventAttempt:
+      type: object
+      required: [eventId, attemptStartedAt, attemptConsumedAt]
+      properties:
+        eventId: { type: string, format: uuid }
+        attemptStartedAt: { type: string, format: date-time }
+        attemptConsumedAt: { type: string, format: date-time }
+
+    EventResults:
+      type: object
+      required: [eventId, status, published, leaderboard, rewards, solutions]
+      properties:
+        eventId: { type: string, format: uuid }
+        status: { type: string, enum: [finished, archived] }
+        published: { type: boolean }
+        publishedAt: { type: string, format: date-time, nullable: true }
+        rewards: { type: object, additionalProperties: true, nullable: true }
+        leaderboard:
+          type: object
+          required: [items, nextCursor]
+          properties:
+            items:
+              type: array
+              items: { $ref: '#/components/schemas/LeaderboardEntry' }
+            nextCursor: { type: string, nullable: true }
+        solutions:
+          type: array
+          items:
+            type: object
+            required: [challengeId, unlocked]
+            properties:
+              challengeId: { type: string, format: uuid }
+              unlocked: { type: boolean }
+
+    EventSolution:
+      type: object
+      required: [eventId, challengeId, solution]
+      properties:
+        eventId: { type: string, format: uuid }
+        challengeId: { type: string, format: uuid }
+        solution: { type: string }
 
     Boss:
       type: object

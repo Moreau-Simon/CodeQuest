@@ -384,21 +384,21 @@ après clôture (refus), consulter le classement dédié puis les solutions apr�
 
 ### Tests for User Story 9 ⚠️
 
-- [ ] T163 [P] [US9] Tests d'intégration event à essai unique dans `apps/api/test/integration/event-attempt.spec.ts` (non-consommation à l'ouverture, consommation explicite, `409`, **abandon ou fermeture du navigateur ⇒ essai consommé après expiration**) (FR-062)
-- [ ] T164 [P] [US9] Tests de frontière temporelle dans `apps/api/test/integration/event-boundary.spec.ts` (soumission à `ends_at`, fuseau IANA, heure d'été)
-- [ ] T165 [P] [US9] Tests de contrat `/events/*` dans `apps/api/test/contract/events.contract.spec.ts`
+- [X] T163 [P] [US9] Tests d'intégration event à essai unique dans `apps/api/test/integration/event-attempt.spec.ts` (non-consommation à l'ouverture, consommation explicite, `409`, **abandon ou fermeture du navigateur ⇒ essai consommé après expiration**) (FR-062)
+- [X] T164 [P] [US9] Tests de frontière temporelle dans `apps/api/test/integration/event-boundary.spec.ts` (soumission à `ends_at`, fuseau IANA, heure d'été)
+- [X] T165 [P] [US9] Tests de contrat `/events/*` dans `apps/api/test/contract/events.contract.spec.ts`
 
 ### Implementation for User Story 9
 
-- [ ] T166 [P] [US9] Créer les modèles Prisma `Event` (`timezone` IANA validé, CHECK `ends_at > starts_at`, `type ∈ {standard, battle_royale}`, CHECK `max_attempts = 1`), `EventChallenge`, `EventParticipant` (UNIQUE `(event_id, subject_type, subject_id)`) dans `apps/api/prisma/schema.prisma`
-- [ ] T167 [US9] Implémenter `apps/api/src/modules/events/events.service.ts` : inscription, fenêtre d'ouverture calculée sur l'horloge serveur, refus hors fenêtre (FR-061)
-- [ ] T168 [US9] Implémenter `apps/api/src/modules/events/attempt.service.ts` : démarrage explicite, `attempt_started_at`, `attempt_consumed_at`, un seul essai, `409` sinon ; considérer l'abandon ou la fermeture du navigateur comme consommé via un job d'expiration `apps/api/src/modules/events/attempt-expiry.job.ts` (échéance = `starts_at` + durée de la fenêtre) (FR-062, FR-065)
-- [ ] T169 [US9] Implémenter `apps/api/src/modules/events/results.service.ts` : classement dédié, récompenses, publication à la clôture, déblocage des solutions après clôture (FR-063, FR-064)
-- [ ] T170 [US9] Implémenter les routes `apps/api/src/modules/events/events.controller.ts` : `GET /events`, `POST /events/{id}/join`, `POST /events/{id}/start`
-- [ ] T171 [US9] Ajouter la priorité de file `1` aux soumissions d'event dans `apps/api/src/modules/submissions/priority.ts` (contrat runner §6)
-- [ ] T172 [P] [US9] Créer `apps/web/src/pages/events/EventsPage.tsx` (liste, fuseau affiché, compte à rebours) et `EventDetailPage.tsx` (bouton Démarrer l'essai avec confirmation explicite, chrono serveur)
-- [ ] T173 [P] [US9] Créer `apps/web/src/pages/events/EventLeaderboardPage.tsx` (classement dédié, résultats après clôture, solutions débloquées)
-- [ ] T174 [US9] Vérifier `quickstart.md` § S6 et l'absence de pause lors d'une déconnexion
+- [X] T166 [P] [US9] Créer les modèles Prisma `Event` (`timezone` IANA validé, CHECK `ends_at > starts_at`, `type ∈ {standard, battle_royale}`, CHECK `max_attempts = 1`), `EventChallenge`, `EventParticipant` (UNIQUE `(event_id, subject_type, subject_id)`) dans `apps/api/prisma/schema.prisma`
+- [X] T167 [US9] Implémenter `apps/api/src/modules/events/events.service.ts` : inscription, fenêtre d'ouverture calculée sur l'horloge serveur, refus hors fenêtre (FR-061)
+- [X] T168 [US9] Implémenter `apps/api/src/modules/events/attempt.service.ts` : démarrage explicite, `attempt_started_at`, `attempt_consumed_at`, un seul essai, `409` sinon ; considérer l'abandon ou la fermeture du navigateur comme consommé via un job d'expiration `apps/api/src/modules/events/attempt-expiry.job.ts` (échéance = `starts_at` + durée de la fenêtre) (FR-062, FR-065)
+- [X] T169 [US9] Implémenter `apps/api/src/modules/events/results.service.ts` : classement dédié, récompenses, publication à la clôture, déblocage des solutions après clôture (FR-063, FR-064)
+- [X] T170 [US9] Implémenter les routes `apps/api/src/modules/events/events.controller.ts` : `GET /events`, `POST /events/{id}/join`, `POST /events/{id}/start`
+- [X] T171 [US9] Ajouter la priorité de file `1` aux soumissions d'event dans `apps/api/src/modules/submissions/priority.ts` (contrat runner §6) — priorité déjà présente dans `apps/api/src/queue/queue.priorities.ts` (`event: 1`) et désormais utilisée par `SubmissionsService.create()`.
+- [X] T172 [P] [US9] Créer `apps/web/src/pages/events/EventsPage.tsx` (liste, fuseau affiché, compte à rebours) et `EventDetailPage.tsx` (bouton Démarrer l'essai avec confirmation explicite, chrono serveur)
+- [X] T173 [P] [US9] Créer `apps/web/src/pages/events/EventLeaderboardPage.tsx` (classement dédié, résultats après clôture, solutions débloquées)
+- [X] T174 [US9] Vérifier `quickstart.md` § S6 et l'absence de pause lors d'une déconnexion
 
 **Checkpoint**: US9 livrable seule.
 
