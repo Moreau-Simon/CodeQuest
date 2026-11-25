@@ -2629,7 +2629,9 @@ export interface components {
             published: boolean;
             /** Format: date-time */
             publishedAt?: string | null;
-            rewards: unknown;
+            rewards: {
+                [key: string]: unknown;
+            } | null;
             leaderboard: {
                 items: components["schemas"]["LeaderboardEntry"][];
                 nextCursor: string | null;

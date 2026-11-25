@@ -1294,7 +1294,7 @@ components:
         status: { type: string, enum: [finished, archived] }
         published: { type: boolean }
         publishedAt: { type: string, format: date-time, nullable: true }
-        rewards: { nullable: true }
+        rewards: { type: object, additionalProperties: true, nullable: true }
         leaderboard:
           type: object
           required: [items, nextCursor]

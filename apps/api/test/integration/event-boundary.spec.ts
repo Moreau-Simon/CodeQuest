@@ -29,7 +29,9 @@ describe('US9 — frontières temporelles des événements (T164)', () => {
 
   beforeAll(async () => {
     infra = await startTestInfrastructure();
-    clock = new FrozenClock(new Date('2026-03-29T01:00:00.000Z'));
+    // L'inscription/connexion doit utiliser l'heure réelle : figer à mars 2026
+    // produirait une session expirée avant `created_at` (CHECK sessions_expiry_check).
+    clock = new FrozenClock(new Date());
     api = await createTestApp(infra, { clock });
     // Import différé : `src/config/env` doit d'abord lire les URLs des conteneurs.
     const { EventsService } = await import('../../src/modules/events/events.service');
@@ -37,6 +39,9 @@ describe('US9 — frontières temporelles des événements (T164)', () => {
     await prisma.$connect();
 
     player = await createTestPlayer(api, prisma, 'boundary-player');
+    // Bascule ensuite sur l'instant DST : seules les frontières de l'événement
+    // sont figées, pas l'établissement de la session d'authentification.
+    clock.set(new Date('2026-03-29T01:00:00.000Z'));
     admin = {
       id: player.id,
       pseudonym: player.pseudonym,
