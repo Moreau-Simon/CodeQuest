@@ -72,8 +72,9 @@ describe('US10 — boss et points de vie (T176)', () => {
 
   beforeAll(async () => {
     infra = await startTestInfrastructure();
-    // L'authentification doit utiliser l'heure réelle (CHECK sessions_expiry_check).
-    clock = new FrozenClock(new Date());
+    // L'horloge est figée avant l'authentification : la session est émise à
+    // NOW et reste valide pendant les scénarios de KO (2030 > created_at DB).
+    clock = new FrozenClock(NOW);
     api = await createTestApp(infra, { clock });
     // Import après createTestApp : `src/config/env` y est initialisé avec les
     // URLs des conteneurs, pas celles par défaut de `test/env.ts`.
@@ -89,7 +90,6 @@ describe('US10 — boss et points de vie (T176)', () => {
     prisma = new PrismaClient({ datasources: { db: { url: infra.databaseUrl } } });
     await prisma.$connect();
     player = await createTestPlayer(api, prisma, 'boss-player');
-    clock.set(NOW);
   }, 180_000);
 
   afterAll(async () => {
