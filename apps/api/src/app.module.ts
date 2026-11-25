@@ -12,6 +12,7 @@ import { AuditModule } from './modules/audit/audit.module';
 import { AuthenticationGuard } from './modules/auth/authentication.guard';
 import { AuthModule } from './modules/auth/auth.module';
 import { ChallengesModule } from './modules/challenges/challenges.module';
+import { EventsModule } from './modules/events/events.module';
 import { HealthModule } from './modules/health/health.module';
 import { LeaderboardsModule } from './modules/leaderboards/leaderboards.module';
 import { LessonsModule } from './modules/lessons/lessons.module';
@@ -40,6 +41,7 @@ import { StorageModule } from './storage/storage.module';
     AuthModule,
     UsersModule,
     ChallengesModule,
+    EventsModule,
     SubmissionsModule,
     LeaderboardsModule,
     TeamsModule,

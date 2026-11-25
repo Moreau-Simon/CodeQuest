@@ -21,6 +21,11 @@ export class CreateSubmissionDto {
   @IsOptional()
   @IsUUID()
   teamId?: string;
+
+  /** US9 (FR-062) : soumission au titre de l'unique essai d'un événement. */
+  @IsOptional()
+  @IsUUID()
+  eventId?: string;
 }
 
 /** Soumissions (T077) : `202` à la création, lecture de repli du temps réel. */

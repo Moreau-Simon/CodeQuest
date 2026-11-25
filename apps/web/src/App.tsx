@@ -1,7 +1,6 @@
 import { Link, Route, Routes } from 'react-router-dom';
 import { AppLayout } from './components/layout/AppLayout';
 import { RequireAuth } from './components/layout/RequireAuth';
-import { Skeleton } from './components/ui';
 import { t } from './i18n';
 import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
 import { AuditLogPage } from './pages/admin/AuditLogPage';
@@ -15,6 +14,9 @@ import { VerifyEmailPage } from './pages/auth/VerifyEmailPage';
 import { ChallengePage } from './pages/challenges/ChallengePage';
 import { CatalogPage } from './pages/challenges/CatalogPage';
 import { DebugChallengePage } from './pages/challenges/DebugChallengePage';
+import { EventDetailPage } from './pages/events/EventDetailPage';
+import { EventLeaderboardPage } from './pages/events/EventLeaderboardPage';
+import { EventsPage } from './pages/events/EventsPage';
 import { LeaderboardPage } from './pages/leaderboards/LeaderboardPage';
 import { LessonPage } from './pages/lessons/LessonPage';
 import { LessonsPage } from './pages/lessons/LessonsPage';
@@ -34,16 +36,6 @@ function HomePage(): JSX.Element {
       >
         {t('home.cta')}
       </Link>
-    </section>
-  );
-}
-
-function PlaceholderPage({ title }: { title: string }): JSX.Element {
-  return (
-    <section className="mx-auto max-w-3xl px-6 py-16">
-      <h1 className="text-3xl font-semibold">{title}</h1>
-      <p className="mt-2 text-muted">{t('common.comingSoon')}</p>
-      <Skeleton label={t('common.loading')} className="mt-6 h-24 w-full" />
     </section>
   );
 }
@@ -78,7 +70,9 @@ export function App(): JSX.Element {
         <Route path="leaderboards" element={<LeaderboardPage />} />
         <Route path="teams" element={<TeamPage />} />
         <Route path="teams/:teamId" element={<TeamSettingsPage />} />
-        <Route path="events" element={<PlaceholderPage title={t('nav.events')} />} />
+        <Route path="events" element={<EventsPage />} />
+        <Route path="events/:eventId" element={<EventDetailPage />} />
+        <Route path="events/:eventId/results" element={<EventLeaderboardPage />} />
 
         <Route element={<RequireAuth />}>
           <Route path="profile" element={<ProfilePage />} />
