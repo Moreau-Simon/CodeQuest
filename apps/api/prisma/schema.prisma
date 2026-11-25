@@ -376,6 +376,7 @@ model Challenge {
   collaborativeDocuments  CollaborativeDocument[]
   contributionEvents      ContributionEvent[]
   eventLinks              EventChallenge[]
+  bossPhases              BossPhase[]
   prerequisites ChallengePrerequisite[] @relation("ChallengePrerequisites")
   requiredFor   ChallengePrerequisite[] @relation("ChallengePrerequisiteRequirements")
 
@@ -415,6 +416,7 @@ model Submission {
   userId             String           @map("user_id") @db.Uuid
   teamId             String?          @map("team_id") @db.Uuid
   eventId            String?          @map("event_id") @db.Uuid
+  bossPhaseId        String?          @map("boss_phase_id") @db.Uuid
   language           String
   code               String
   status             SubmissionStatus @default(pending)
@@ -440,6 +442,7 @@ model Submission {
   user      User             @relation(fields: [userId], references: [id], onDelete: Restrict)
   attempt   ChallengeAttempt? @relation(fields: [attemptId], references: [id], onDelete: Restrict)
   event     Event?            @relation(fields: [eventId], references: [id], onDelete: SetNull)
+  bossPhase BossPhase?        @relation(fields: [bossPhaseId], references: [id], onDelete: SetNull)
   bestScores BestScore[]
   /// D4 : `TeamOfficialSubmission` est la source de vérité de la désignation ;
   /// ce booléen en est le miroir, maintenu dans la même transaction.
@@ -610,6 +613,7 @@ model LoreChapter {
   createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
   progress      LoreProgress[]
+  bosses        Boss[]
   prerequisites ChallengePrerequisite[]
 
   @@map("lore_chapters")
@@ -847,4 +851,79 @@ model EventParticipant {
   @@unique([eventId, subjectType, subjectId])
   @@index([eventId, eliminatedAt])
   @@map("event_participants")
+}
+
+/// Boss de fin de chapitre (US10, FR-066). La somme des `hp_share` de ses
+/// phases doit valoir 100 ; elle est vérifiée à la création par l'API et
+/// documentée dans `data-model.md` (aucun CHECK SQL inter-lignes équivalent).
+model Boss {
+  id            String   @id @db.Uuid
+  slug          String   @unique
+  name          String
+  loreChapterId String   @map("lore_chapter_id") @db.Uuid
+  maxHp         Int      @map("max_hp")
+  rewards       Json?
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  chapter     LoreChapter      @relation(fields: [loreChapterId], references: [id], onDelete: Restrict)
+  phases      BossPhase[]
+  engagements BossEngagement[]
+
+  @@map("bosses")
+}
+
+/// Phase ordonnée d'un boss : sous-défi, part de la barre et règle de dégâts
+/// `{"per_100_score": 5, "failureCost": 15}` (FR-066, FR-070).
+model BossPhase {
+  id          String  @id @db.Uuid
+  bossId      String  @map("boss_id") @db.Uuid
+  order       Int
+  challengeId String  @map("challenge_id") @db.Uuid
+  hpShare     Decimal @map("hp_share") @db.Decimal(5, 2)
+  damageRule  Json    @map("damage_rule")
+
+  boss        Boss         @relation(fields: [bossId], references: [id], onDelete: Cascade)
+  challenge   Challenge    @relation(fields: [challengeId], references: [id], onDelete: Restrict)
+  submissions Submission[]
+
+  @@unique([bossId, order])
+  @@index([bossId, order])
+  @@map("boss_phases")
+}
+
+/// PV d'un joueur ou d'un pool d'équipe. La régénération est calculée à la
+/// lecture puis matérialisée (FR-067, FR-069) ; le CHECK `0 <= hp <= max_hp`
+/// est porté par la migration SQL.
+model PlayerHealth {
+  id          String      @id @db.Uuid
+  subjectType SubjectType @map("subject_type")
+  subjectId   String      @map("subject_id") @db.Uuid
+  hp          Int         @default(100)
+  maxHp       Int         @default(100) @map("max_hp")
+  koUntil     DateTime?   @map("ko_until") @db.Timestamptz(6)
+  lastRegenAt DateTime    @map("last_regen_at") @db.Timestamptz(6)
+  updatedAt   DateTime    @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([subjectType, subjectId])
+  @@map("player_health")
+}
+
+/// Progression d'un joueur (ou d'une équipe) sur un boss. L'unicité garantit
+/// qu'une victoire n'est attribuée qu'une seule fois (FR-070).
+model BossEngagement {
+  id              String      @id @db.Uuid
+  bossId          String      @map("boss_id") @db.Uuid
+  subjectType     SubjectType @map("subject_type")
+  subjectId       String      @map("subject_id") @db.Uuid
+  bossHpRemaining Int?        @map("boss_hp_remaining")
+  phaseReached    Int         @default(1) @map("phase_reached")
+  defeatedAt      DateTime?   @map("defeated_at") @db.Timestamptz(6)
+  createdAt       DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime    @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  boss Boss @relation(fields: [bossId], references: [id], onDelete: Cascade)
+
+  @@unique([bossId, subjectType, subjectId])
+  @@index([subjectType, subjectId])
+  @@map("boss_engagements")
 }

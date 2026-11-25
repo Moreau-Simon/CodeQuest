@@ -17,6 +17,7 @@ import { DebugChallengePage } from './pages/challenges/DebugChallengePage';
 import { EventDetailPage } from './pages/events/EventDetailPage';
 import { EventLeaderboardPage } from './pages/events/EventLeaderboardPage';
 import { EventsPage } from './pages/events/EventsPage';
+import { BossPage } from './pages/bosses/BossPage';
 import { LeaderboardPage } from './pages/leaderboards/LeaderboardPage';
 import { LessonPage } from './pages/lessons/LessonPage';
 import { LessonsPage } from './pages/lessons/LessonsPage';
@@ -75,6 +76,7 @@ export function App(): JSX.Element {
         <Route path="events/:eventId/results" element={<EventLeaderboardPage />} />
 
         <Route element={<RequireAuth />}>
+          <Route path="bosses" element={<BossPage />} />
           <Route path="profile" element={<ProfilePage />} />
           <Route path="settings/profile" element={<ProfilePage />} />
           <Route path="settings/sessions" element={<SessionsPage />} />

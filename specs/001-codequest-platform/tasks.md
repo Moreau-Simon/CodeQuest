@@ -414,19 +414,19 @@ potion (PV restaurés), vaincre le boss (une seule fois).
 
 ### Tests for User Story 10 ⚠️
 
-- [ ] T175 [P] [US10] Tests unitaires des PV dans `apps/api/test/unit/health.spec.ts` (bornes 0..100, régénération 1 PV/6 min, plafond, pas de régénération pendant KO)
-- [ ] T176 [P] [US10] Tests d'intégration boss dans `apps/api/test/integration/boss.spec.ts` (phases ordonnées, dégâts, victoire unique, blocage en KO)
+- [x] T175 [P] [US10] Tests unitaires des PV dans `apps/api/test/unit/health.spec.ts` (bornes 0..100, régénération 1 PV/6 min, plafond, pas de régénération pendant KO)
+- [x] T176 [P] [US10] Tests d'intégration boss dans `apps/api/test/integration/boss.spec.ts` (phases ordonnées, dégâts, victoire unique, blocage en KO)
 
 ### Implementation for User Story 10
 
-- [ ] T177 [P] [US10] Créer les modèles Prisma `Boss`, `BossPhase` (`hp_share` somme = 100, UNIQUE `(boss_id, order)`), `PlayerHealth` (UNIQUE `(subject_type, subject_id)`, CHECK `0 ≤ hp ≤ max_hp`), `BossEngagement` (UNIQUE `(boss_id, subject_type, subject_id)`) dans `apps/api/prisma/schema.prisma`
-- [ ] T178 [US10] Implémenter `apps/api/src/modules/bosses/health.service.ts` : régénération calculée à la lecture puis matérialisée, KO à `ko_until`, restauration par potion (FR-067, FR-069)
-- [ ] T179 [US10] Implémenter `apps/api/src/modules/bosses/boss.service.ts` : phases ordonnées, progression, dégâts `per_100_score`, victoire unique (FR-066, FR-070)
-- [ ] T180 [US10] Implémenter le blocage en KO dans `apps/api/src/modules/bosses/boss.guard.ts` avec motif et échéance affichés (FR-068)
-- [ ] T181 [US10] Implémenter le pool de PV partagé d'équipe dans `apps/api/src/modules/bosses/team-health.service.ts` (FR-071)
-- [ ] T182 [US10] Exposer `apps/api/src/modules/bosses/bosses.controller.ts` : `GET /bosses`, `POST /bosses/{id}/phases/{phaseId}/submissions`, `GET /me/health`
-- [ ] T183 [US10] Émettre `health.changed`, `health.ko`, `health.restored`, `boss.phase.cleared`, `boss.defeated` (contrat temps réel §3.3)
-- [ ] T184 [P] [US10] Créer `apps/web/src/pages/bosses/BossPage.tsx` (barre de PV animée mais désactivable, phases, compte à rebours de KO) et `HealthBar.tsx`
+- [x] T177 [P] [US10] Créer les modèles Prisma `Boss`, `BossPhase` (`hp_share` somme = 100, UNIQUE `(boss_id, order)`), `PlayerHealth` (UNIQUE `(subject_type, subject_id)`, CHECK `0 ≤ hp ≤ max_hp`), `BossEngagement` (UNIQUE `(boss_id, subject_type, subject_id)`) dans `apps/api/prisma/schema.prisma`
+- [x] T178 [US10] Implémenter `apps/api/src/modules/bosses/health.service.ts` : régénération calculée à la lecture puis matérialisée, KO à `ko_until`, restauration par potion (FR-067, FR-069)
+- [x] T179 [US10] Implémenter `apps/api/src/modules/bosses/boss.service.ts` : phases ordonnées, progression, dégâts `per_100_score`, victoire unique (FR-066, FR-070)
+- [x] T180 [US10] Implémenter le blocage en KO dans `apps/api/src/modules/bosses/boss.guard.ts` avec motif et échéance affichés (FR-068)
+- [x] T181 [US10] Implémenter le pool de PV partagé d'équipe dans `apps/api/src/modules/bosses/team-health.service.ts` (FR-071)
+- [x] T182 [US10] Exposer `apps/api/src/modules/bosses/bosses.controller.ts` : `GET /bosses`, `POST /bosses/{id}/phases/{phaseId}/submissions`, `GET /me/health`
+- [x] T183 [US10] Émettre `health.changed`, `health.ko`, `health.restored`, `boss.phase.cleared`, `boss.defeated` (contrat temps réel §3.3)
+- [x] T184 [P] [US10] Créer `apps/web/src/pages/bosses/BossPage.tsx` (barre de PV animée mais désactivable, phases, compte à rebours de KO) et `HealthBar.tsx`
 
 **Checkpoint**: US10 livrable seule.
 

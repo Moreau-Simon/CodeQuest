@@ -161,11 +161,17 @@ fork, allocation mémoire massive. **Attendu** : `status = rejected` pour les qu
 
 ### S7 — Boss, PV et KO (FR-067 → FR-070)
 
-1. Engager un boss, échouer une phase → **attendu** : `health.changed` avec `delta` négatif.
-2. Faire tomber les PV à 0 → `health.ko` avec `koUntil` à +30 min ; toute soumission de boss renvoie
-   `403` pendant le KO.
-3. Utiliser une potion → `health.restored`, `koUntil` remis à `null`, débit unique malgré un double
-   clic (en-tête `Idempotency-Key`).
+1. Ouvrir `/bosses` : `GET /api/v1/bosses` liste les phases dans l'ordre et `GET /api/v1/me/health`
+   fournit les PV avec `serverNow` (le compte à rebours ne dépend pas du navigateur).
+2. Soumettre une phase (`POST /api/v1/bosses/{bossId}/phases/{phaseId}/submissions` → `202`) puis
+   échouer le verdict → **attendu** : `health.changed` avec `delta` négatif et des PV régénérés
+   1 par 6 minutes hors KO.
+3. Faire tomber les PV à 0 → `health.ko` avec `koUntil` à +30 min ; toute soumission de boss renvoie
+   `403 BOSS_KO` pendant le KO, avec le motif et l'échéance dans `details`.
+4. Restaurer les PV via `HealthService.restore` (potion ; la boutique US11 arrivera ensuite) →
+   `health.restored`, `koUntil` remis à `null`.
+5. Vaincre les phases dans l'ordre → `boss.phase.cleared` puis `boss.defeated` ; une seconde
+   soumission sur le même boss renvoie `409 BOSS_ALREADY_DEFEATED`.
 
 ### S8 — Économie et indices (FR-042, FR-072 → FR-076)
 

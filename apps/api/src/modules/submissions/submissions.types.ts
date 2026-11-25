@@ -27,6 +27,7 @@ export interface SubmissionJob {
     subjectId: string;
     eventId: string | null;
     isEventAttempt: boolean;
+    bossPhaseId: string | null;
   };
   enqueuedAt: string;
 }

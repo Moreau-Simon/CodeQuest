@@ -56,7 +56,14 @@ export class SubmissionsService {
   async create(
     challengeId: string,
     user: AuthenticatedUser,
-    input: { language: string; code: string; attemptId?: string; teamId?: string; eventId?: string },
+    input: {
+      language: string;
+      code: string;
+      attemptId?: string;
+      teamId?: string;
+      eventId?: string;
+      bossPhaseId?: string;
+    },
     idempotencyKey?: string
   ): Promise<SubmissionView> {
     this.requireWritable(user);
@@ -99,6 +106,27 @@ export class SubmissionsService {
         throw new ForbiddenException({
           code: 'EVENT_CHALLENGE_FORBIDDEN',
           message: 'Ce défi ne fait pas partie de l’événement'
+        });
+      }
+    }
+
+    // US10 (FR-066/FR-070) : une soumission de phase de boss est reliée à la
+    // phase, jamais à un événement (la FK `submissions.event_id` cible `events`).
+    if (input.bossPhaseId) {
+      if (!UUID_PATTERN.test(input.bossPhaseId)) {
+        throw new BadRequestException({
+          code: 'INVALID_BOSS_PHASE_ID',
+          message: 'Identifiant de phase de boss invalide'
+        });
+      }
+      const phase = await this.prisma.bossPhase.findUnique({
+        where: { id: input.bossPhaseId },
+        select: { challengeId: true, bossId: true }
+      });
+      if (!phase || phase.challengeId !== challengeId) {
+        throw new ForbiddenException({
+          code: 'BOSS_PHASE_FORBIDDEN',
+          message: 'Ce défi ne correspond pas à la phase de boss demandée'
         });
       }
     }
@@ -181,6 +209,7 @@ export class SubmissionsService {
         userId: user.id,
         teamId: input.teamId ?? null,
         eventId: input.eventId ?? null,
+        bossPhaseId: input.bossPhaseId ?? null,
         language: input.language,
         code: input.code,
         status: 'pending',
@@ -212,7 +241,8 @@ export class SubmissionsService {
         subjectType: 'player',
         subjectId: user.id,
         eventId: input.eventId ?? null,
-        isEventAttempt: Boolean(input.eventId)
+        isEventAttempt: Boolean(input.eventId),
+        bossPhaseId: input.bossPhaseId ?? null
       },
       enqueuedAt: new Date().toISOString()
     };
@@ -220,7 +250,7 @@ export class SubmissionsService {
     await this.queue.enqueueSubmission(
       id,
       job as unknown as Record<string, unknown>,
-      input.eventId ? 'event' : 'standard'
+      input.bossPhaseId ? 'boss' : input.eventId ? 'event' : 'standard'
     );
     this.gateway.queued(user.id, id, challengeId, 1);
 

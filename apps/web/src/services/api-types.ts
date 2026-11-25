@@ -1911,6 +1911,8 @@ export interface paths {
                         /** @enum {string} */
                         language: "python" | "javascript";
                         code: string;
+                        /** Format: uuid */
+                        teamId?: string;
                     };
                 };
             };
@@ -1920,15 +1922,13 @@ export interface paths {
                     headers: {
                         [name: string]: unknown;
                     };
-                    content?: never;
-                };
-                /** @description KO en cours */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
+                    content: {
+                        "application/json": components["schemas"]["BossPhaseSubmission"];
                     };
-                    content?: never;
                 };
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+                409: components["responses"]["Error"];
             };
         };
         delete?: never;
@@ -2411,13 +2411,15 @@ export interface components {
             current?: boolean;
         };
         PlayerHealth: {
-            hp?: number;
+            hp: number;
             /** @example 100 */
-            maxHp?: number;
+            maxHp: number;
             /** Format: date-time */
-            koUntil?: string | null;
+            koUntil: string | null;
             /** Format: date-time */
-            nextRegenAt?: string | null;
+            nextRegenAt: string | null;
+            /** Format: date-time */
+            serverNow: string;
         };
         Wallet: {
             balance?: number;
@@ -2651,18 +2653,26 @@ export interface components {
         };
         Boss: {
             /** Format: uuid */
-            id?: string;
-            name?: string;
-            maxHp?: number;
-            chapter?: string;
-            phases?: {
+            id: string;
+            name: string;
+            maxHp: number;
+            chapter: string;
+            phases: {
                 /** Format: uuid */
-                id?: string;
-                order?: number;
-                completed?: boolean;
+                id: string;
+                order: number;
+                completed: boolean;
             }[];
-            hpRemaining?: number | null;
-            defeated?: boolean;
+            hpRemaining: number | null;
+            defeated: boolean;
+        };
+        BossPhaseSubmission: {
+            /** Format: uuid */
+            submissionId: string;
+            /** Format: uuid */
+            bossPhaseId: string;
+            /** @enum {string} */
+            status: "pending" | "running" | "passed" | "failed" | "error" | "timeout" | "rejected";
         };
         ShopItem: {
             /** Format: uuid */
