@@ -10,7 +10,8 @@ const NAV_ITEMS = [
   { to: '/lessons', key: 'nav.lessons' },
   { to: '/leaderboards', key: 'nav.leaderboards' },
   { to: '/teams', key: 'nav.teams' },
-  { to: '/events', key: 'nav.events' }
+  { to: '/events', key: 'nav.events' },
+  { to: '/bosses', key: 'nav.bosses' }
 ] as const;
 
 /**

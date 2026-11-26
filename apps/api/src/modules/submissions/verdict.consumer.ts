@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
+import { ModuleRef } from '@nestjs/core';
 import { Worker, type ConnectionOptions } from 'bullmq';
 import { uuidv7 } from '../../common/uuid';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -33,7 +34,8 @@ export class VerdictConsumer implements OnModuleInit, OnModuleDestroy {
     private readonly gateway: SubmissionsGateway,
     private readonly leaderboards: LeaderboardService,
     private readonly xp: XpService,
-    private readonly analytics: AnalyticsService
+    private readonly analytics: AnalyticsService,
+    private readonly moduleRef: ModuleRef
   ) {}
 
   onModuleInit(): void {
@@ -190,6 +192,19 @@ export class VerdictConsumer implements OnModuleInit, OnModuleDestroy {
         teamId: submission.teamId,
         eventId: submission.eventId
       });
+    }
+
+    // US10 (FR-067/FR-070) : une soumission de phase de boss met à jour la
+    // barre du boss ou les PV. Le service est résolu tardivement pour éviter
+    // un cycle SubmissionsModule ↔ BossesModule à l'initialisation Nest.
+    if (submission.bossPhaseId && (result.status === 'passed' || result.status === 'failed')) {
+      try {
+        const { BossService } = await import('../bosses/boss.service');
+        const bosses = this.moduleRef.get(BossService, { strict: false });
+        await bosses.applyPhaseVerdict(submission.id, result.status, score);
+      } catch (error) {
+        this.logger.error('Impossible d’appliquer le verdict de boss', error as Error);
+      }
     }
 
     // US6 (FR-054, SC-010) : ces effets ne doivent jamais faire échouer la

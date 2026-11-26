@@ -8,6 +8,7 @@ export const fr = {
   'nav.leaderboards': 'Classements',
   'nav.teams': 'Équipes',
   'nav.events': 'Événements',
+  'nav.bosses': 'Boss',
   'nav.profile': 'Profil',
   'nav.login': 'Connexion',
   'nav.logout': 'Déconnexion',
@@ -307,7 +308,31 @@ export const fr = {
   'event.notClosed': 'Les résultats seront publiés à la clôture de l’événement.',
   'event.rank': 'Rang',
   'event.player': 'Joueur',
-  'event.score': 'Score'
+  'event.score': 'Score',
+
+  'boss.title': 'Boss de chapitre',
+  'boss.subtitle': 'Affrontez les phases dans l’ordre. Un échec coûte des points de vie.',
+  'boss.empty': 'Aucun boss disponible pour le moment.',
+  'boss.chapter': 'Chapitre',
+  'boss.hp': 'PV du boss',
+  'boss.phases': 'Phases',
+  'boss.phase': 'Phase {{order}}',
+  'boss.completed': 'Terminée',
+  'boss.current': 'À affronter',
+  'boss.locked': 'Verrouillée',
+  'boss.defeated': 'Vaincu',
+  'boss.code': 'Votre solution',
+  'boss.language': 'Langage',
+  'boss.submit': 'Lancer la phase',
+  'boss.submitted': 'Phase soumise — le verdict arrivera sous peu.',
+  'boss.koNotice': 'KO : récupération dans {{countdown}}.',
+  'boss.error.default': 'La soumission a été refusée.',
+  'boss.error.KO': 'Vous êtes en KO. Attendez la récupération.',
+  'boss.error.PHASE_NOT_REACHED': 'Terminez d’abord la phase précédente.',
+  'boss.error.ALREADY_DEFEATED': 'Ce boss est déjà vaincu.',
+  'health.title': 'Vos points de vie',
+  'health.ko': 'Hors combat — retour dans {{countdown}}.',
+  'health.regen': 'Prochaine régénération dans {{countdown}}.'
 } as const;
 
 export type TranslationKey = keyof typeof fr;

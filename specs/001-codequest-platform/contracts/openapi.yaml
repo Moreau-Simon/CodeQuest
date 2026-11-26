@@ -813,9 +813,16 @@ paths:
               properties:
                 language: { type: string, enum: [python, javascript] }
                 code: { type: string, maxLength: 131072 }
+                teamId: { type: string, format: uuid }
       responses:
-        '202': { description: Soumission de phase acceptée }
-        '403': { description: KO en cours, PV insuffisants ou phase non atteinte }
+        '202':
+          description: Soumission de phase acceptée
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BossPhaseSubmission' }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
 
   /shop:
     get:
@@ -1045,11 +1052,13 @@ components:
 
     PlayerHealth:
       type: object
+      required: [hp, maxHp, koUntil, nextRegenAt, serverNow]
       properties:
         hp: { type: integer, minimum: 0, maximum: 100 }
         maxHp: { type: integer, example: 100 }
         koUntil: { type: string, format: date-time, nullable: true }
         nextRegenAt: { type: string, format: date-time, nullable: true }
+        serverNow: { type: string, format: date-time }
 
     Wallet:
       type: object
@@ -1322,6 +1331,7 @@ components:
 
     Boss:
       type: object
+      required: [id, name, maxHp, chapter, phases, hpRemaining, defeated]
       properties:
         id: { type: string, format: uuid }
         name: { type: string }
@@ -1331,12 +1341,21 @@ components:
           type: array
           items:
             type: object
+            required: [id, order, completed]
             properties:
               id: { type: string, format: uuid }
               order: { type: integer }
               completed: { type: boolean }
         hpRemaining: { type: integer, nullable: true }
         defeated: { type: boolean }
+
+    BossPhaseSubmission:
+      type: object
+      required: [submissionId, bossPhaseId, status]
+      properties:
+        submissionId: { type: string, format: uuid }
+        bossPhaseId: { type: string, format: uuid }
+        status: { type: string, enum: [pending, running, passed, failed, error, timeout, rejected] }
 
     ShopItem:
       type: object
