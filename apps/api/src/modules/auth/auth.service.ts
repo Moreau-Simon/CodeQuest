@@ -3,6 +3,7 @@ import {
   ConflictException,
   HttpException,
   Injectable,
+  Logger,
   UnauthorizedException
 } from '@nestjs/common';
 import { signEmailVerificationToken, verifyEmailVerificationToken } from './auth.tokens';
@@ -12,6 +13,7 @@ import { env } from '../../config/env';
 import { MailService } from '../../mail/mail.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
+import { RewardsService } from '../economy/rewards.service';
 import { AUTH_AUDIT_EVENTS } from './audit.events';
 import type { LoginDto } from './dto/login.dto';
 import type { RegisterDto } from './dto/register.dto';
@@ -30,6 +32,8 @@ import { SessionService, type SessionContext } from './session.service';
  */
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly passwords: PasswordService,
@@ -38,6 +42,7 @@ export class AuthService {
     private readonly lockout: LockoutService,
     private readonly mail: MailService,
     private readonly audit: AuditService,
+    private readonly rewards: RewardsService,
     private readonly clock: Clock
   ) {}
 
@@ -188,6 +193,14 @@ export class AuthService {
 
     await this.lockout.reset(dto.identifier);
     const session = await this.sessions.create(user.id, context);
+
+    // La série de connexions est un avantage non compétitif : une panne du
+    // registre ne doit jamais empêcher l'authentification.
+    try {
+      await this.rewards.awardStreak(user.id);
+    } catch (error) {
+      this.logger.warn(`Série de connexions non créditée pour ${user.id}: ${String(error)}`);
+    }
 
     await this.audit.record({
       actorId: user.id,

@@ -194,6 +194,11 @@ export class UsersService {
     preferredLanguage: string;
     preferences: Prisma.JsonValue;
   }): Promise<Profile> {
+    const badges = await this.prisma.userBadge.findMany({
+      where: { userId: user.id },
+      select: { badge: { select: { key: true } } },
+      orderBy: { awardedAt: 'asc' }
+    });
     return {
       id: user.id,
       pseudonym: user.pseudonym,
@@ -207,8 +212,7 @@ export class UsersService {
         user.preferences && typeof user.preferences === 'object' && !Array.isArray(user.preferences)
           ? (user.preferences as Record<string, unknown>)
           : {},
-      // Badges : alimentés par la Phase 10 ; contrat stable dès maintenant.
-      badges: []
+      badges: badges.map((row) => row.badge.key)
     };
   }
 

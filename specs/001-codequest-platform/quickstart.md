@@ -168,7 +168,7 @@ fork, allocation mémoire massive. **Attendu** : `status = rejected` pour les qu
    1 par 6 minutes hors KO.
 3. Faire tomber les PV à 0 → `health.ko` avec `koUntil` à +30 min ; toute soumission de boss renvoie
    `403 BOSS_KO` pendant le KO, avec le motif et l'échéance dans `details`.
-4. Restaurer les PV via `HealthService.restore` (potion ; la boutique US11 arrivera ensuite) →
+4. Restaurer les PV via `HealthService.restore` (potion achetée dans la boutique US11) →
    `health.restored`, `koUntil` remis à `null`.
 5. Vaincre les phases dans l'ordre → `boss.phase.cleared` puis `boss.defeated` ; une seconde
    soumission sur le même boss renvoie `409 BOSS_ALREADY_DEFEATED`.
@@ -181,7 +181,12 @@ fork, allocation mémoire massive. **Attendu** : `status = rejected` pour les qu
    **attendu** : `409` (clarification 5, FR-075).
 3. Rejouer la même requête d'achat avec la même `Idempotency-Key` → **attendu** : même réponse, aucun
    second débit.
-4. Vérifier `SUM(transactions.amount) = wallets.balance` via la tâche de contrôle (SC-021).
+4. Ouvrir `/shop` puis `/wallet` : la confirmation d'achat envoie l'`Idempotency-Key` et
+   l'historique affiche les montants signés ; `GET /me/badges` liste les badges acquis.
+5. Résoudre un défi puis un boss → **attendu** : des crédits `challenge_reward`, `record_bonus`,
+   `event_reward`, `boss_reward` ou `streak` (une fois par jour, plafonné à 7 Bits) apparaissent dans le registre (une seule fois par événement).
+6. Vérifier `SUM(transactions.amount) = wallets.balance` via la tâche de contrôle (SC-021) ; toute
+   modification directe d'une ligne `transactions` est refusée par les triggers PostgreSQL.
 
 ### S9 — Battle royale (SC-018, FR-097 → FR-101)
 

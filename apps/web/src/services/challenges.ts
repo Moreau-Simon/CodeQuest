@@ -28,7 +28,14 @@ export interface ChallengeDetail extends ChallengeSummary {
     sha256: string;
     cached: boolean;
   };
-  hints: Array<{ id: string; priceBits: number; purchased: boolean }>;
+  hints: Array<{
+    id: string;
+    order?: number;
+    priceBits: number;
+    purchased: boolean;
+    /** Présent uniquement après achat ; jamais de test caché ni de solution. */
+    content?: string;
+  }>;
   missingPrerequisites: string[];
 }
 

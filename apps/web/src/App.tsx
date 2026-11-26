@@ -25,6 +25,8 @@ import { ProfilePage } from './pages/settings/ProfilePage';
 import { TeamPage } from './pages/teams/TeamPage';
 import { TeamSettingsPage } from './pages/teams/TeamSettingsPage';
 import { SessionsPage } from './pages/settings/SessionsPage';
+import { ShopPage } from './pages/shop/ShopPage';
+import { WalletPage } from './pages/shop/WalletPage';
 
 function HomePage(): JSX.Element {
   return (
@@ -77,6 +79,8 @@ export function App(): JSX.Element {
 
         <Route element={<RequireAuth />}>
           <Route path="bosses" element={<BossPage />} />
+          <Route path="shop" element={<ShopPage />} />
+          <Route path="wallet" element={<WalletPage />} />
           <Route path="profile" element={<ProfilePage />} />
           <Route path="settings/profile" element={<ProfilePage />} />
           <Route path="settings/sessions" element={<SessionsPage />} />

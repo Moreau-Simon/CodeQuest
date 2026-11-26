@@ -34,7 +34,14 @@ export interface ChallengeDetail extends ChallengeSummary {
   /** Défi de décryptage : instance générée pour ce joueur (jamais la graine). */
   cipher: string | null;
   instance?: DecryptionInstanceView;
-  hints: Array<{ id: string; priceBits: number; purchased: boolean }>;
+  /** Le contenu n’est présent que pour un indice acheté par l’appelant (FR-042). */
+  hints: Array<{
+    id: string;
+    order: number;
+    priceBits: number;
+    purchased: boolean;
+    content?: string;
+  }>;
   missingPrerequisites: string[];
 }
 
@@ -184,9 +191,23 @@ export class ChallengesService {
       });
     }
 
-    const bestScores = userId
-      ? await this.bestScoresFor(userId, [challenge.id])
-      : new Map<string, number>();
+    const [bestScores, hints, purchases] = await Promise.all([
+      userId
+        ? this.bestScoresFor(userId, [challenge.id])
+        : Promise.resolve(new Map<string, number>()),
+      this.prisma.challengeHint.findMany({
+        where: { challengeId },
+        orderBy: { order: 'asc' },
+        select: { id: true, order: true, content: true, priceBits: true }
+      }),
+      userId
+        ? this.prisma.hintPurchase.findMany({
+            where: { userId, challengeId },
+            select: { hintId: true }
+          })
+        : Promise.resolve([])
+    ]);
+    const purchasedIds = new Set(purchases.map((purchase) => purchase.hintId));
 
     return {
       id: challenge.id,
@@ -205,7 +226,16 @@ export class ChallengesService {
       buggyCode: challenge.type === 'debugging' ? challenge.buggyCode : null,
       maxModifiedLines: challenge.maxModifiedLines,
       cipher: challenge.type === 'decryption' ? challenge.cipher : null,
-      hints: [],
+      hints: hints.map((hint) => {
+        const purchased = purchasedIds.has(hint.id);
+        return {
+          id: hint.id,
+          order: hint.order,
+          priceBits: hint.priceBits,
+          purchased,
+          ...(purchased ? { content: hint.content } : {})
+        };
+      }),
       missingPrerequisites: []
     };
   }

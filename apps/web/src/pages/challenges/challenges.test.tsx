@@ -169,3 +169,69 @@ describe('page de défi (T088)', () => {
     expect(screen.queryByText(/expected/i)).not.toBeInTheDocument();
   });
 });
+
+describe('indices progressifs (T196)', () => {
+  it('n’affiche le contenu qu’après achat et envoie une clé d’idempotence', async () => {
+    let firstPurchased = false;
+    const exploratory = {
+      ...challenge,
+      id: 'challenge-1',
+      title: 'Corriger la boucle',
+      type: 'debugging' as const,
+      hints: [
+        { id: 'hint-1', order: 1, priceBits: 10, purchased: firstPurchased },
+        { id: 'hint-2', order: 2, priceBits: 20, purchased: false }
+      ]
+    };
+    const fetchMock = vi.fn((url: string, init?: RequestInit) => {
+      if (url.includes('/shop/') && init?.method === 'POST') {
+        firstPurchased = true;
+        return Promise.resolve(
+          jsonResponse(
+            {
+              itemId: 'hint-1',
+              sku: 'hint-hint-1',
+              priceBits: 10,
+              balance: 490,
+              quantity: 1
+            },
+            201
+          )
+        );
+      }
+      if (url === '/api/v1/challenges/challenge-1') {
+        return Promise.resolve(
+          jsonResponse({
+            ...exploratory,
+            hints: [
+              {
+                id: 'hint-1',
+                order: 1,
+                priceBits: 10,
+                purchased: firstPurchased,
+                ...(firstPurchased ? { content: 'Indice : inspectez la borne supérieure.' } : {})
+              },
+              { id: 'hint-2', order: 2, priceBits: 20, purchased: false }
+            ]
+          })
+        );
+      }
+      return Promise.resolve(jsonResponse({ code: 'NOT_FOUND', message: 'introuvable' }, 404));
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    renderAt('/challenges/:challengeId', <ChallengePage />);
+
+    expect(await screen.findByRole('heading', { name: 'Corriger la boucle' })).toBeInTheDocument();
+    expect(screen.queryByText(/inspectez la borne/)).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Acheter l’indice 1' }));
+
+    expect(await screen.findByText(/inspectez la borne/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Acheter l’indice 2' })).toBeInTheDocument();
+    const purchase = fetchMock.mock.calls.find(
+      ([url, init]) => String(url).includes('/shop/') && init?.method === 'POST'
+    );
+    expect(new Headers(purchase?.[1]?.headers).get('Idempotency-Key')).toBeTruthy();
+  });
+});

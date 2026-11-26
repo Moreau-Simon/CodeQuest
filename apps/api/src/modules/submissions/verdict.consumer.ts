@@ -1,10 +1,17 @@
-import { Inject, Injectable, Logger, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  Logger,
+  type OnModuleDestroy,
+  type OnModuleInit
+} from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
 import { Worker, type ConnectionOptions } from 'bullmq';
 import { uuidv7 } from '../../common/uuid';
 import { PrismaService } from '../../prisma/prisma.service';
 import { BULLMQ_CONNECTION } from '../../redis/redis.constants';
 import { SubmissionsGateway } from '../../realtime/submissions.gateway';
+import { RewardsService } from '../economy/rewards.service';
 import { LeaderboardService } from '../leaderboards/leaderboard.service';
 import { AnalyticsService } from '../lessons/analytics.service';
 import { XpService } from '../lessons/xp.service';
@@ -35,6 +42,7 @@ export class VerdictConsumer implements OnModuleInit, OnModuleDestroy {
     private readonly leaderboards: LeaderboardService,
     private readonly xp: XpService,
     private readonly analytics: AnalyticsService,
+    private readonly rewards: RewardsService,
     private readonly moduleRef: ModuleRef
   ) {}
 
@@ -90,8 +98,7 @@ export class VerdictConsumer implements OnModuleInit, OnModuleDestroy {
     // A5 : les défis de débogage/décryptage sont scorés sur le temps écoulé
     // depuis le `start` explicite, avec pénalités d'indices et de lignes.
     const timed =
-      submission.challenge.type === 'debugging' ||
-      submission.challenge.type === 'decryption';
+      submission.challenge.type === 'debugging' || submission.challenge.type === 'decryption';
     const verdictReached = result.status === 'passed' || result.status === 'failed';
     const scored =
       verdictReached && testsTotal > 0 && (timed ? submission.attempt !== null : median !== null);
@@ -225,6 +232,27 @@ export class VerdictConsumer implements OnModuleInit, OnModuleDestroy {
           challengeId: submission.challengeId,
           score
         });
+        // FR-072 : une récompense par défi, sauf bonus de record personnel.
+        await this.rewards.awardChallenge({
+          userId: submission.userId,
+          challengeId: submission.challengeId,
+          submissionId: submission.id,
+          score,
+          isRecord: bestScoreChanged
+        });
+        if (submission.eventId) {
+          const event = await this.prisma.event.findUnique({
+            where: { id: submission.eventId },
+            select: { rewards: true }
+          });
+          if (event) {
+            await this.rewards.awardEvent({
+              eventId: submission.eventId,
+              userId: submission.userId,
+              rewards: event.rewards
+            });
+          }
+        }
       }
     } catch (error) {
       this.logger.error('Impossible d’enregistrer XP/analytics pour le verdict', error as Error);

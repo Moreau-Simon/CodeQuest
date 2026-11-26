@@ -13,6 +13,7 @@ import { AuthenticationGuard } from './modules/auth/authentication.guard';
 import { AuthModule } from './modules/auth/auth.module';
 import { BossesModule } from './modules/bosses/bosses.module';
 import { ChallengesModule } from './modules/challenges/challenges.module';
+import { EconomyModule } from './modules/economy/economy.module';
 import { EventsModule } from './modules/events/events.module';
 import { HealthModule } from './modules/health/health.module';
 import { LeaderboardsModule } from './modules/leaderboards/leaderboards.module';
@@ -43,6 +44,7 @@ import { StorageModule } from './storage/storage.module';
     UsersModule,
     ChallengesModule,
     EventsModule,
+    EconomyModule,
     BossesModule,
     SubmissionsModule,
     LeaderboardsModule,

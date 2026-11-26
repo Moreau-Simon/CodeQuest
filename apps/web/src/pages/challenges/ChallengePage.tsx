@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { t } from '../../i18n';
 import { useCollaborativeDoc } from '../../hooks/useCollaborativeDoc';
 import { useSubmissionVerdict } from '../../hooks/useSubmissionVerdict';
 import { ApiError } from '../../services/api-client';
 import { getChallenge, submitSolution, type Submission } from '../../services/challenges';
+import { purchaseItem } from '../../services/economy';
 import { CodeEditor } from '../../components/editor/CodeEditor';
 import { Button, Skeleton } from '../../components/ui';
 import { useSessionStore, selectIsAuthenticated } from '../../stores/session';
@@ -19,6 +20,9 @@ const DATE_FORMAT = new Intl.DateTimeFormat('fr-FR', {
   dateStyle: 'medium',
   timeStyle: 'short'
 });
+
+/** Les indices n'existent que sur les défis exploratoires (FR-075). */
+const EXPLORATORY = new Set(['debugging', 'decryption', 'steganography', 'qr_code']);
 
 function formatCpu(value: number | null): string {
   return value === null ? '—' : `${value} ms`;
@@ -119,6 +123,9 @@ export function ChallengePage(): JSX.Element {
   const [code, setCode] = useState(DEFAULT_CODE[user?.preferredLanguage ?? 'python']);
   const [submissionId, setSubmissionId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [hintError, setHintError] = useState<string | null>(null);
+  const [purchasedHint, setPurchasedHint] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (!detail.data) return;
@@ -149,6 +156,18 @@ export function ChallengePage(): JSX.Element {
     onError: (cause) => {
       setError(cause instanceof ApiError ? cause.message : t('common.error'));
     }
+  });
+
+  const buyHint = useMutation({
+    mutationFn: (hintId: string) =>
+      purchaseItem(`hint-${hintId}`, `${Date.now()}-${hintId}`, { teamId }),
+    onSuccess: async (_result, hintId) => {
+      setHintError(null);
+      setPurchasedHint(hintId);
+      await queryClient.invalidateQueries({ queryKey: ['challenge', challengeId] });
+      await queryClient.invalidateQueries({ queryKey: ['wallet'] });
+    },
+    onError: () => setHintError(t('challenge.hint.error'))
   });
 
   function changeLanguage(next: 'python' | 'javascript'): void {
@@ -214,6 +233,52 @@ export function ChallengePage(): JSX.Element {
           </div>
         </dl>
       </section>
+
+      {EXPLORATORY.has(challenge.type) && challenge.hints.length > 0 ? (
+        <section
+          aria-label={t('challenge.hintsTitle')}
+          className="flex flex-col gap-2 rounded-xl border border-line p-4"
+        >
+          <h2 className="text-xl font-semibold">{t('challenge.hintsTitle')}</h2>
+          {hintError ? (
+            <p role="alert" className="text-sm text-danger">
+              {hintError}
+            </p>
+          ) : null}
+          <ol className="flex flex-col gap-2">
+            {challenge.hints.map((hint) => {
+              const unlocked = hint.purchased || purchasedHint === hint.id;
+              return (
+                <li key={hint.id} className="rounded-lg bg-elevated p-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="font-semibold">
+                      {t('challenge.hint.buy', { order: hint.order ?? 0 })}
+                    </span>
+                    {unlocked ? (
+                      <span className="text-sm text-muted">{t('challenge.hint.purchased')}</span>
+                    ) : (
+                      <Button
+                        type="button"
+                        aria-label={t('challenge.hint.buy', { order: hint.order ?? 0 })}
+                        disabled={
+                          !authenticated ||
+                          !user?.emailVerified ||
+                          Boolean(teamId) ||
+                          buyHint.isPending
+                        }
+                        onClick={() => buyHint.mutate(hint.id)}
+                      >
+                        {t('challenge.hint.price', { price: hint.priceBits ?? 0 })}
+                      </Button>
+                    )}
+                  </div>
+                  {hint.content ? <p className="mt-2 text-sm">{hint.content}</p> : null}
+                </li>
+              );
+            })}
+          </ol>
+        </section>
+      ) : null}
 
       <div className="flex flex-wrap items-end gap-4">
         <label className="flex flex-col gap-1 text-sm">
