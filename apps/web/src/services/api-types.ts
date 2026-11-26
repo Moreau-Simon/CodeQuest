@@ -809,6 +809,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/assets/generate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Génère une instance d'asset (stéganographie ou QR code) */
+        post: operations["generateAsset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/assets/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Vérifie une réponse sans jamais révéler l'attendu */
+        post: operations["verifyAsset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/assets/{assetId}/content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Redirige vers l'URL signée de l'asset (15 minutes) */
+        get: operations["getAssetContent"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/challenges/{challengeId}/submissions": {
         parameters: {
             query?: never;
@@ -2441,6 +2492,56 @@ export interface components {
                 [key: string]: unknown;
             };
         };
+        AssetSubject: {
+            /** @enum {string} */
+            type: "player" | "team";
+            id: string;
+        };
+        AssetQrStyle: {
+            fragments?: number;
+            rotationDeg?: number;
+            noiseLevel?: number;
+            overlay?: boolean;
+        };
+        AssetGenerateRequest: {
+            challengeId: string;
+            challengeVersion: number;
+            /** @enum {string} */
+            kind: "steganography" | "qr_code";
+            subject: components["schemas"]["AssetSubject"];
+            payload?: string;
+            qrStyle?: components["schemas"]["AssetQrStyle"];
+        };
+        AssetVerifyRequest: components["schemas"]["AssetGenerateRequest"] & {
+            answer: {
+                text?: string;
+                assetId?: string;
+            };
+        };
+        AssetView: {
+            assetId: string;
+            seedFingerprint: string;
+            objectKey: string;
+            /** Format: uri-reference */
+            url: string;
+            sha256: string;
+            width: number;
+            height: number;
+            bytes: number;
+            /** Format: date-time */
+            generatedAt: string;
+            cached: boolean;
+        };
+        AssetVerification: {
+            correct: boolean;
+            partial: {
+                matchedFragments: number;
+                totalFragments: number;
+            };
+            /** @enum {string|null} */
+            reason: "payload_mismatch" | "incomplete_fragments" | null;
+            elapsedMs: number;
+        };
         TeamMember: {
             /** Format: uuid */
             userId: string;
@@ -2906,4 +3007,173 @@ export interface components {
     pathItems: never;
 }
 export type $defs = Record<string, never>;
-export type operations = Record<string, never>;
+export interface operations {
+    generateAsset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssetGenerateRequest"];
+            };
+        };
+        responses: {
+            /** @description Instance générée ou retrouvée */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssetView"];
+                };
+            };
+            /** @description Paramètres invalides */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Authentification requise */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Conflit de clé d'objet */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Payload impossible à encoder */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Service d'assets indisponible */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    verifyAsset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssetVerifyRequest"];
+            };
+        };
+        responses: {
+            /** @description Résultat de vérification */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssetVerification"];
+                };
+            };
+            /** @description Paramètres invalides */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Authentification requise */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Trop de vérifications */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Service d'assets indisponible */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getAssetContent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assetId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Redirection vers l'URL signée */
+            302: {
+                headers: {
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authentification requise */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Asset inconnu */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+}

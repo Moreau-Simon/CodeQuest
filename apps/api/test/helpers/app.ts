@@ -8,6 +8,8 @@ import type { TestInfrastructure } from './db';
 export interface CreateTestAppOptions {
   /** Remplace l'horloge serveur (scénarios temporels US9, FR-061/FR-062). */
   readonly clock?: import('../../src/common/clock').Clock;
+  /** Remplace l'appel au service d'assets (US13, sans démarrer FastAPI). */
+  readonly assetsFetch?: typeof globalThis.fetch;
 }
 
 export interface TestApp {
@@ -48,6 +50,10 @@ export async function createTestApp(
   if (options.clock) {
     const { Clock } = await import('../../src/common/clock');
     builder.overrideProvider(Clock).useValue(options.clock);
+  }
+  if (options.assetsFetch) {
+    const { ASSETS_FETCH } = await import('../../src/modules/challenges/instance.service');
+    builder.overrideProvider(ASSETS_FETCH).useValue(options.assetsFetch);
   }
   const moduleRef = await builder.compile();
   const app = moduleRef.createNestApplication<NestExpressApplication>({ logger: false });

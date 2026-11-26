@@ -500,19 +500,19 @@ et incorrecte (aucune fuite), résoudre un QR fragmenté.
 
 ### Tests for User Story 13 ⚠️
 
-- [ ] T206 [P] [US13] Tests pytest du service d'assets dans `services/assets/tests/test_generate.py` et `test_verify.py` (déterminisme, indépendance par sujet, non-fuite, bornes)
-- [ ] T207 [P] [US13] Tests d'intégration de l'atelier inverse dans `apps/api/test/integration/inverse-workshop.spec.ts` (le joueur cache un message, un autre le retrouve)
-- [ ] T208 [P] [US13] Tests de la génération QR altérée dans `services/assets/tests/test_qr.py` (fragments, rotation, bruit, surcapacité → `422`)
+- [x] T206 [P] [US13] Tests pytest du service d'assets dans `services/assets/tests/test_generate.py` et `test_verify.py` (déterminisme, indépendance par sujet, non-fuite, bornes)
+- [x] T207 [P] [US13] Tests d'intégration de l'atelier inverse dans `apps/api/test/integration/inverse-workshop.spec.ts` (le joueur cache un message, un autre le retrouve)
+- [x] T208 [P] [US13] Tests de la génération QR altérée dans `services/assets/tests/test_qr.py` (fragments, rotation, bruit, surcapacité → `422`)
 
 ### Implementation for User Story 13
 
-- [ ] T209 [US13] Implémenter le calcul de graine HMAC-SHA256 et le PRNG `xoshiro128**` dans `services/assets/app/generator/seed.py` (contrat §2)
-- [ ] T210 [US13] Implémenter `services/assets/app/generator/steganography.py` avec Pillow/`stegano` (LSB, capacités, refus des payloads trop longs)
-- [ ] T211 [US13] Implémenter `services/assets/app/generator/qr.py` : surcharge, fragmentation, rotation, bruit (FR-041, FR-044)
-- [ ] T212 [US13] Implémenter l'atelier inverse dans `services/assets/app/generator/inverse.py` : le joueur fournit un message, l'image est générée et vérifiable (FR-043)
-- [ ] T213 [US13] Implémenter `services/assets/app/routes/generate.py` et `verify.py` conformes à `contracts/assets-service.md`, avec cache par clé d'objet et SSE-S3 MinIO
-- [ ] T214 [US13] Implémenter `apps/api/src/modules/challenges/asset-proxy.controller.ts` : relais authentifié vers le service d'assets, URL signée courte, jamais de graine exposée
-- [ ] T215 [P] [US13] Créer `apps/web/src/pages/challenges/StegoChallengePage.tsx` (visionneuse d'image, zoom, soumission de texte, atelier inverse) et `QrChallengePage.tsx`
+- [x] T209 [US13] Implémenter le calcul de graine HMAC-SHA256 et le PRNG `xoshiro128**` dans `services/assets/app/generator/seed.py` (contrat §2)
+- [x] T210 [US13] Implémenter `services/assets/app/generator/steganography.py` avec Pillow/`stegano` (LSB, capacités, refus des payloads trop longs)
+- [x] T211 [US13] Implémenter `services/assets/app/generator/qr.py` : surcharge, fragmentation, rotation, bruit (FR-041, FR-044)
+- [x] T212 [US13] Implémenter l'atelier inverse dans `services/assets/app/generator/inverse.py` : le joueur fournit un message, l'image est générée et vérifiable (FR-043)
+- [x] T213 [US13] Implémenter `services/assets/app/routes/generate.py` et `verify.py` conformes à `contracts/assets-service.md`, avec cache par clé d'objet et SSE-S3 MinIO
+- [x] T214 [US13] Implémenter `apps/api/src/modules/challenges/asset-proxy.controller.ts` : relais authentifié vers le service d'assets, URL signée courte, jamais de graine exposée
+- [x] T215 [P] [US13] Créer `apps/web/src/pages/challenges/StegoChallengePage.tsx` (visionneuse d'image, zoom, soumission de texte, atelier inverse) et `QrChallengePage.tsx`
 
 **Checkpoint**: US13 livrable seule.
 

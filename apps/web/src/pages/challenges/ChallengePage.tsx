@@ -217,6 +217,22 @@ export function ChallengePage(): JSX.Element {
             {t('challenge.debugLink')}
           </Link>
         ) : null}
+        {challenge.type === 'steganography' ? (
+          <Link
+            to={`/challenges/${challengeId}/stego`}
+            className="mt-2 inline-block text-sm font-semibold"
+          >
+            {t('challenge.stegoLink')}
+          </Link>
+        ) : null}
+        {challenge.type === 'qr_code' ? (
+          <Link
+            to={`/challenges/${challengeId}/qr`}
+            className="mt-2 inline-block text-sm font-semibold"
+          >
+            {t('challenge.qrLink')}
+          </Link>
+        ) : null}
       </div>
 
       <section className="flex flex-col gap-2 rounded-xl bg-elevated p-4">

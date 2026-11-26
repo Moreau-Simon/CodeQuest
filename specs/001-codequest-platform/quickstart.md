@@ -31,11 +31,14 @@ pnpm --filter @codequest/api prisma migrate deploy
 pnpm --filter @codequest/api seed        # rôles, thèmes, cours, défis de référence, boutique
 ```
 
-> Pour les défis de décryptage (US7), renseigner `ASSETS_SEED_KEY` (hexadécimal de 64 caractères ou
-> chaix brut d'au moins 16 caractères) dans l'environnement de l'API **et** du service assets : les deux
-> doivent utiliser la même clé, sinon `GET /challenges/{id}` renvoie `503 ASSETS_SEED_MISMATCH`.
-> `ASSETS_SERVICE_URL` (défaut `http://localhost:8001`) désigne le service assets, jamais exposé au
-> navigateur. La clé ne doit jamais être journalisée ni renvoyée au client.
+> Pour les défis de décryptage (US7) et de stéganographie/QR (US13), renseigner `ASSETS_SEED_KEY`
+> (hexadécimal de 64 caractères ou chaîne brute d'au moins 16 caractères) dans l'environnement de
+> l'API **et** du service assets : les deux doivent utiliser la même clé, sinon les routes assets
+> renvoient `503 ASSETS_SEED_MISMATCH`. `ASSETS_SERVICE_URL` (défaut `http://localhost:8001` en local,
+> `http://assets:8000` dans Docker) désigne le service assets, jamais exposé au navigateur. Les
+> navigateurs consomment uniquement le relais authentifié `/api/v1/assets/...` : URL courte, signée
+> 15 min côté serveur, sans graine ni message attendu. La clé ne doit jamais être journalisée ni
+> renvoyée au client.
 
 Services attendus :
 
