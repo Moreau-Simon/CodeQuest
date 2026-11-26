@@ -902,7 +902,11 @@ paths:
   /lore/chapters:
     get:
       tags: [Lore]
-      summary: Chapitres de lore débloqués et état de lecture
+      summary: Chapitres de lore débloqués et état de lecture (lecture publique FR-003)
+      security: []
+      description: >
+        Les chapitres verrouillés sont listés sans leur contenu. Le contenu
+        n'est joint que pour un compte connecté au niveau requis.
       responses:
         '200':
           description: Chapitres
@@ -911,6 +915,23 @@ paths:
               schema:
                 type: array
                 items: { $ref: '#/components/schemas/LoreChapter' }
+
+  /lore/chapters/{chapterId}/read:
+    post:
+      tags: [Lore]
+      summary: Marquer un chapitre débloqué comme lu
+      parameters:
+        - { name: chapterId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: Chapitre lu (la date initiale est conservée en cas de rejeu)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LoreChapter' }
+        '401': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
 
   /channels/{channelId}/messages:
     get:
@@ -1444,8 +1465,14 @@ components:
         slug: { type: string }
         title: { type: string }
         requiredLevel: { type: integer }
+        order: { type: integer }
+        audioKey: { type: string, nullable: true }
         unlocked: { type: boolean }
         read: { type: boolean }
+        readAt: { type: string, format: date-time, nullable: true }
+        content:
+          type: string
+          description: Markdown du chapitre, absent tant que le chapitre est verrouillé
 
     ChatMessage:
       type: object

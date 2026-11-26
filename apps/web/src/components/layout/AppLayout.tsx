@@ -8,6 +8,7 @@ import { Button } from '../ui';
 const NAV_ITEMS = [
   { to: '/challenges', key: 'nav.challenges' },
   { to: '/lessons', key: 'nav.lessons' },
+  { to: '/lore', key: 'nav.lore' },
   { to: '/leaderboards', key: 'nav.leaderboards' },
   { to: '/teams', key: 'nav.teams' },
   { to: '/events', key: 'nav.events' },
@@ -23,6 +24,7 @@ const NAV_ITEMS = [
 export function AppLayout(): JSX.Element {
   const authenticated = useSessionStore(selectIsAuthenticated);
   const pseudonym = useSessionStore(selectPseudonym);
+  const reducedMotion = useSessionStore((state) => state.user?.preferences?.reducedMotion === true);
   const clearSession = useSessionStore((state) => state.clearSession);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -37,7 +39,10 @@ export function AppLayout(): JSX.Element {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-surface">
+    <div
+      className="flex min-h-screen flex-col bg-surface"
+      data-motion={reducedMotion ? 'reduced' : undefined}
+    >
       <a
         href="#contenu"
         className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-elevated focus:px-4 focus:py-2"

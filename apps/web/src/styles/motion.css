@@ -1,0 +1,27 @@
+/* Animations décoratives et préférence utilisateur (US12, FR-082). */
+/* La préférence système est déjà couverte dans tokens.css. */
+
+@keyframes cq-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+[data-cq-animated] {
+  animation: cq-fade-in 600ms ease-out both;
+}
+
+/* Préférence « réduire les animations » enregistrée dans le profil :
+   l'information reste intégralement disponible en texte (FR-081/FR-082). */
+[data-motion='reduced'] *,
+[data-motion='reduced'] *::before,
+[data-motion='reduced'] *::after {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
+}

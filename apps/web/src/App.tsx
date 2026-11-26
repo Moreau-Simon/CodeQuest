@@ -19,6 +19,8 @@ import { EventLeaderboardPage } from './pages/events/EventLeaderboardPage';
 import { EventsPage } from './pages/events/EventsPage';
 import { BossPage } from './pages/bosses/BossPage';
 import { LeaderboardPage } from './pages/leaderboards/LeaderboardPage';
+import { LoreChapterPage } from './pages/lore/LoreChapterPage';
+import { LorePage } from './pages/lore/LorePage';
 import { LessonPage } from './pages/lessons/LessonPage';
 import { LessonsPage } from './pages/lessons/LessonsPage';
 import { ProfilePage } from './pages/settings/ProfilePage';
@@ -70,6 +72,8 @@ export function App(): JSX.Element {
         <Route path="challenges/:challengeId/debug" element={<DebugChallengePage />} />
         <Route path="lessons" element={<LessonsPage />} />
         <Route path="lessons/:lessonId" element={<LessonPage />} />
+        <Route path="lore" element={<LorePage />} />
+        <Route path="lore/:chapterId" element={<LoreChapterPage />} />
         <Route path="leaderboards" element={<LeaderboardPage />} />
         <Route path="teams" element={<TeamPage />} />
         <Route path="teams/:teamId" element={<TeamSettingsPage />} />

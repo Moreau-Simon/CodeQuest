@@ -2,12 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { AuditService } from '../audit/audit.service';
 import { uuidv7 } from '../../common/uuid';
 import { PrismaService } from '../../prisma/prisma.service';
-import {
-  DEFAULT_XP_CURVE,
-  levelForXp,
-  normalizeXpCurve,
-  type XpCurveConfig
-} from './xp-curve';
+import { DEFAULT_XP_CURVE, levelForXp, normalizeXpCurve, type XpCurveConfig } from './xp-curve';
 
 export const XP_CURVE_SETTING_KEY = 'xp.curve';
 export const XP_AWARD_ACTION = 'xp.awarded';
@@ -131,7 +126,20 @@ export class XpService {
       select: { xp: true }
     });
     const level = levelForXp(user.xp, curve);
-    await this.prisma.user.update({ where: { id: userId }, data: { level } });
+    await this.prisma.runInTransaction(async (tx) => {
+      await tx.user.update({ where: { id: userId }, data: { level } });
+      // FR-054 : un recalibrage de la courbe peut débloquer de nouveaux chapitres.
+      const chapters = await tx.loreChapter.findMany({
+        where: { requiredLevel: { lte: level } },
+        select: { id: true }
+      });
+      if (chapters.length > 0) {
+        await tx.loreProgress.createMany({
+          data: chapters.map((chapter) => ({ userId, chapterId: chapter.id })),
+          skipDuplicates: true
+        });
+      }
+    });
     await this.audit.record({
       actorId: userId,
       action: 'xp.level.recomputed',

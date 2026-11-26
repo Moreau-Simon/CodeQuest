@@ -238,6 +238,18 @@ pnpm security:zap       # OWASP ZAP en mode baseline
 **Attendu** : zéro violation critique d'accessibilité, parcours complets sur les quatre navigateurs et
 les trois formats d'écran, aucune alerte ZAP de sévérité haute.
 
+**Ambiance et animations (US12, FR-079 → FR-082)** :
+
+1. Ouvrir `/lore` : aucun `AudioContext` ni lecture média ne doit être créé avant une interaction
+   explicite ; le statut « Ambiance désactivée » reste visible en texte.
+2. Activer l'ambiance via le bouton dédié : le statut passe à « Ambiance activée » et le chapitre
+   débloqué affiche son contenu en texte ; un échec ou un déblocage reste perceptible sans son.
+3. Cocher « Réduire les animations » dans `/settings/profile` (ou activer
+   `prefers-reduced-motion` côté système) : les animations disparaissent, les valeurs et les
+   statuts restent intégralement lisibles.
+4. Ajuster les volumes général/musique/effets/voix ou couper le son global dans le profil : la
+   préférence est persistée via `PATCH /me` et reprise après rechargement.
+
 ### S14 — Restauration et intégrité (SC-014, SC-021)
 
 ```bash

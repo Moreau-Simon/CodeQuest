@@ -2114,7 +2114,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Chapitres de lore débloqués et état de lecture */
+        /**
+         * Chapitres de lore débloqués et état de lecture (lecture publique FR-003)
+         * @description Les chapitres verrouillés sont listés sans leur contenu. Le contenu n'est joint que pour un compte connecté au niveau requis.
+         */
         get: {
             parameters: {
                 query?: never;
@@ -2137,6 +2140,48 @@ export interface paths {
         };
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/lore/chapters/{chapterId}/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Marquer un chapitre débloqué comme lu */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    chapterId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Chapitre lu (la date initiale est conservée en cas de rejeu) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["LoreChapter"];
+                    };
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+                409: components["responses"]["Error"];
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -2786,8 +2831,14 @@ export interface components {
             slug?: string;
             title?: string;
             requiredLevel?: number;
+            order?: number;
+            audioKey?: string | null;
             unlocked?: boolean;
             read?: boolean;
+            /** Format: date-time */
+            readAt?: string | null;
+            /** @description Markdown du chapitre, absent tant que le chapitre est verrouillé */
+            content?: string;
         };
         ChatMessage: {
             /** Format: uuid */
