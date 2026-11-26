@@ -333,6 +333,133 @@ paths:
         '403': { description: Compte non confirmé ou prérequis non satisfaits }
         '409': { description: Une seule tentative autorisée (ATTEMPT_ALREADY_STARTED) }
 
+  /assets/generate:
+    post:
+      tags: [Assets]
+      operationId: generateAsset
+      summary: Génère une instance d'asset (stéganographie ou QR code)
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssetGenerateRequest'
+      responses:
+        '201':
+          description: Instance générée ou retrouvée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetView'
+        '400':
+          description: Paramètres invalides
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Authentification requise
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Conflit de clé d'objet
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: Payload impossible à encoder
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Service d'assets indisponible
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /assets/verify:
+    post:
+      tags: [Assets]
+      operationId: verifyAsset
+      summary: Vérifie une réponse sans jamais révéler l'attendu
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssetVerifyRequest'
+      responses:
+        '200':
+          description: Résultat de vérification
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetVerification'
+        '400':
+          description: Paramètres invalides
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Authentification requise
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Trop de vérifications
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Service d'assets indisponible
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /assets/{assetId}/content:
+    get:
+      tags: [Assets]
+      operationId: getAssetContent
+      summary: Redirige vers l'URL signée de l'asset (15 minutes)
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: assetId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '302':
+          description: Redirection vers l'URL signée
+          headers:
+            Location:
+              schema:
+                type: string
+                format: uri
+        '401':
+          description: Authentification requise
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Asset inconnu
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /challenges/{challengeId}/submissions:
     post:
       tags: [Challenges]
@@ -1028,6 +1155,73 @@ components:
         code: { type: string, example: CHALLENGE_LOCKED }
         message: { type: string }
         details: { type: object, additionalProperties: true }
+
+    AssetSubject:
+      type: object
+      required: [type, id]
+      properties:
+        type: { type: string, enum: [player, team] }
+        id: { type: string }
+
+    AssetQrStyle:
+      type: object
+      properties:
+        fragments: { type: integer, minimum: 1, maximum: 9 }
+        rotationDeg: { type: integer, minimum: -180, maximum: 180 }
+        noiseLevel: { type: number, minimum: 0, maximum: 1 }
+        overlay: { type: boolean }
+
+    AssetGenerateRequest:
+      type: object
+      required: [challengeId, challengeVersion, kind, subject]
+      properties:
+        challengeId: { type: string }
+        challengeVersion: { type: integer }
+        kind: { type: string, enum: [steganography, qr_code] }
+        subject: { $ref: '#/components/schemas/AssetSubject' }
+        payload: { type: string, maxLength: 2048 }
+        qrStyle: { $ref: '#/components/schemas/AssetQrStyle' }
+
+    AssetVerifyRequest:
+      allOf:
+        - $ref: '#/components/schemas/AssetGenerateRequest'
+        - type: object
+          required: [answer]
+          properties:
+            answer:
+              type: object
+              properties:
+                text: { type: string }
+                assetId: { type: string }
+
+    AssetView:
+      type: object
+      required: [assetId, seedFingerprint, objectKey, url, sha256, width, height, bytes, generatedAt, cached]
+      properties:
+        assetId: { type: string }
+        seedFingerprint: { type: string }
+        objectKey: { type: string }
+        url: { type: string, format: uri-reference }
+        sha256: { type: string }
+        width: { type: integer, minimum: 600, maximum: 2000 }
+        height: { type: integer, minimum: 600, maximum: 2000 }
+        bytes: { type: integer, minimum: 0 }
+        generatedAt: { type: string, format: date-time }
+        cached: { type: boolean }
+
+    AssetVerification:
+      type: object
+      required: [correct, partial, reason, elapsedMs]
+      properties:
+        correct: { type: boolean }
+        partial:
+          type: object
+          required: [matchedFragments, totalFragments]
+          properties:
+            matchedFragments: { type: integer, minimum: 0 }
+            totalFragments: { type: integer, minimum: 1 }
+        reason: { type: string, nullable: true, enum: [payload_mismatch, incomplete_fragments, null] }
+        elapsedMs: { type: integer, minimum: 0 }
 
     TeamMember:
       type: object

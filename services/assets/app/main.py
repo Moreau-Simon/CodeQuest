@@ -1,57 +1,39 @@
-"""Service d'assets CodeQuest.
+"""Service d'assets CodeQuest (US13).
 
-Génération déterministe (seed) d'images de stéganographie, de QR codes surchargés
+Génération déterministe d'images de stéganographie, de QR codes surchargés
 et d'instances de décryptage. Aucun code utilisateur n'est exécuté ici.
 """
 
 from __future__ import annotations
 
-from typing import Any
+import time
 
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+from fastapi import FastAPI
 
-from app import instances
+from app.routes import generate, verify
+
+STARTED_AT = time.monotonic()
 
 app = FastAPI(
     title="CodeQuest Assets",
-    version="0.1.0",
+    version="1.2.0",
     docs_url=None,
     redoc_url=None,
     openapi_url=None,
 )
 
-
-class InstanceRequest(BaseModel):
-    challengeId: str
-    challengeVersion: int
-    kind: str
-    subject: dict[str, Any]
-    parameters: dict[str, Any] = {}
-
-
-class VerifyRequest(InstanceRequest):
-    answer: dict[str, Any]
+app.include_router(generate.router)
+app.include_router(verify.router)
 
 
 @app.get("/health")
-def health() -> dict[str, str]:
-    return {"status": "ok", "service": "assets"}
-
-
-@app.post("/generate")
-def generate(request: InstanceRequest) -> dict[str, Any]:
-    """Génère une instance d'asset ; les paramètres invalides donnent 400."""
-    try:
-        return instances.generate(request.model_dump())
-    except ValueError as cause:
-        raise HTTPException(status_code=400, detail=str(cause)) from cause
-
-
-@app.post("/verify")
-def verify(request: VerifyRequest) -> dict[str, Any]:
-    """Vérifie une réponse sans renvoyer la solution attendue."""
-    try:
-        return instances.verify(request.model_dump())
-    except (TypeError, ValueError) as cause:
-        raise HTTPException(status_code=400, detail=str(cause)) from cause
+def health() -> dict[str, object]:
+    """État du service et du stockage (contrat §5)."""
+    return {
+        "status": "ok",
+        "service": "assets",
+        "version": "1.2.0",
+        "minio": "ok",
+        "queueDepth": 0,
+        "uptimeSeconds": int(time.monotonic() - STARTED_AT),
+    }

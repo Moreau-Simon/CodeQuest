@@ -14,6 +14,8 @@ import { VerifyEmailPage } from './pages/auth/VerifyEmailPage';
 import { ChallengePage } from './pages/challenges/ChallengePage';
 import { CatalogPage } from './pages/challenges/CatalogPage';
 import { DebugChallengePage } from './pages/challenges/DebugChallengePage';
+import { QrChallengePage } from './pages/challenges/QrChallengePage';
+import { StegoChallengePage } from './pages/challenges/StegoChallengePage';
 import { EventDetailPage } from './pages/events/EventDetailPage';
 import { EventLeaderboardPage } from './pages/events/EventLeaderboardPage';
 import { EventsPage } from './pages/events/EventsPage';
@@ -70,6 +72,8 @@ export function App(): JSX.Element {
         <Route path="challenges" element={<CatalogPage />} />
         <Route path="challenges/:challengeId" element={<ChallengePage />} />
         <Route path="challenges/:challengeId/debug" element={<DebugChallengePage />} />
+        <Route path="challenges/:challengeId/stego" element={<StegoChallengePage />} />
+        <Route path="challenges/:challengeId/qr" element={<QrChallengePage />} />
         <Route path="lessons" element={<LessonsPage />} />
         <Route path="lessons/:lessonId" element={<LessonPage />} />
         <Route path="lore" element={<LorePage />} />
