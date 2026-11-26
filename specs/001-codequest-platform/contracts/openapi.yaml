@@ -246,6 +246,40 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/Wallet' }
 
+  /me/badges:
+    get:
+      tags: [Economy]
+      summary: Clés des badges attribués (FR-077)
+      responses:
+        '200':
+          description: Badges du joueur
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [keys]
+                properties:
+                  keys: { type: array, items: { type: string } }
+
+  /me/inventory/{itemId}/equip:
+    post:
+      tags: [Economy]
+      summary: Équiper un objet cosmétique (sans effet sur le score)
+      parameters:
+        - { name: itemId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: Objet équipé
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [itemId, equipped]
+                properties:
+                  itemId: { type: string, format: uuid }
+                  equipped: { type: boolean }
+        '404': { $ref: '#/components/responses/Error' }
+
   /challenges:
     get:
       tags: [Challenges]
@@ -840,14 +874,30 @@ paths:
   /shop/{itemId}/purchase:
     post:
       tags: [Economy]
-      summary: Acheter un objet
+      summary: Acheter un objet (idempotent)
       parameters:
         - { name: itemId, in: path, required: true, schema: { type: string, format: uuid } }
         - { name: Idempotency-Key, in: header, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                teamId:
+                  type: string
+                  format: uuid
+                  description: Interdit pour les indices (FR-074, solo uniquement)
       responses:
-        '201': { description: Achat enregistré une seule fois }
-        '402': { description: Solde insuffisant }
-        '409': { description: Achat interdit (indice en event ou sur boss) }
+        '201':
+          description: Achat enregistré une seule fois ; le rejeu renvoie la même réponse
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PurchaseResult' }
+        '400': { $ref: '#/components/responses/Error' }
+        '402': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
 
   /lore/chapters:
     get:
@@ -1072,7 +1122,18 @@ components:
               id: { type: string, format: uuid }
               amount: { type: integer }
               reason: { type: string }
+              balanceAfter: { type: integer }
               createdAt: { type: string, format: date-time }
+
+    PurchaseResult:
+      type: object
+      required: [itemId, sku, priceBits, balance, quantity]
+      properties:
+        itemId: { type: string, format: uuid }
+        sku: { type: string }
+        priceBits: { type: integer, minimum: 0 }
+        balance: { type: integer, minimum: 0 }
+        quantity: { type: integer, minimum: 0 }
 
     ChallengeType:
       type: string
@@ -1118,8 +1179,12 @@ components:
                 type: object
                 properties:
                   id: { type: string, format: uuid }
+                  order: { type: integer }
                   priceBits: { type: integer }
                   purchased: { type: boolean }
+                  content:
+                    type: string
+                    description: Présent uniquement après achat, jamais avant (FR-042)
             missingPrerequisites:
               type: array
               items: { type: string }
@@ -1368,6 +1433,9 @@ components:
           enum: [hint, potion, avatar, title, editor_theme, early_access]
         priceBits: { type: integer, minimum: 0 }
         available: { type: boolean }
+        metadata:
+          type: object
+          description: 'Ex. {"hintId": "..."} ou {"hp_restore": 50}'
 
     LoreChapter:
       type: object

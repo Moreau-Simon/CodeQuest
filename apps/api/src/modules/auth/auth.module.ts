@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { MailModule } from '../../mail/mail.module';
+import { EconomyModule } from '../economy/economy.module';
 import { AuthenticationGuard } from './authentication.guard';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
@@ -9,7 +10,7 @@ import { PasswordService } from './password.service';
 import { SessionService } from './session.service';
 
 @Module({
-  imports: [MailModule],
+  imports: [MailModule, EconomyModule],
   controllers: [AuthController],
   providers: [
     AuthService,

@@ -10,6 +10,7 @@ import { uuidv7 } from '../../common/uuid';
 import { PrismaService } from '../../prisma/prisma.service';
 import { RealtimeGateway } from '../../realtime/realtime.gateway';
 import { AuditService } from '../audit/audit.service';
+import { RewardsService } from '../economy/rewards.service';
 import { SubmissionsService } from '../submissions/submissions.service';
 import { BossGuard } from './boss.guard';
 import { HealthService, type HealthSubjectType } from './health.service';
@@ -84,6 +85,7 @@ export class BossService {
     private readonly teamHealth: TeamHealthService,
     private readonly gateway: RealtimeGateway,
     private readonly audit: AuditService,
+    private readonly rewards: RewardsService,
     private readonly clock: Clock
   ) {}
 
@@ -228,10 +230,7 @@ export class BossService {
 
     const phaseCount = await this.prisma.bossPhase.count({ where: { bossId: phase.bossId } });
     const damage = Math.max(0, Math.round((score * (rule.per_100_score ?? 5)) / 100));
-    const rawRemaining = Math.max(
-      0,
-      (engagement.bossHpRemaining ?? 0) - damage
-    );
+    const rawRemaining = Math.max(0, (engagement.bossHpRemaining ?? 0) - damage);
     const defeated = rawRemaining === 0 || phase.order >= phaseCount;
     const bossHpRemaining = defeated ? 0 : rawRemaining;
 
@@ -261,6 +260,24 @@ export class BossService {
         targetType: 'boss',
         targetId: phase.bossId,
         metadata: { subjectType, subjectId, phaseOrder: phase.order }
+      });
+
+      // FR-072 : les Bits annoncés dans l'événement sont crédités une seule
+      // fois ; en raid, chaque membre actif reçoit la récompense.
+      const members =
+        subjectType === 'team'
+          ? await this.prisma.teamMember.findMany({
+              where: { teamId: subjectId, leftAt: null },
+              select: { userId: true }
+            })
+          : [];
+      await this.rewards.awardBoss({
+        bossId: phase.bossId,
+        subjectType,
+        subjectId,
+        recipientIds:
+          subjectType === 'player' ? [subjectId] : members.map((member) => member.userId),
+        rewards: phase.boss.rewards
       });
     }
   }

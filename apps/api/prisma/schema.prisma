@@ -42,6 +42,37 @@ enum TeamMemberRole {
   @@map("team_member_role")
 }
 
+/// Raisons des mouvements de la monnaie virtuelle (FR-072, §7 data-model).
+enum TransactionReason {
+  challenge_reward
+  record_bonus
+  event_reward
+  boss_reward
+  badge
+  achievement
+  streak
+  hint_purchase
+  potion_purchase
+  cosmetic_purchase
+  admin_adjustment
+  refund
+
+  @@map("transaction_reason")
+}
+
+/// Nature d'un objet de boutique : seuls les objets non compétitifs sont
+/// autorisés (FR-074).
+enum ShopItemKind {
+  hint
+  potion
+  avatar
+  title
+  editor_theme
+  early_access
+
+  @@map("shop_item_kind")
+}
+
 // ---------------------------------------------------------------------------
 // 1. Identité et accès
 // ---------------------------------------------------------------------------
@@ -83,6 +114,11 @@ model User {
   contributionEvents  ContributionEvent[]
   contributionScores  ContributionScore[]
   createdEvents       Event[]                  @relation("EventCreatedBy")
+  wallet              Wallet?
+  inventory           Inventory[]
+  hintPurchases       HintPurchase[]
+  badges              UserBadge[]
+  createdTransactions Transaction[]            @relation("TransactionCreatedBy")
 
   @@map("users")
 }
@@ -379,6 +415,8 @@ model Challenge {
   bossPhases              BossPhase[]
   prerequisites ChallengePrerequisite[] @relation("ChallengePrerequisites")
   requiredFor   ChallengePrerequisite[] @relation("ChallengePrerequisiteRequirements")
+  hints         ChallengeHint[]
+  hintPurchases HintPurchase[]
 
   @@index([themeId])
   @@index([status])
@@ -926,4 +964,143 @@ model BossEngagement {
   @@unique([bossId, subjectType, subjectId])
   @@index([subjectType, subjectId])
   @@map("boss_engagements")
+}
+
+// ---------------------------------------------------------------------------
+// Économie (US11, FR-072 à FR-077)
+// ---------------------------------------------------------------------------
+
+/// Portefeuille d'un joueur. Le solde est un cache transactionnel du registre :
+/// sa source de vérité reste `SUM(transactions.amount)` (SC-021).
+model Wallet {
+  id        String   @id @db.Uuid
+  userId    String   @unique @map("user_id") @db.Uuid
+  balance   Int      @default(0)
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+
+  @@map("wallets")
+}
+
+/// Registre append-only : UPDATE et DELETE sont refusés par trigger SQL.
+model Transaction {
+  id             String            @id @db.Uuid
+  walletId       String            @map("wallet_id") @db.Uuid
+  amount         Int
+  reason         TransactionReason
+  referenceType  String?           @map("reference_type")
+  referenceId    String?           @map("reference_id") @db.Uuid
+  idempotencyKey String            @unique @map("idempotency_key")
+  balanceAfter   Int               @map("balance_after")
+  createdBy      String?           @map("created_by") @db.Uuid
+  createdAt      DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  wallet        Wallet          @relation(fields: [walletId], references: [id], onDelete: Restrict)
+  creator       User?           @relation("TransactionCreatedBy", fields: [createdBy], references: [id], onDelete: SetNull)
+  hintPurchases HintPurchase[]
+
+  @@index([walletId, createdAt])
+  @@map("transactions")
+}
+
+/// Catalogue de la boutique. `metadata` porte par exemple `{ "hint_id": ... }`
+/// ou `{ "hp_restore": 50 }` (§7 data-model).
+model ShopItem {
+  id            String        @id @db.Uuid
+  sku           String        @unique
+  name          String
+  kind          ShopItemKind
+  priceBits     Int           @map("price_bits")
+  isActive      Boolean       @default(true) @map("is_active")
+  metadata      Json          @default("{}")
+  availableFrom DateTime?     @map("available_from") @db.Timestamptz(6)
+  availableUntil DateTime?    @map("available_until") @db.Timestamptz(6)
+  createdAt     DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  inventory Inventory[]
+
+  @@index([kind, isActive])
+  @@map("shop_items")
+}
+
+/// Objets possédés par un joueur (quantité et état d'équipement).
+model Inventory {
+  id         String   @id @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  shopItemId String   @map("shop_item_id") @db.Uuid
+  quantity   Int      @default(1)
+  equipped   Boolean  @default(false)
+  acquiredAt DateTime @default(now()) @map("acquired_at") @db.Timestamptz(6)
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  shopItem ShopItem @relation(fields: [shopItemId], references: [id], onDelete: Restrict)
+
+  @@unique([userId, shopItemId])
+  @@index([userId])
+  @@map("inventory")
+}
+
+/// Indice rédigé par l'auteur, jamais dérivé des tests chiffrés (FR-042).
+model ChallengeHint {
+  id          String @id @db.Uuid
+  challengeId String @map("challenge_id") @db.Uuid
+  order       Int
+  content     String
+  priceBits   Int    @map("price_bits")
+
+  challenge Challenge       @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  purchases HintPurchase[]
+
+  @@unique([challengeId, order])
+  @@index([challengeId, order])
+  @@map("challenge_hints")
+}
+
+/// Achat d'un indice : unicité `(user_id, hint_id)` et transaction liée.
+model HintPurchase {
+  id            String   @id @db.Uuid
+  userId        String   @map("user_id") @db.Uuid
+  challengeId   String   @map("challenge_id") @db.Uuid
+  hintId        String   @map("hint_id") @db.Uuid
+  transactionId String   @map("transaction_id") @db.Uuid
+  purchasedAt   DateTime @default(now()) @map("purchased_at") @db.Timestamptz(6)
+
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  challenge   Challenge     @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  hint        ChallengeHint @relation(fields: [hintId], references: [id], onDelete: Restrict)
+  transaction Transaction   @relation(fields: [transactionId], references: [id], onDelete: Restrict)
+
+  @@unique([userId, hintId])
+  @@index([userId, challengeId])
+  @@map("hint_purchases")
+}
+
+/// Succès configurés par clé, avec critères évalués côté serveur (FR-077).
+model Badge {
+  id          String   @id @db.Uuid
+  key         String   @unique
+  name        String
+  description String
+  criteria    Json     @default("{}")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  users UserBadge[]
+
+  @@map("badges")
+}
+
+/// Attribution unique d'un badge à un joueur.
+model UserBadge {
+  userId    String   @map("user_id") @db.Uuid
+  badgeId   String   @map("badge_id") @db.Uuid
+  awardedAt DateTime @default(now()) @map("awarded_at") @db.Timestamptz(6)
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge Badge @relation(fields: [badgeId], references: [id], onDelete: Restrict)
+
+  @@id([userId, badgeId])
+  @@index([badgeId])
+  @@map("user_badges")
 }

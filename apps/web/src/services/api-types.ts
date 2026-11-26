@@ -585,6 +585,87 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/me/badges": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Clés des badges attribués (FR-077) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Badges du joueur */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            keys: string[];
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/inventory/{itemId}/equip": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Équiper un objet cosmétique (sans effet sur le score) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    itemId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Objet équipé */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            itemId: string;
+                            equipped: boolean;
+                        };
+                    };
+                };
+                404: components["responses"]["Error"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/challenges": {
         parameters: {
             query?: never;
@@ -1982,7 +2063,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Acheter un objet */
+        /** Acheter un objet (idempotent) */
         post: {
             parameters: {
                 query?: never;
@@ -1994,29 +2075,30 @@ export interface paths {
                 };
                 cookie?: never;
             };
-            requestBody?: never;
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /**
+                         * Format: uuid
+                         * @description Interdit pour les indices (FR-074, solo uniquement)
+                         */
+                        teamId?: string;
+                    };
+                };
+            };
             responses: {
-                /** @description Achat enregistré une seule fois */
+                /** @description Achat enregistré une seule fois ; le rejeu renvoie la même réponse */
                 201: {
                     headers: {
                         [name: string]: unknown;
                     };
-                    content?: never;
-                };
-                /** @description Solde insuffisant */
-                402: {
-                    headers: {
-                        [name: string]: unknown;
+                    content: {
+                        "application/json": components["schemas"]["PurchaseResult"];
                     };
-                    content?: never;
                 };
-                /** @description Achat interdit (indice en event ou sur boss) */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
+                400: components["responses"]["Error"];
+                402: components["responses"]["Error"];
+                409: components["responses"]["Error"];
             };
         };
         delete?: never;
@@ -2428,9 +2510,18 @@ export interface components {
                 id?: string;
                 amount?: number;
                 reason?: string;
+                balanceAfter?: number;
                 /** Format: date-time */
                 createdAt?: string;
             }[];
+        };
+        PurchaseResult: {
+            /** Format: uuid */
+            itemId: string;
+            sku: string;
+            priceBits: number;
+            balance: number;
+            quantity: number;
         };
         /** @enum {string} */
         ChallengeType: "sorting" | "debugging" | "decryption" | "steganography" | "qr_code";
@@ -2461,8 +2552,11 @@ export interface components {
             hints?: {
                 /** Format: uuid */
                 id?: string;
+                order?: number;
                 priceBits?: number;
                 purchased?: boolean;
+                /** @description Présent uniquement après achat, jamais avant (FR-042) */
+                content?: string;
             }[];
             missingPrerequisites?: string[];
         };
@@ -2683,6 +2777,8 @@ export interface components {
             kind?: "hint" | "potion" | "avatar" | "title" | "editor_theme" | "early_access";
             priceBits?: number;
             available?: boolean;
+            /** @description Ex. {"hintId": "..."} ou {"hp_restore": 50} */
+            metadata?: Record<string, never>;
         };
         LoreChapter: {
             /** Format: uuid */

@@ -443,21 +443,21 @@ potion (PV restaurés), vaincre le boss (une seule fois).
 
 ### Tests for User Story 11 ⚠️
 
-- [ ] T185 [P] [US11] Tests unitaires du registre dans `apps/api/test/unit/ledger.spec.ts` (`balance = SUM(amount)`, montants signés, idempotence)
-- [ ] T186 [P] [US11] Tests d'intégration achats dans `apps/api/test/integration/shop.spec.ts` (solde insuffisant → `402`, achat interdit → `409`, double envoi → un seul débit)
-- [ ] T187 [P] [US11] Tests des règles d'indices dans `apps/api/test/integration/hints.spec.ts` (sorting interdit, event ouvert interdit, boss interdit, ne révèle jamais tests/solution)
+- [x] T185 [P] [US11] Tests unitaires du registre dans `apps/api/test/unit/ledger.spec.ts` (`balance = SUM(amount)`, montants signés, idempotence)
+- [x] T186 [P] [US11] Tests d'intégration achats dans `apps/api/test/integration/shop.spec.ts` (solde insuffisant → `402`, achat interdit → `409`, double envoi → un seul débit)
+- [x] T187 [P] [US11] Tests des règles d'indices dans `apps/api/test/integration/hints.spec.ts` (sorting interdit, event ouvert interdit, boss interdit, ne révèle jamais tests/solution)
 
 ### Implementation for User Story 11
 
-- [ ] T188 [P] [US11] Créer les modèles Prisma `Wallet` (`balance ≥ 0`, `user_id` UNIQUE), `Transaction` (`amount` signé, `idempotency_key` UNIQUE, `balance_after`, `reason` enum), `ShopItem`, `Inventory` (UNIQUE `(user_id, shop_item_id)`), `ChallengeHint`, `HintPurchase` (UNIQUE `(user_id, hint_id)`), `Badge`, `UserBadge` dans `apps/api/prisma/schema.prisma`
-- [ ] T189 [US11] Créer le trigger d'immuabilité du registre dans `apps/api/prisma/migrations/` (`BEFORE UPDATE/DELETE` → exception) (FR-073)
-- [ ] T190 [US11] Implémenter `apps/api/src/modules/economy/ledger.service.ts` : écriture append-only, clé d'idempotence, mise à jour du solde dans la même transaction, contrôle de cohérence (SC-021)
-- [ ] T191 [US11] Implémenter `apps/api/src/modules/economy/rewards.service.ts` : Bits pour défis, records, events, boss, badges, séries (FR-072)
-- [ ] T192 [US11] Implémenter `apps/api/src/modules/economy/shop.service.ts` : catalogue, achat idempotent, `402` si solde insuffisant, décrément d'inventaire (FR-074, FR-076)
-- [ ] T193 [US11] Implémenter les règles d'interdiction d'achat d'indices dans `apps/api/src/modules/economy/hint.policy.ts` : exploratoires uniquement, solo uniquement, jamais sorting/event/boss, jamais de révélation de test ou solution (FR-075, clarification 5)
-- [ ] T194 [US11] Implémenter l'attribution de badges dans `apps/api/src/modules/economy/badges.service.ts` (critères jsonb, une seule attribution) (FR-077)
-- [ ] T195 [P] [US11] Créer `apps/web/src/pages/shop/ShopPage.tsx` (catalogue, solde, confirmation d'achat, `Idempotency-Key` généré côté client) et `WalletPage.tsx` (historique)
-- [ ] T196 [US11] Afficher les indices progressifs dans `ChallengePage.tsx` (déverrouillage un par un, prix en Bits, contenu jamais caché côté client avant achat)
+- [x] T188 [P] [US11] Créer les modèles Prisma `Wallet` (`balance ≥ 0`, `user_id` UNIQUE), `Transaction` (`amount` signé, `idempotency_key` UNIQUE, `balance_after`, `reason` enum), `ShopItem`, `Inventory` (UNIQUE `(user_id, shop_item_id)`), `ChallengeHint`, `HintPurchase` (UNIQUE `(user_id, hint_id)`), `Badge`, `UserBadge` dans `apps/api/prisma/schema.prisma`
+- [x] T189 [US11] Créer le trigger d'immuabilité du registre dans `apps/api/prisma/migrations/` (`BEFORE UPDATE/DELETE` → exception) (FR-073)
+- [x] T190 [US11] Implémenter `apps/api/src/modules/economy/ledger.service.ts` : écriture append-only, clé d'idempotence, mise à jour du solde dans la même transaction, contrôle de cohérence (SC-021)
+- [x] T191 [US11] Implémenter `apps/api/src/modules/economy/rewards.service.ts` : Bits pour défis, records, events, boss, badges, séries (FR-072)
+- [x] T192 [US11] Implémenter `apps/api/src/modules/economy/shop.service.ts` : catalogue, achat idempotent, `402` si solde insuffisant, décrément d'inventaire (FR-074, FR-076)
+- [x] T193 [US11] Implémenter les règles d'interdiction d'achat d'indices dans `apps/api/src/modules/economy/hint.policy.ts` : exploratoires uniquement, solo uniquement, jamais sorting/event/boss, jamais de révélation de test ou solution (FR-075, clarification 5)
+- [x] T194 [US11] Implémenter l'attribution de badges dans `apps/api/src/modules/economy/badges.service.ts` (critères jsonb, une seule attribution) (FR-077)
+- [x] T195 [P] [US11] Créer `apps/web/src/pages/shop/ShopPage.tsx` (catalogue, solde, confirmation d'achat, `Idempotency-Key` généré côté client) et `WalletPage.tsx` (historique)
+- [x] T196 [US11] Afficher les indices progressifs dans `ChallengePage.tsx` (déverrouillage un par un, prix en Bits, contenu jamais caché côté client avant achat)
 
 **Checkpoint**: US11 livrable seule.
 
