@@ -12,6 +12,7 @@ export const fr = {
   'nav.shop': 'Boutique',
   'nav.wallet': 'Portefeuille',
   'nav.profile': 'Profil',
+  'nav.lore': 'Lore',
   'nav.login': 'Connexion',
   'nav.logout': 'Déconnexion',
   'home.title': 'Bienvenue sur CodeQuest',
@@ -84,6 +85,7 @@ export const fr = {
   'settings.soundMusic': 'Musique',
   'settings.soundEffects': 'Effets',
   'settings.soundVoice': 'Voix',
+  'settings.soundMuted': 'Couper le son (global)',
   'settings.reducedMotion': 'Réduire les animations',
   'settings.dataTitle': 'Mes données',
   'settings.export': 'Exporter mes données (RGPD)',
@@ -363,7 +365,26 @@ export const fr = {
   'challenge.hint.error': 'Achat d’indice refusé.',
   'health.title': 'Vos points de vie',
   'health.ko': 'Hors combat — retour dans {{countdown}}.',
-  'health.regen': 'Prochaine régénération dans {{countdown}}.'
+  'health.regen': 'Prochaine régénération dans {{countdown}}.',
+  'lore.title': 'Chroniques de CodeQuest',
+  'lore.subtitle': 'Les chapitres se débloquent au fil de votre progression.',
+  'lore.requiredLevel': 'Niveau requis : {{level}}',
+  'lore.locked': 'Verrouillé',
+  'lore.available': 'Disponible',
+  'lore.read': 'Lu',
+  'lore.markRead': 'Marquer comme lu',
+  'lore.readDone': 'Lecture enregistrée.',
+  'lore.lockedDetail': 'Ce chapitre se débloque au niveau {{level}}.',
+  'lore.notFound': 'Chapitre introuvable.',
+  'lore.back': 'Retour aux chroniques',
+  'lore.listen': 'Écouter ce chapitre',
+  'audio.statusLabel': 'Ambiance sonore',
+  'audio.enable': 'Activer l’ambiance',
+  'audio.disable': 'Couper l’ambiance',
+  'audio.on': 'Ambiance activée',
+  'audio.off': 'Ambiance désactivée',
+  'audio.visualEquivalent':
+    'Le son est facultatif : toutes les informations sont aussi affichées en texte.'
 } as const;
 
 export type TranslationKey = keyof typeof fr;

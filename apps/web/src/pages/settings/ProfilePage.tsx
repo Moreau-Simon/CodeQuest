@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
+import { readSoundSettings, type SoundSettings } from '../../hooks/useAmbientAudio';
 import { t } from '../../i18n';
 import { ApiError } from '../../services/api-client';
 import { exportPersonalData, updateProfile, type Profile } from '../../services/auth';
@@ -8,22 +9,7 @@ import { Button, Field, Input } from '../../components/ui';
 import { useSessionStore } from '../../stores/session';
 import { DeleteAccountDialog } from './DeleteAccountDialog';
 
-interface SoundPreferences {
-  master: boolean;
-  music: boolean;
-  effects: boolean;
-  voice: boolean;
-}
-
-function readSound(preferences: Record<string, unknown>): SoundPreferences {
-  const sound = (preferences.sound ?? {}) as Record<string, unknown>;
-  return {
-    master: sound.master !== false,
-    music: sound.music !== false,
-    effects: sound.effects !== false,
-    voice: sound.voice !== false
-  };
-}
+type VolumeChannel = Exclude<keyof SoundSettings, 'muted'>;
 
 /**
  * Profil (T063) : pseudo, avatar, langue d'exécution et préférences
@@ -42,7 +28,7 @@ export function ProfilePage(): JSX.Element {
   const [language, setLanguage] = useState<'python' | 'javascript'>(
     user?.preferredLanguage ?? 'python'
   );
-  const [sound, setSound] = useState<SoundPreferences>(readSound(user?.preferences ?? {}));
+  const [sound, setSound] = useState<SoundSettings>(readSoundSettings(user?.preferences ?? {}));
   const [reducedMotion, setReducedMotion] = useState(user?.preferences.reducedMotion === true);
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [error, setError] = useState<string | null>(null);
@@ -53,12 +39,12 @@ export function ProfilePage(): JSX.Element {
     setPseudonym(user.pseudonym);
     setAvatarKey('');
     setLanguage(user.preferredLanguage);
-    setSound(readSound(user.preferences));
+    setSound(readSoundSettings(user.preferences));
     setReducedMotion(user.preferences.reducedMotion === true);
   }, [user]);
 
-  function toggleSound(key: keyof SoundPreferences): void {
-    setSound((current) => ({ ...current, [key]: !current[key] }));
+  function setVolume(key: VolumeChannel, percent: number): void {
+    setSound((current) => ({ ...current, [key]: Math.min(100, Math.max(0, percent)) / 100 }));
   }
 
   async function onSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
@@ -156,7 +142,7 @@ export function ProfilePage(): JSX.Element {
 
         <fieldset className="rounded-xl border border-elevated p-4">
           <legend className="px-1 font-semibold">{t('settings.preferences')}</legend>
-          <div className="mt-2 grid gap-2 sm:grid-cols-2">
+          <div className="mt-2 grid gap-3 sm:grid-cols-2">
             {(
               [
                 ['master', 'settings.soundMaster'],
@@ -165,11 +151,35 @@ export function ProfilePage(): JSX.Element {
                 ['voice', 'settings.soundVoice']
               ] as const
             ).map(([key, label]) => (
-              <label key={key} className="flex items-center gap-2">
-                <input type="checkbox" checked={sound[key]} onChange={() => toggleSound(key)} />
-                {t(label)}
-              </label>
+              <div key={key}>
+                <label htmlFor={`sound-${key}`} className="flex items-center justify-between gap-2">
+                  <span>{t(label)}</span>
+                  <output htmlFor={`sound-${key}`} className="text-sm text-muted">
+                    {Math.round(sound[key] * 100)} %
+                  </output>
+                </label>
+                <input
+                  id={`sound-${key}`}
+                  type="range"
+                  min={0}
+                  max={100}
+                  step={5}
+                  value={Math.round(sound[key] * 100)}
+                  onChange={(event) => setVolume(key, Number(event.target.value))}
+                  className="w-full accent-current"
+                />
+              </div>
             ))}
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={sound.muted}
+                onChange={(event) =>
+                  setSound((current) => ({ ...current, muted: event.target.checked }))
+                }
+              />
+              {t('settings.soundMuted')}
+            </label>
             <label className="flex items-center gap-2">
               <input
                 type="checkbox"

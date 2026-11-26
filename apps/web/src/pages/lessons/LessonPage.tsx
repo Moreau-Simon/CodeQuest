@@ -46,7 +46,7 @@ function renderInline(text: string): ReactNode[] {
   return nodes;
 }
 
-function MarkdownContent({ source }: { source: string }): JSX.Element {
+export function MarkdownContent({ source }: { source: string }): JSX.Element {
   const blocks: ReactNode[] = [];
   let paragraph: string[] = [];
   let list: string[] = [];
@@ -54,14 +54,20 @@ function MarkdownContent({ source }: { source: string }): JSX.Element {
 
   const flushParagraph = (): void => {
     if (paragraph.length === 0) return;
-    blocks.push(<p key={key++} className="leading-relaxed">{renderInline(paragraph.join(' '))}</p>);
+    blocks.push(
+      <p key={key++} className="leading-relaxed">
+        {renderInline(paragraph.join(' '))}
+      </p>
+    );
     paragraph = [];
   };
   const flushList = (): void => {
     if (list.length === 0) return;
     blocks.push(
       <ul key={key++} className="list-disc space-y-1 pl-5">
-        {list.map((item, index) => <li key={index}>{renderInline(item)}</li>)}
+        {list.map((item, index) => (
+          <li key={index}>{renderInline(item)}</li>
+        ))}
       </ul>
     );
     list = [];
@@ -80,9 +86,24 @@ function MarkdownContent({ source }: { source: string }): JSX.Element {
       flushParagraph();
       const content = renderInline(heading[2]);
       const level = heading[1].length;
-      if (level === 1) blocks.push(<h2 key={key++} className="text-2xl font-semibold">{content}</h2>);
-      else if (level === 2) blocks.push(<h3 key={key++} className="text-xl font-semibold">{content}</h3>);
-      else blocks.push(<h4 key={key++} className="text-lg font-semibold">{content}</h4>);
+      if (level === 1)
+        blocks.push(
+          <h2 key={key++} className="text-2xl font-semibold">
+            {content}
+          </h2>
+        );
+      else if (level === 2)
+        blocks.push(
+          <h3 key={key++} className="text-xl font-semibold">
+            {content}
+          </h3>
+        );
+      else
+        blocks.push(
+          <h4 key={key++} className="text-lg font-semibold">
+            {content}
+          </h4>
+        );
       continue;
     }
     if (line.startsWith('- ')) {
@@ -226,7 +247,9 @@ export function LessonPage(): JSX.Element {
 
   const lesson = detail.data;
   const completed = lesson.status === 'completed';
-  const quizPassed = Boolean(quizResult?.passed) || (lesson.progress.quizScore ?? 0) >= (lesson.quiz?.passScore ?? 101);
+  const quizPassed =
+    Boolean(quizResult?.passed) ||
+    (lesson.progress.quizScore ?? 0) >= (lesson.quiz?.passScore ?? 101);
   const applicationChallenge = completion?.applicationChallenge ?? lesson.applicationChallenge;
 
   function setAnswer(target: 'quiz' | 'positioning', id: string, choice: number): void {
@@ -256,10 +279,14 @@ export function LessonPage(): JSX.Element {
 
       {!canWrite ? (
         authenticated ? (
-          <p role="status" className="text-sm text-muted">{t('lesson.emailToProgress')}</p>
+          <p role="status" className="text-sm text-muted">
+            {t('lesson.emailToProgress')}
+          </p>
         ) : (
           <p role="status" className="text-sm">
-            <Link to="/login" className="text-primary hover:underline">{t('lesson.loginToProgress')}</Link>
+            <Link to="/login" className="text-primary hover:underline">
+              {t('lesson.loginToProgress')}
+            </Link>
           </p>
         )
       ) : (
@@ -362,7 +389,11 @@ export function LessonPage(): JSX.Element {
         </>
       )}
 
-      {error && <p role="alert" className="text-sm text-danger">{error}</p>}
+      {error && (
+        <p role="alert" className="text-sm text-danger">
+          {error}
+        </p>
+      )}
     </section>
   );
 }

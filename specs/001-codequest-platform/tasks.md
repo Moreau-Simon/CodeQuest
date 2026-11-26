@@ -473,18 +473,18 @@ qu'aucun son ne démarre avant interaction et que chaque information sonore a un
 
 ### Tests for User Story 12 ⚠️
 
-- [ ] T197 [P] [US12] Tests d'intégration lore dans `apps/api/test/integration/lore.spec.ts` (déblocage par niveau, persistance de lecture)
-- [ ] T198 [P] [US12] Tests d'accessibilité audio/animations dans `apps/web/e2e/a11y-media.spec.ts` (aucun son avant interaction, `prefers-reduced-motion` respecté)
+- [x] T197 [P] [US12] Tests d'intégration lore dans `apps/api/test/integration/lore.spec.ts` (déblocage par niveau, persistance de lecture)
+- [x] T198 [P] [US12] Tests d'accessibilité audio/animations dans `apps/web/e2e/a11y-media.spec.ts` (aucun son avant interaction, `prefers-reduced-motion` respecté)
 
 ### Implementation for User Story 12
 
-- [ ] T199 [P] [US12] Créer les modèles Prisma `LoreChapter` (`slug` UNIQUE, `required_level`, `audio_key`) et `LoreProgress` (PK composite, `unlocked_at`, `read_at`) dans `apps/api/prisma/schema.prisma`
-- [ ] T200 [US12] Implémenter `apps/api/src/modules/content/lore.service.ts` : déblocage par progression, état de lecture, chapitres publics lisibles sans compte confirmé (FR-078, FR-003)
-- [ ] T201 [US12] Exposer `apps/api/src/modules/content/lore.controller.ts` : `GET /lore/chapters`
-- [ ] T202 [P] [US12] Créer `apps/web/src/pages/lore/LorePage.tsx` et `LoreChapterPage.tsx` (typographie, progression, audio à la demande)
-- [ ] T203 [US12] Implémenter le gestionnaire audio `apps/web/src/hooks/useAmbientAudio.ts` : démarrage après interaction explicite uniquement, mixage maître/musique/effets/voix, persistance des préférences (FR-079, FR-080)
-- [ ] T204 [US12] Ajouter les équivalents visuels de chaque signal sonore et le respect de `prefers-reduced-motion` dans `apps/web/src/styles/motion.css` (FR-081, FR-082)
-- [ ] T205 [US12] Vérifier `quickstart.md` § S13 (audio sans interaction, animations désactivées)
+- [x] T199 [P] [US12] Créer les modèles Prisma `LoreChapter` (`slug` UNIQUE, `required_level`, `audio_key`) et `LoreProgress` (PK composite, `unlocked_at`, `read_at`) dans `apps/api/prisma/schema.prisma`
+- [x] T200 [US12] Implémenter `apps/api/src/modules/content/lore.service.ts` : déblocage par progression, état de lecture, chapitres publics lisibles sans compte confirmé (FR-078, FR-003)
+- [x] T201 [US12] Exposer `apps/api/src/modules/content/lore.controller.ts` : `GET /lore/chapters`
+- [x] T202 [P] [US12] Créer `apps/web/src/pages/lore/LorePage.tsx` et `LoreChapterPage.tsx` (typographie, progression, audio à la demande)
+- [x] T203 [US12] Implémenter le gestionnaire audio `apps/web/src/hooks/useAmbientAudio.ts` : démarrage après interaction explicite uniquement, mixage maître/musique/effets/voix, persistance des préférences (FR-079, FR-080)
+- [x] T204 [US12] Ajouter les équivalents visuels de chaque signal sonore et le respect de `prefers-reduced-motion` dans `apps/web/src/styles/motion.css` (FR-081, FR-082)
+- [x] T205 [US12] Vérifier `quickstart.md` § S13 (audio sans interaction, animations désactivées)
 
 **Checkpoint**: US12 livrable seule.
 
