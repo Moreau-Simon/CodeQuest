@@ -1,4 +1,11 @@
-import { ForbiddenException, Inject, Injectable, forwardRef, type OnApplicationShutdown } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Inject,
+  Injectable,
+  forwardRef,
+  type OnApplicationShutdown
+} from '@nestjs/common';
 import {
   WebSocketGateway,
   SubscribeMessage,
@@ -23,8 +30,15 @@ import {
   leaderboardRoom
 } from '../modules/leaderboards/leaderboard.constants';
 import {
+  ChatRateLimitedError,
+  ChatRateLimitService
+} from '../modules/chat/chat-rate-limit.service';
+import { ChatService } from '../modules/chat/chat.service';
+import { VoiceService } from '../modules/chat/voice.service';
+import {
   REALTIME_NAMESPACE,
   REALTIME_REVOKE_CHANNEL,
+  channelRoom,
   documentRoom,
   eventRoom,
   spectatorRoom,
@@ -64,6 +78,31 @@ function docErrorCode(error: unknown): string {
   return 'DOC_ERROR';
 }
 
+export interface ChatSocketAck {
+  ok: boolean;
+  room?: string;
+  code?: string;
+  messageId?: string;
+  retryAfterMs?: number;
+  token?: string;
+  url?: string;
+  expiresAt?: string;
+}
+
+function chatErrorCode(error: unknown): ChatSocketAck {
+  if (error instanceof ChatRateLimitedError) {
+    return { ok: false, code: error.code, retryAfterMs: error.retryAfterMs };
+  }
+  if (error instanceof ForbiddenException) {
+    const response = error.getResponse() as { code?: string };
+    return { ok: false, code: response.code ?? 'FORBIDDEN_ROOM' };
+  }
+  if (error instanceof BadRequestException) {
+    return { ok: false, code: 'INVALID_PAYLOAD' };
+  }
+  return { ok: false, code: 'CHAT_ERROR' };
+}
+
 /**
  * Gateway temps réel (T033) : authentification par cookie au handshake,
  * adaptateur Redis multi-instance, fermeture des sockets à la révocation.
@@ -88,7 +127,13 @@ export class RealtimeGateway
     private readonly redis: RedisService,
     private readonly metrics: MetricsService,
     @Inject(forwardRef(() => YjsProvider))
-    private readonly yjs: YjsProvider
+    private readonly yjs: YjsProvider,
+    @Inject(forwardRef(() => ChatService))
+    private readonly chat: ChatService,
+    @Inject(forwardRef(() => ChatRateLimitService))
+    private readonly chatRateLimit: ChatRateLimitService,
+    @Inject(forwardRef(() => VoiceService))
+    private readonly voice: VoiceService
   ) {}
 
   async afterInit(server: Namespace): Promise<void> {
@@ -290,6 +335,124 @@ export class RealtimeGateway
     } catch (error) {
       return { ok: false, code: docErrorCode(error) };
     }
+  }
+
+  /**
+   * US15 (FR-092) : un socket ne rejoint une room de canal qu'après que le
+   * service a vérifié l'appartenance. Les Audience complètes sont définies par
+   * `ChatService.assertAccess` ; la salle `user:<id>` reste privée au titulaire.
+   */
+  @SubscribeMessage('room.join')
+  async onRoomJoin(
+    @ConnectedSocket() socket: Socket,
+    @MessageBody() payload: unknown
+  ): Promise<ChatSocketAck> {
+    const room = (payload as { room?: unknown } | null)?.room;
+    const userId = (socket.data as { userId?: string }).userId;
+    if (typeof room !== 'string' || !userId) return { ok: false, code: 'INVALID_PAYLOAD' };
+    if (room === `user:${userId}`) {
+      await socket.join(room);
+      return { ok: true, room };
+    }
+    if (!room.startsWith('channel:')) return { ok: false, code: 'FORBIDDEN_ROOM' };
+
+    try {
+      await this.chat.assertAccess(room.slice('channel:'.length), userId);
+    } catch (error) {
+      return chatErrorCode(error);
+    }
+    await socket.join(room);
+    return { ok: true, room };
+  }
+
+  @SubscribeMessage('room.leave')
+  async onRoomLeave(
+    @ConnectedSocket() socket: Socket,
+    @MessageBody() payload: unknown
+  ): Promise<ChatSocketAck> {
+    const room = (payload as { room?: unknown } | null)?.room;
+    if (typeof room === 'string') await socket.leave(room);
+    return { ok: true };
+  }
+
+  /** Contrat §4 : `chat.send` → `{ ok, messageId }` ou `{ ok: false, code }`. */
+  @SubscribeMessage('chat.send')
+  async onChatSend(
+    @ConnectedSocket() socket: Socket,
+    @MessageBody() payload: unknown
+  ): Promise<ChatSocketAck> {
+    const data = (payload ?? {}) as Record<string, unknown>;
+    const userId = (socket.data as { userId?: string }).userId;
+    if (!userId || typeof data.channelId !== 'string') {
+      return { ok: false, code: 'INVALID_PAYLOAD' };
+    }
+    try {
+      const message = await this.chat.send({
+        channelId: data.channelId,
+        userId,
+        body: data.body,
+        clientMessageId: data.clientMessageId,
+        address: socket.handshake.address
+      });
+      this.emitToRoom(channelRoom(data.channelId), 'chat.message', {
+        channelId: message.channelId,
+        messageId: message.id,
+        authorName: message.authorName,
+        body: message.body,
+        createdAt: message.createdAt
+      });
+      return { ok: true, messageId: message.id };
+    } catch (error) {
+      return chatErrorCode(error);
+    }
+  }
+
+  /** `chat.typing` est éphémère : jamais persisté, au plus une fois / 2 s. */
+  @SubscribeMessage('chat.typing')
+  async onChatTyping(
+    @ConnectedSocket() socket: Socket,
+    @MessageBody() payload: unknown
+  ): Promise<ChatSocketAck> {
+    const channelId = (payload as { channelId?: unknown } | null)?.channelId;
+    const userId = (socket.data as { userId?: string }).userId;
+    if (!userId || typeof channelId !== 'string') return { ok: false, code: 'INVALID_PAYLOAD' };
+    try {
+      this.chatRateLimit.assertCanType(userId);
+      await this.chat.assertAccess(channelId, userId);
+      const authorName = await this.chat.authorName(userId);
+      this.emitToRoom(channelRoom(channelId), 'chat.typing', {
+        channelId,
+        authorName,
+        expiresInMs: 3_000
+      });
+      return { ok: true };
+    } catch (error) {
+      return chatErrorCode(error);
+    }
+  }
+
+  /** FR-095/FR-096 : jeton court, délivré seulement après contrôle du canal. */
+  @SubscribeMessage('voice.join')
+  async onVoiceJoin(
+    @ConnectedSocket() socket: Socket,
+    @MessageBody() payload: unknown
+  ): Promise<ChatSocketAck> {
+    const userId = (socket.data as { userId?: string }).userId;
+    if (!userId) return { ok: false, code: 'UNAUTHENTICATED' };
+    try {
+      const grant = await this.voice.authorize(
+        (payload as { roomName?: unknown } | null)?.roomName,
+        userId
+      );
+      return { ok: true, ...grant };
+    } catch (error) {
+      return chatErrorCode(error);
+    }
+  }
+
+  @SubscribeMessage('voice.leave')
+  onVoiceLeave(): ChatSocketAck {
+    return { ok: true };
   }
 
   /**

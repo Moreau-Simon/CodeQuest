@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { to: '/leaderboards', key: 'nav.leaderboards' },
   { to: '/teams', key: 'nav.teams' },
   { to: '/events', key: 'nav.events' },
+  { to: '/chat', key: 'nav.chat' },
   { to: '/bosses', key: 'nav.bosses' },
   { to: '/shop', key: 'nav.shop' },
   { to: '/wallet', key: 'nav.wallet' }

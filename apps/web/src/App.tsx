@@ -23,6 +23,7 @@ import { EventsPage } from './pages/events/EventsPage';
 import { SpectatorView } from './pages/events/SpectatorView';
 import { BossPage } from './pages/bosses/BossPage';
 import { LeaderboardPage } from './pages/leaderboards/LeaderboardPage';
+import { ChatPage } from './pages/ChatPage';
 import { LoreChapterPage } from './pages/lore/LoreChapterPage';
 import { LorePage } from './pages/lore/LorePage';
 import { LessonPage } from './pages/lessons/LessonPage';
@@ -90,6 +91,7 @@ export function App(): JSX.Element {
         <Route element={<RequireAuth />}>
           <Route path="events/:eventId/arena" element={<BattleRoyalePage />} />
           <Route path="events/:eventId/spectate" element={<SpectatorView />} />
+          <Route path="chat" element={<ChatPage />} />
           <Route path="bosses" element={<BossPage />} />
           <Route path="shop" element={<ShopPage />} />
           <Route path="wallet" element={<WalletPage />} />

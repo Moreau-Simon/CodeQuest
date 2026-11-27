@@ -16,6 +16,11 @@ export function spectatorRoom(eventId: string): string {
   return `event:${eventId}:spectators`;
 }
 
+/** US15 : salle d'un canal de chat (contrat `websocket-events.md` §2). */
+export function channelRoom(channelId: string): string {
+  return `channel:${channelId}`;
+}
+
 export interface RealtimeRevocation {
   userId?: string;
   sessionId?: string;

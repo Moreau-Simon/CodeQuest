@@ -14,6 +14,7 @@ import { AuthenticationGuard } from './modules/auth/authentication.guard';
 import { AuthModule } from './modules/auth/auth.module';
 import { BossesModule } from './modules/bosses/bosses.module';
 import { ChallengesModule } from './modules/challenges/challenges.module';
+import { ChatModule } from './modules/chat/chat.module';
 import { ContentModule } from './modules/content/content.module';
 import { EconomyModule } from './modules/economy/economy.module';
 import { EventsModule } from './modules/events/events.module';
@@ -45,6 +46,7 @@ import { StorageModule } from './storage/storage.module';
     AuthModule,
     UsersModule,
     ChallengesModule,
+    ChatModule,
     EventsModule,
     BattleRoyaleModule,
     EconomyModule,

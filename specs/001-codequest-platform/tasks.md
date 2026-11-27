@@ -556,21 +556,21 @@ de débit limité, signalement traité, voix active seulement après activation 
 
 ### Tests for User Story 15 ⚠️
 
-- [ ] T226 [P] [US15] Tests d'intégration chat dans `apps/api/test/integration/chat.spec.ts` (portée par canal, historique, suppression, anonymisation à la suppression de compte)
-- [ ] T227 [P] [US15] Tests de limitation de débit chat dans `apps/api/test/integration/chat-rate-limit.spec.ts` (par compte et par préfixe IP, `retryAfterMs`)
-- [ ] T228 [P] [US15] Tests d'autorisation vocale dans `apps/api/test/integration/voice.spec.ts` (jeton court, appartenance au canal, aucun enregistrement exposé)
+- [x] T226 [P] [US15] Tests d'intégration chat dans `apps/api/test/integration/chat.spec.ts` (portée par canal, historique, suppression, anonymisation à la suppression de compte)
+- [x] T227 [P] [US15] Tests de limitation de débit chat dans `apps/api/test/integration/chat-rate-limit.spec.ts` (par compte et par préfixe IP, `retryAfterMs`)
+- [x] T228 [P] [US15] Tests d'autorisation vocale dans `apps/api/test/integration/voice.spec.ts` (jeton court, appartenance au canal, aucun enregistrement exposé)
 
 ### Implementation for User Story 15
 
-- [ ] T229 [P] [US15] Créer les modèles Prisma `ChatChannel` (UNIQUE `(kind, scope_id)`, `kind ∈ {global, team, event, spectator}`), `ChatMessage` (1–2 000 caractères, `user_id` nullable + `author_label`), `ChatReport`, `ChatSanction` dans `apps/api/prisma/schema.prisma`
-- [ ] T230 [US15] Implémenter `apps/api/src/modules/chat/chat.service.ts` : envoi idempotent (`clientMessageId`), historique paginé, suppression logique, portée vérifiée côté serveur (FR-091, FR-092)
-- [ ] T231 [US15] Implémenter `apps/api/src/modules/chat/chat-rate-limit.service.ts` : fenêtre glissante par compte et par IP, `chat.typing` limité à 1 émission / 2 s (FR-093)
-- [ ] T232 [US15] Implémenter la modération `apps/api/src/modules/chat/moderation.service.ts` : mute, suppression, bannissement, journalisation, notification (FR-094)
-- [ ] T233 [US15] Implémenter l'émission `apps/api/src/modules/chat/voice.service.ts` : jetons LiveKit à durée courte, après vérification d'appartenance, enregistrement jamais activé (FR-095, FR-096)
-- [ ] T234 [P] [US15] Créer `apps/web/src/components/chat/ChatPanel.tsx` (messages, présence, indicateur de frappe, signalement) et `ChatMessageList.tsx`
-- [ ] T235 [P] [US15] Créer `apps/web/src/components/chat/VoiceRoom.tsx` : activation explicite du microphone, indicateur de mute, liste des participants, aucune action d'enregistrement
-- [ ] T236 [US15] Intégrer les canaux dans `apps/web/src/hooks/useChat.ts` avec gestion de la reconnexion et de l'idempotence d'envoi
-- [ ] T237 [US15] Vérifier `quickstart.md` § S10 (réception < 1 s, refus inter-canal, modération)
+- [x] T229 [P] [US15] Créer les modèles Prisma `ChatChannel` (UNIQUE `(kind, scope_id)`, `kind ∈ {global, team, event, spectator}`), `ChatMessage` (1–2 000 caractères, `user_id` nullable + `author_label`), `ChatReport`, `ChatSanction` dans `apps/api/prisma/schema.prisma`
+- [x] T230 [US15] Implémenter `apps/api/src/modules/chat/chat.service.ts` : envoi idempotent (`clientMessageId`), historique paginé, suppression logique, portée vérifiée côté serveur (FR-091, FR-092)
+- [x] T231 [US15] Implémenter `apps/api/src/modules/chat/chat-rate-limit.service.ts` : fenêtre glissante par compte et par IP, `chat.typing` limité à 1 émission / 2 s (FR-093)
+- [x] T232 [US15] Implémenter la modération `apps/api/src/modules/chat/moderation.service.ts` : mute, suppression, bannissement, journalisation, notification (FR-094)
+- [x] T233 [US15] Implémenter l'émission `apps/api/src/modules/chat/voice.service.ts` : jetons LiveKit à durée courte, après vérification d'appartenance, enregistrement jamais activé (FR-095, FR-096)
+- [x] T234 [P] [US15] Créer `apps/web/src/components/chat/ChatPanel.tsx` (messages, présence, indicateur de frappe, signalement) et `ChatMessageList.tsx`
+- [x] T235 [P] [US15] Créer `apps/web/src/components/chat/VoiceRoom.tsx` : activation explicite du microphone, indicateur de mute, liste des participants, aucune action d'enregistrement
+- [x] T236 [US15] Intégrer les canaux dans `apps/web/src/hooks/useChat.ts` avec gestion de la reconnexion et de l'idempotence d'envoi
+- [x] T237 [US15] Vérifier `quickstart.md` § S10 (réception < 1 s, refus inter-canal, modération)
 
 **Checkpoint**: US15 livrable seule.
 
