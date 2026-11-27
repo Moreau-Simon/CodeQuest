@@ -652,11 +652,11 @@ bloquée, restaurer une sauvegarde et valider l'intégrité, exporter et supprim
 - [ ] T271 Vérifier la conformité constitutionnelle finale (5 principes) et mettre à jour `.specify/memory/constitution.md` si une dérive est constatée
 - [ ] T272 [P] Configurer la génération automatique des notes de version et le workflow `release.yml` dans `.github/workflows/` : **SemVer**, tags Git annotés `vX.Y.Z` sur `main` après CI verte, `CHANGELOG.md` généré depuis les Conventional Commits (section 11.2)
 - [ ] T273 Former les mainteneurs : documenter les procédures de validation de défi, de modération et de rotation de secrets dans `docs/operations/onboarding.md`
-- [ ] T274 [P] E2E du parcours critique complet dans `apps/web/e2e/critical-journey.spec.ts` : inscription → confirmation e-mail → leçon → défi → classement (SC-011, principe IV)
-- [ ] T275 [P] E2E du cycle de vie du compte dans `apps/web/e2e/account-lifecycle.spec.ts` : réinitialisation de mot de passe, suppression avec réauthentification, anonymisation des scores (SC-011, SC-017)
-- [ ] T276 [P] E2E de l'event à essai unique dans `apps/web/e2e/event-single-attempt.spec.ts` : ouverture sans consommation, démarrage explicite, second essai refusé, abandon consommé (SC-011, FR-062)
-- [ ] T277 [P] E2E équipe dans `apps/web/e2e/team-critical.spec.ts` : création, invitation, édition collaborative, désignation officielle, classement d'équipe (SC-011)
-- [ ] T278 Câbler `pnpm e2e` comme porte bloquante dans `.github/workflows/ci.yml` sur les 4 navigateurs (principe IV)
+- [X] T274 [P] E2E du parcours critique complet dans `apps/web/e2e/critical-journey.spec.ts` : inscription → confirmation e-mail → leçon → défi → classement (SC-011, principe IV)
+- [X] T275 [P] E2E du cycle de vie du compte dans `apps/web/e2e/account-lifecycle.spec.ts` : réinitialisation de mot de passe, suppression avec réauthentification, anonymisation des scores (SC-011, SC-017)
+- [X] T276 [P] E2E de l'event à essai unique dans `apps/web/e2e/event-single-attempt.spec.ts` : ouverture sans consommation, démarrage explicite, second essai refusé, abandon consommé (SC-011, FR-062)
+- [X] T277 [P] E2E équipe dans `apps/web/e2e/team-critical.spec.ts` : création, invitation, édition collaborative, désignation officielle, classement d'équipe (SC-011)
+- [X] T278 Câbler `pnpm e2e` comme porte bloquante dans `.github/workflows/ci.yml` sur les 4 navigateurs (principe IV)
 
 ---
 

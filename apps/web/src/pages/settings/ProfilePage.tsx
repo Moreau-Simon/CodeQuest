@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { readSoundSettings, type SoundSettings } from '../../hooks/useAmbientAudio';
 import { t } from '../../i18n';
 import { ApiError } from '../../services/api-client';
@@ -20,9 +20,7 @@ type VolumeChannel = Exclude<keyof SoundSettings, 'muted'>;
 export function ProfilePage(): JSX.Element {
   const user = useSessionStore((state) => state.user);
   const setUser = useSessionStore((state) => state.setUser);
-  const clearSession = useSessionStore((state) => state.clearSession);
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
 
   const [pseudonym, setPseudonym] = useState(user?.pseudonym ?? '');
   const [avatarKey, setAvatarKey] = useState('');
@@ -232,8 +230,9 @@ export function ProfilePage(): JSX.Element {
         onClose={() => setDeleteOpen(false)}
         onDeleted={() => {
           setDeleteOpen(false);
-          clearSession();
-          navigate('/');
+          // Rechargement complet : la session serveur et les caches React
+          // Query doivent être purgés avant toute nouvelle navigation.
+          window.location.assign('/');
         }}
       />
     </section>

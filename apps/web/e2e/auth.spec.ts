@@ -80,7 +80,9 @@ test('inscription, confirmation, connexion puis révocation de session', async (
   await expect(page.getByRole('status')).toContainText('Compte créé');
 
   await page.goto('/verify-email?token=jeton-de-test');
-  await expect(page.getByRole('status')).toContainText('adresse e-mail est confirmée');
+  // Le squelette de chargement expose également `role="status"` : cibler le
+  // texte évite une violation de mode strict sur WebKit, plus lent à basculer.
+  await expect(page.getByText('Votre adresse e-mail est confirmée')).toBeVisible();
 
   await page.goto('/login');
   await page.getByLabel('E-mail ou pseudo').fill('ada@example.com');

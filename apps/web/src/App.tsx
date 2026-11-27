@@ -30,6 +30,7 @@ import { LessonPage } from './pages/lessons/LessonPage';
 import { LessonsPage } from './pages/lessons/LessonsPage';
 import { ProfilePage } from './pages/settings/ProfilePage';
 import { TeamPage } from './pages/teams/TeamPage';
+import { JoinTeamPage } from './pages/teams/JoinTeamPage';
 import { TeamSettingsPage } from './pages/teams/TeamSettingsPage';
 import { SessionsPage } from './pages/settings/SessionsPage';
 import { ShopPage } from './pages/shop/ShopPage';
@@ -83,6 +84,7 @@ export function App(): JSX.Element {
         <Route path="lore/:chapterId" element={<LoreChapterPage />} />
         <Route path="leaderboards" element={<LeaderboardPage />} />
         <Route path="teams" element={<TeamPage />} />
+        <Route path="teams/join" element={<JoinTeamPage />} />
         <Route path="teams/:teamId" element={<TeamSettingsPage />} />
         <Route path="events" element={<EventsPage />} />
         <Route path="events/:eventId" element={<EventDetailPage />} />

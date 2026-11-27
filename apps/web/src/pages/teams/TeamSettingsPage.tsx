@@ -1,27 +1,34 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
 import { Button, Input, Skeleton } from '../../components/ui';
 import { t } from '../../i18n';
 import { ApiError } from '../../services/api-client';
 import {
+  designateOfficialSubmission,
   getContributions,
   getTeam,
   inviteMember,
   leaveTeam,
   transferCaptain,
-  type TeamInvitation
+  type TeamInvitation,
+  type TeamOfficialSubmission
 } from '../../services/teams';
 import { useSessionStore } from '../../stores/session';
 
 /** US8 (FR-055 à FR-060) : invitations, capitainerie et contributions d'une équipe. */
 export function TeamSettingsPage(): JSX.Element {
   const { teamId = '' } = useParams<{ teamId: string }>();
+  const location = useLocation();
+  const joined = (location.state as { joined?: boolean } | null)?.joined === true;
   const queryClient = useQueryClient();
   const user = useSessionStore((state) => state.user);
   const [pseudonym, setPseudonym] = useState('');
   const [invitation, setInvitation] = useState<TeamInvitation | null>(null);
   const [transferTo, setTransferTo] = useState('');
+  const [challengeIdInput, setChallengeIdInput] = useState('');
+  const [submissionIdInput, setSubmissionIdInput] = useState('');
+  const [official, setOfficial] = useState<TeamOfficialSubmission | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const invalidate = (): void => {
@@ -50,6 +57,19 @@ export function TeamSettingsPage(): JSX.Element {
       setTransferTo('');
       setError(null);
       invalidate();
+    },
+    onError: (cause) => setError(cause instanceof ApiError ? cause.message : t('common.error'))
+  });
+
+  const designate = useMutation({
+    mutationFn: () =>
+      designateOfficialSubmission(teamId, {
+        challengeId: challengeIdInput,
+        submissionId: submissionIdInput
+      }),
+    onSuccess: (result) => {
+      setOfficial(result);
+      setError(null);
     },
     onError: (cause) => setError(cause instanceof ApiError ? cause.message : t('common.error'))
   });
@@ -96,6 +116,12 @@ export function TeamSettingsPage(): JSX.Element {
         </h1>
         <p className="mt-2 text-sm text-muted">{t('team.collabHint')}</p>
       </header>
+
+      {joined ? (
+        <p role="status" className="rounded-xl border border-elevated p-3 text-sm">
+          {t('team.joinedStatus', { name: current.name })}
+        </p>
+      ) : null}
 
       {error ? (
         <p role="alert" className="rounded-xl border border-danger p-3 text-sm text-danger">
@@ -150,6 +176,46 @@ export function TeamSettingsPage(): JSX.Element {
           </dl>
         ) : null}
       </section>
+
+      {isCaptain ? (
+        <section className="rounded-xl border border-elevated p-4">
+          <h2 className="text-xl font-semibold">{t('team.officialTitle')}</h2>
+          <form
+            className="mt-3 grid gap-3 sm:grid-cols-2"
+            onSubmit={(event) => {
+              event.preventDefault();
+              designate.mutate();
+            }}
+          >
+            <label className="flex flex-col gap-1 text-sm">
+              {t('team.officialChallengeId')}
+              <Input
+                value={challengeIdInput}
+                onChange={(event) => setChallengeIdInput(event.target.value)}
+                required
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-sm">
+              {t('team.officialSubmissionId')}
+              <Input
+                value={submissionIdInput}
+                onChange={(event) => setSubmissionIdInput(event.target.value)}
+                required
+              />
+            </label>
+            <div className="flex items-end">
+              <Button type="submit" loading={designate.isPending}>
+                {t('team.officialDesignate')}
+              </Button>
+            </div>
+          </form>
+          {official ? (
+            <p role="status" className="mt-3 text-sm">
+              {t('team.officialDone', { id: official.submissionId })}
+            </p>
+          ) : null}
+        </section>
+      ) : null}
 
       {isCaptain ? (
         <section className="rounded-xl border border-elevated p-4">
