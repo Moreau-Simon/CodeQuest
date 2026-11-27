@@ -145,8 +145,9 @@ FR-100). Une déconnexion ne suspend jamais le round.
 // type: "doc.awareness"
 { "docId": "…", "clients": [{ "userId": "uuid", "cursor": { "line": 12, "ch": 4 } }] }
 
-// type: "notification.new"
+// type: "notification.new" — diffusé sur la salle user:<userId> (FR-104)
 { "kind": "event_starting", "payload": { "eventId": "uuid", "startsAt": "…" } }
+{ "kind": "ko_ended", "payload": { "endedAt": "…" } }
 
 // type: "voice.token"    (émis après autorisation, jamais dans l'URL)
 { "roomName": "team-uuid", "token": "…", "expiresAt": "…" }
@@ -187,5 +188,6 @@ FR-100). Une déconnexion ne suspend jamais le round.
 | FR-067 → FR-070 PV / boss / KO | §3.3 |
 | FR-091 → FR-094 chat, portée, limitation, modération | §2, §3.4, §5 |
 | FR-095, FR-096 voix sans enregistrement, micro explicite | §4 `voice.join`, `voice.token` |
+| FR-104 rappels d'événement et fin de KO | §3.6 `notification.new` (salle `user:<userId>`, idempotente par référence) |
 | FR-097 → FR-101 rounds, éliminations, spectateurs | §3.5 |
 | FR-017 fermeture à la révocation | §1 |

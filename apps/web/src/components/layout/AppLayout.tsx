@@ -4,6 +4,7 @@ import { t } from '../../i18n';
 import { logout } from '../../services/auth';
 import { selectIsAuthenticated, selectPseudonym, useSessionStore } from '../../stores/session';
 import { Button } from '../ui';
+import { OfflineBanner } from './OfflineBanner';
 
 const NAV_ITEMS = [
   { to: '/challenges', key: 'nav.challenges' },
@@ -51,12 +52,14 @@ export function AppLayout(): JSX.Element {
         {t('common.skipToContent')}
       </a>
 
+      <OfflineBanner />
+
       <header className="border-b border-elevated">
         <nav
           aria-label={t('nav.main')}
-          className="mx-auto flex max-w-5xl flex-wrap items-center gap-6 px-6 py-4"
+          className="cq-main-nav mx-auto flex max-w-5xl items-center gap-6 overflow-x-auto px-6 py-2 md:flex-wrap md:py-4"
         >
-          <Link to="/" className="font-bold text-ink no-underline">
+          <Link to="/" className="cq-nav-link font-bold text-ink no-underline">
             {t('app.name')}
           </Link>
           {NAV_ITEMS.map((item) => (
@@ -64,7 +67,7 @@ export function AppLayout(): JSX.Element {
               key={item.to}
               to={item.to}
               className={({ isActive }) =>
-                `no-underline ${isActive ? 'text-ink' : 'text-muted hover:text-ink'}`
+                `cq-nav-link no-underline ${isActive ? 'text-ink' : 'text-muted hover:text-ink'}`
               }
             >
               {t(item.key)}
@@ -76,7 +79,7 @@ export function AppLayout(): JSX.Element {
               <>
                 <NavLink
                   to="/settings/profile"
-                  className="text-sm text-muted no-underline hover:text-ink"
+                  className="cq-nav-link text-sm text-muted no-underline hover:text-ink"
                 >
                   {pseudonym}
                 </NavLink>
@@ -85,7 +88,7 @@ export function AppLayout(): JSX.Element {
                 </Button>
               </>
             ) : (
-              <NavLink to="/login" className="text-muted no-underline hover:text-ink">
+              <NavLink to="/login" className="cq-nav-link text-muted no-underline hover:text-ink">
                 {t('nav.login')}
               </NavLink>
             )}

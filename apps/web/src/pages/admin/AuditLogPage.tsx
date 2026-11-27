@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { t } from '../../i18n';
 import { Button, Input, Skeleton } from '../../components/ui';
 import { fetchAuditLogs, type AdminAuditLog } from '../../services/admin';
 
@@ -42,19 +43,17 @@ export function AuditLogPage(): JSX.Element {
   return (
     <section className="mx-auto max-w-5xl px-6 py-12">
       <div className="border-b border-border pb-6">
-        <h1 className="text-3xl font-bold tracking-tight">Journal d’audit immuable</h1>
-        <p className="mt-1 text-muted">
-          Registre append-only de toutes les actions administratives et de sécurité (FR-089)
-        </p>
+        <h1 className="text-3xl font-bold tracking-tight">{t('admin.auditTitle')}</h1>
+        <p className="mt-1 text-muted">{t('admin.auditSubtitle')}</p>
       </div>
 
       <form onSubmit={handleApplyFilter} className="mt-6 flex max-w-lg items-center gap-3">
         <Input
-          placeholder="Filtrer par UUID d'acteur..."
+          placeholder={t('admin.filterPlaceholder')}
           value={actorIdFilter}
           onChange={(e) => setActorIdFilter(e.target.value)}
         />
-        <Button type="submit">Filtrer</Button>
+        <Button type="submit">{t('admin.filter')}</Button>
       </form>
 
       {error && <div className="mt-4 rounded-xl bg-error/10 p-4 text-sm text-error">{error}</div>}
@@ -71,17 +70,17 @@ export function AuditLogPage(): JSX.Element {
             <table className="w-full text-left text-sm font-mono">
               <thead className="border-b border-border bg-elevated/50 text-xs text-muted uppercase font-sans">
                 <tr>
-                  <th className="px-6 py-3">Date</th>
-                  <th className="px-6 py-3">Action</th>
-                  <th className="px-6 py-3">Cible</th>
-                  <th className="px-6 py-3">Acteur</th>
+                  <th className="px-6 py-3">{t('admin.date')}</th>
+                  <th className="px-6 py-3">{t('admin.action')}</th>
+                  <th className="px-6 py-3">{t('admin.target')}</th>
+                  <th className="px-6 py-3">{t('admin.actor')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {logs.length === 0 ? (
                   <tr>
                     <td colSpan={4} className="px-6 py-8 text-center text-muted font-sans">
-                      Aucune entrée d'audit trouvée.
+                      {t('admin.noAudit')}
                     </td>
                   </tr>
                 ) : (

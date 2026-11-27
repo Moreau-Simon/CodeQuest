@@ -10,6 +10,8 @@ export interface CreateTestAppOptions {
   readonly clock?: import('../../src/common/clock').Clock;
   /** Remplace l'appel au service d'assets (US13, sans démarrer FastAPI). */
   readonly assetsFetch?: typeof globalThis.fetch;
+  /** Remplace un provider (ex. transport Web Push) dans le module de test. */
+  readonly overrides?: ReadonlyArray<{ token: unknown; useValue: unknown }>;
 }
 
 export interface TestApp {
@@ -54,6 +56,9 @@ export async function createTestApp(
   if (options.assetsFetch) {
     const { ASSETS_FETCH } = await import('../../src/modules/challenges/instance.service');
     builder.overrideProvider(ASSETS_FETCH).useValue(options.assetsFetch);
+  }
+  for (const override of options.overrides ?? []) {
+    builder.overrideProvider(override.token).useValue(override.useValue);
   }
   const moduleRef = await builder.compile();
   const app = moduleRef.createNestApplication<NestExpressApplication>({ logger: false });

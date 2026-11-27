@@ -13,15 +13,13 @@ export interface HealthBarProps {
  * Barre de PV accessible (T184, FR-067) : valeur annoncée aux lecteurs d'écran,
  * largeur bornée à 100 % et transition désactivable.
  */
-export function HealthBar({
-  hp,
-  maxHp,
-  label,
-  animated = true
-}: HealthBarProps): JSX.Element {
+export function HealthBar({ hp, maxHp, label, animated = true }: HealthBarProps): JSX.Element {
   const labelId = useId();
-  const current = Math.max(0, Math.min(maxHp, hp));
-  const percentage = maxHp > 0 ? (current / maxHp) * 100 : 0;
+  // T246 : une réponse API partielle ne doit jamais produire `aria-valuenow="NaN"`.
+  const safeMax = Number.isFinite(maxHp) && maxHp > 0 ? maxHp : 100;
+  const safeHp = Number.isFinite(hp) ? hp : 0;
+  const current = Math.max(0, Math.min(safeMax, safeHp));
+  const percentage = (current / safeMax) * 100;
 
   return (
     <div className="flex flex-col gap-1">
@@ -30,19 +28,22 @@ export function HealthBar({
           {label}
         </span>
         <span className="tabular-nums text-muted">
-          {current}/{maxHp}
+          {current}/{safeMax}
         </span>
       </div>
       <div
         role="progressbar"
         aria-labelledby={labelId}
         aria-valuemin={0}
-        aria-valuemax={maxHp}
+        aria-valuemax={safeMax}
         aria-valuenow={current}
         className="h-3 w-full overflow-hidden rounded-full bg-elevated"
       >
         <div
-          className={cn('h-full rounded-full bg-danger', animated && 'transition-[width] duration-500')}
+          className={cn(
+            'h-full rounded-full bg-danger',
+            animated && 'transition-[width] duration-500'
+          )}
           style={{ width: `${percentage}%` }}
         />
       </div>

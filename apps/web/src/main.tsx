@@ -10,6 +10,12 @@ import './index.css';
 const container = document.getElementById('root');
 if (!container) throw new Error('Élément #root introuvable dans index.html');
 
+// T243 (FR-103) : installation PWA. Le service worker n'intercepte ni `/api/v1/*`
+// ni `/socket.io/*` (voir `public/sw.js`) : scores et temps réel restent réseau.
+if ('serviceWorker' in navigator) {
+  void navigator.serviceWorker.register('/sw.js').catch(() => undefined);
+}
+
 createRoot(container).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>

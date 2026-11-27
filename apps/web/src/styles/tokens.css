@@ -8,6 +8,9 @@
   --cq-accent: 168 85 247; /* #a855f7 */
   --cq-danger: 248 113 113; /* #f87171 */
   --cq-success: 52 211 153; /* #34d399 */
+  --cq-warning: 251 191 36; /* #fbbf24 */
+  --cq-border: 71 85 105; /* #475569 */
+  --cq-line: 51 65 85; /* #334155 */
 
   --cq-space-1: 0.25rem;
   --cq-space-2: 0.5rem;

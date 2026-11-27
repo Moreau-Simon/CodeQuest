@@ -11,6 +11,7 @@
   },
   "include": [
     "src",
+    "test",
     "e2e",
     "scripts",
     "vite.config.ts",

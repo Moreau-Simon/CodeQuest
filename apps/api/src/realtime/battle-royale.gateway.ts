@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { eventRoom, spectatorRoom } from './realtime.constants';
+import { eventRoom, NOTIFICATION_NEW, spectatorRoom } from './realtime.constants';
 import { RealtimeGateway } from './realtime.gateway';
 
 /** Contrat `websocket-events.md` §3.5 (FR-097 → FR-101). */
@@ -12,7 +12,7 @@ export const ROUND_EVENTS = {
 } as const;
 
 /** Contrat `websocket-events.md` §3.6 (notification.new). */
-export const NOTIFICATION_NEW = 'notification.new';
+export { NOTIFICATION_NEW };
 
 export interface RoundStartedPayload {
   eventId: string;

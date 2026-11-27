@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { t } from '../i18n';
 import { io, type Socket } from 'socket.io-client';
 import { getSubmission, type Submission } from '../services/challenges';
 
@@ -60,7 +61,7 @@ export function useSubmissionVerdict(submissionId: string | null): {
         setSubmission(latest);
         if (isTerminal(latest.status)) clearInterval(timer);
       } catch {
-        if (active) setError('Impossible de récupérer le verdict');
+        if (active) setError(t('submission.verdictUnavailable'));
       }
     };
 

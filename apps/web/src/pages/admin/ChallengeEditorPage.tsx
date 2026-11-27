@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { t } from '../../i18n';
 import { Button, Input } from '../../components/ui';
 import {
   createChallengeDraft,
@@ -98,10 +99,8 @@ export function ChallengeEditorPage(): JSX.Element {
 
   return (
     <section className="mx-auto max-w-4xl px-6 py-12">
-      <h1 className="text-3xl font-bold tracking-tight">Créateur de défi</h1>
-      <p className="mt-1 text-muted">
-        Rédigez l'énoncé, configurez la solution et validez l'épreuve.
-      </p>
+      <h1 className="text-3xl font-bold tracking-tight">{t('admin.editorTitle')}</h1>
+      <p className="mt-1 text-muted">{t('admin.editorSubtitle')}</p>
 
       {validationResult && (
         <div className="mt-6 whitespace-pre-line rounded-xl bg-success/10 p-4 text-sm text-success">
@@ -118,20 +117,20 @@ export function ChallengeEditorPage(): JSX.Element {
       <form onSubmit={handleSaveDraft} className="mt-8 space-y-6">
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="text-sm font-medium">Titre</label>
+            <label className="text-sm font-medium">{t('admin.title')}</label>
             <Input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="ex: Tri fusion"
+              placeholder={t('admin.exampleTitle')}
               required
             />
           </div>
           <div>
-            <label className="text-sm font-medium">ID Thématique (UUID)</label>
+            <label className="text-sm font-medium">{t('admin.themeId')}</label>
             <Input
               value={themeId}
               onChange={(e) => setThemeId(e.target.value)}
-              placeholder="UUID de la thématique"
+              placeholder={t('admin.themeIdHint')}
               required
             />
           </div>
@@ -139,21 +138,21 @@ export function ChallengeEditorPage(): JSX.Element {
 
         <div className="grid gap-4 sm:grid-cols-4">
           <div>
-            <label className="text-sm font-medium">Type</label>
+            <label className="text-sm font-medium">{t('admin.type')}</label>
             <select
               value={type}
               onChange={(e) => setType(e.target.value)}
               className="mt-1 block w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm"
             >
-              <option value="sorting">Tri (sorting)</option>
-              <option value="debugging">Débogage (debugging)</option>
-              <option value="decryption">Décryptage (decryption)</option>
-              <option value="steganography">Stéganographie</option>
-              <option value="qr_code">QR Code</option>
+              <option value="sorting">{t('admin.kindSorting')}</option>
+              <option value="debugging">{t('admin.kindDebug')}</option>
+              <option value="decryption">{t('admin.kindDecryption')}</option>
+              <option value="steganography">{t('admin.kindStego')}</option>
+              <option value="qr_code">{t('admin.kindQr')}</option>
             </select>
           </div>
           <div>
-            <label className="text-sm font-medium">Difficulté (1 à 5)</label>
+            <label className="text-sm font-medium">{t('admin.difficulty')}</label>
             <Input
               type="number"
               min={1}
@@ -164,7 +163,7 @@ export function ChallengeEditorPage(): JSX.Element {
             />
           </div>
           <div>
-            <label className="text-sm font-medium">Points de base</label>
+            <label className="text-sm font-medium">{t('admin.basePoints')}</label>
             <Input
               type="number"
               min={0}
@@ -174,7 +173,7 @@ export function ChallengeEditorPage(): JSX.Element {
             />
           </div>
           <div>
-            <label className="text-sm font-medium">Bonus performance</label>
+            <label className="text-sm font-medium">{t('admin.perfBonus')}</label>
             <Input
               type="number"
               min={0}
@@ -186,19 +185,19 @@ export function ChallengeEditorPage(): JSX.Element {
         </div>
 
         <div>
-          <label className="text-sm font-medium">Énoncé (Markdown)</label>
+          <label className="text-sm font-medium">{t('admin.statement')}</label>
           <textarea
             value={statement}
             onChange={(e) => setStatement(e.target.value)}
             rows={5}
             className="mt-1 block w-full rounded-lg border border-border bg-surface p-3 font-mono text-sm"
-            placeholder="Rédigez les consignes du défi en Markdown..."
+            placeholder={t('admin.statementHint')}
             required
           />
         </div>
 
         <div>
-          <label className="text-sm font-medium">Solution de référence (Python)</label>
+          <label className="text-sm font-medium">{t('admin.solution')}</label>
           <textarea
             value={referenceSolution}
             onChange={(e) => setReferenceSolution(e.target.value)}
@@ -209,7 +208,7 @@ export function ChallengeEditorPage(): JSX.Element {
         </div>
 
         <div>
-          <label className="text-sm font-medium">Jeux de tests (JSON)</label>
+          <label className="text-sm font-medium">{t('admin.testCases')}</label>
           <textarea
             value={testsRaw}
             onChange={(e) => setTestsRaw(e.target.value)}

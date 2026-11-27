@@ -28,6 +28,7 @@ tags:
   - name: Economy
   - name: Lore
   - name: Chat
+  - name: Notifications
   - name: Admin
 
 paths:
@@ -1220,6 +1221,71 @@ paths:
         - { name: cursor, in: query, schema: { type: string } }
       responses:
         '200': { description: Entrées d'audit }
+
+  /notifications/vapid-public-key:
+    get:
+      tags: [Notifications]
+      summary: Clé publique VAPID pour l'abonnement Web Push
+      security: []
+      responses:
+        '200':
+          description: Clé publique (chaîne vide si Web Push n'est pas configuré)
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [publicKey]
+                properties:
+                  publicKey: { type: string }
+
+  /notifications/subscriptions:
+    post:
+      tags: [Notifications]
+      summary: Enregistrer un abonnement Web Push après autorisation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [endpoint, keys]
+              properties:
+                endpoint: { type: string, format: uri }
+                keys:
+                  type: object
+                  required: [p256dh, auth]
+                  properties:
+                    p256dh: { type: string }
+                    auth: { type: string }
+      responses:
+        '201':
+          description: Abonnement enregistré
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id: { type: string, format: uuid }
+                  endpoint: { type: string }
+                  createdAt: { type: string, format: date-time }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+    delete:
+      tags: [Notifications]
+      summary: Révoquer un abonnement Web Push
+      parameters:
+        - { name: endpoint, in: query, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Abonnement révoqué
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  revoked: { type: boolean, enum: [true] }
+        '401': { $ref: '#/components/responses/Error' }
 
 components:
   securitySchemes:

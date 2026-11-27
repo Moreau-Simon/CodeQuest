@@ -1,6 +1,13 @@
 export const REALTIME_NAMESPACE = '/realtime';
 export const REALTIME_REVOKE_CHANNEL = 'auth.revoke';
 
+/**
+ * Contrat `websocket-events.md` §3.6 (FR-104) : canal de notification par
+ * utilisateur (`user:<userId>`). Constante sans effet de bord, importable
+ * avant l'initialisation de l'environnement (tests d'intégration).
+ */
+export const NOTIFICATION_NEW = 'notification.new';
+
 /** Room Socket.IO d'un document collaboratif (contrat `websocket-events.md`). */
 export function documentRoom(teamId: string, challengeId: string): string {
   return `doc:${teamId}:${challengeId}`;
