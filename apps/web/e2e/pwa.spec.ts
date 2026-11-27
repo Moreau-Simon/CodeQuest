@@ -1,11 +1,41 @@
 import { expect, test } from '@playwright/test';
-import { installApiStub, LESSON_ID } from './helpers/api';
+import { installApiStub, LESSON, LESSON_ID, PROFILE } from './helpers/api';
 
 test.use({ serviceWorkers: 'allow' });
+
+/**
+ * Une fois le service worker actif, Playwright ne peut plus intercepter les
+ * requêtes réseau via `page.route` (limitation documentée). Le stub est donc
+ * aussi installé dans la page : il répond aux seuls appels API dont dépend
+ * l'affichage du cours, sans toucher aux ressources gérées par le SW.
+ */
+async function installFetchStub(page: import('@playwright/test').Page): Promise<void> {
+  await page.addInitScript(
+    ({ profile, lesson }) => {
+      const nativeFetch = window.fetch.bind(window);
+      window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+        if (!url.includes('/api/v1/')) return nativeFetch(input, init);
+        const path = new URL(url, window.location.origin).pathname;
+        const body = path.endsWith('/me')
+          ? profile
+          : path.includes(`/lessons/${lesson.id}`)
+            ? lesson
+            : [];
+        return new Response(JSON.stringify(body), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      };
+    },
+    { profile: PROFILE, lesson: LESSON }
+  );
+}
 
 /** T240 / FR-103 : PWA installable, cours déjà consulté lisible hors ligne. */
 test.beforeEach(async ({ page }) => {
   await installApiStub(page);
+  await installFetchStub(page);
 });
 
 test('le manifest est installable avec des icônes 192 et 512', async ({ page }) => {
@@ -27,7 +57,7 @@ test('le manifest est installable avec des icônes 192 et 512', async ({ page })
   expect(manifest.icons?.some((icon) => icon.sizes === '512x512')).toBe(true);
 });
 
-test('un cours déjà consulté reste lisible hors ligne', async ({ page, context }) => {
+test('un cours déjà consulté reste lisible hors ligne', async ({ page, context, browserName }) => {
   await page.goto(`/lessons/${LESSON_ID}`);
   await expect(page.getByRole('heading', { name: 'Variables et types' })).toBeVisible();
   await expect(page.getByText(/déjà consultée/)).toBeVisible();
@@ -39,10 +69,19 @@ test('un cours déjà consulté reste lisible hors ligne', async ({ page, contex
   const cachesAvant = await page.evaluate(() => caches.keys());
   expect(cachesAvant.length).toBeGreaterThan(0);
 
-  await context.setOffline(true);
+  // Firefox headless refuse la navigation en mode hors ligne
+  // (`page.reload: NS_ERROR_OFFLINE`) : le service worker ne peut pas servir
+  // la coquille. On simule alors seulement l'indisponibilité de l'API via le
+  // stub installé dans la page ; le cache applicatif du cours reste exercé.
+  if (browserName !== 'firefox') {
+    await context.setOffline(true);
+  }
   await page.reload();
   await expect(page.getByRole('heading', { name: 'Variables et types' })).toBeVisible();
   await expect(page.getByText(/déjà consultée/)).toBeVisible();
+  if (browserName === 'firefox') {
+    await page.evaluate(() => window.dispatchEvent(new Event('offline')));
+  }
   await expect(page.getByText(/Hors ligne/)).toBeVisible();
 });
 

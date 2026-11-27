@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test';
 
-const PROFILE = {
+export const PROFILE = {
   id: '018f2c9e-7b3a-7c4d-9e11-2a6f5d4c8b01',
   pseudonym: 'ada',
   email: 'ada@example.com',
@@ -15,7 +15,7 @@ const PROFILE = {
 
 export const LESSON_ID = '018f2c9e-7b3a-7c4d-9e11-2a6f5d4c8b10';
 
-const LESSON = {
+export const LESSON = {
   id: LESSON_ID,
   theme: 'Bases',
   title: 'Variables et types',

@@ -1,5 +1,4 @@
 import { useState, type FormEvent, type ReactNode } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
 import { t } from '../../i18n';
 import { ApiError } from '../../services/api-client';
 import { deleteAccount } from '../../services/auth';
@@ -20,7 +19,6 @@ export function DeleteAccountDialog({
   onClose,
   onDeleted
 }: DeleteAccountDialogProps): ReactNode {
-  const queryClient = useQueryClient();
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -31,7 +29,8 @@ export function DeleteAccountDialog({
     setSubmitting(true);
     try {
       await deleteAccount(password);
-      await queryClient.invalidateQueries({ queryKey: ['session', 'me'] });
+      // Le compte supprimé ne doit pas être rechargé : `ProfilePage` purge la
+      // session et redirige immédiatement vers l'accueil.
       setPassword('');
       onDeleted();
     } catch (cause) {

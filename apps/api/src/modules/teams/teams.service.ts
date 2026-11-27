@@ -176,7 +176,7 @@ export class TeamsService {
     });
     return {
       token,
-      inviteUrl: `${env.PUBLIC_APP_URL}/teams/join?token=${encodeURIComponent(token)}`,
+      inviteUrl: `${env.PUBLIC_APP_URL}/teams/join?teamId=${encodeURIComponent(teamId)}&token=${encodeURIComponent(token)}`,
       teamId,
       expiresAt: expiresAt.toISOString()
     };

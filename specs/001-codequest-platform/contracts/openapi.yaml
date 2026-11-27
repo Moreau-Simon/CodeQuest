@@ -1479,7 +1479,10 @@ components:
       required: [token, inviteUrl, teamId, expiresAt]
       properties:
         token: { type: string }
-        inviteUrl: { type: string, format: uri }
+        inviteUrl:
+          type: string
+          format: uri
+          description: Lien d'adhésion `/teams/join` portant `teamId` et `token`.
         teamId: { type: string, format: uuid }
         expiresAt: { type: string, format: date-time }
 
