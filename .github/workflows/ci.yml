@@ -51,6 +51,19 @@ jobs:
       - name: Unit tests
         run: pnpm test
 
+      # SC-012 : seuil de 80 % sur les règles métier (scoring, économie,
+      # élimination, prérequis) et publication du rapport lcov.
+      - name: Business coverage
+        run: pnpm --filter @codequest/api test:coverage
+
+      - name: Publish coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-coverage
+          path: apps/api/coverage
+          if-no-files-found: warn
+
       - name: Build
         run: pnpm build
 

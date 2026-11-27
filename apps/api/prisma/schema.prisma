@@ -127,6 +127,8 @@ model User {
   issuedChatSanctions ChatSanction[]           @relation("ChatSanctionIssuer")
   createdTransactions Transaction[]            @relation("TransactionCreatedBy")
 
+  // Liste admin cursorisée par createdAt DESC (T262).
+  @@index([createdAt(sort: Desc)])
   @@map("users")
 }
 
@@ -474,6 +476,9 @@ model Challenge {
 
   @@index([themeId])
   @@index([status])
+  // Catalogue trié et paginé : (status, difficulty, title, id) couvre le filtre
+  // et l'ordre sans tri secondaire (T262).
+  @@index([status, difficulty, title, id])
   @@map("challenges")
 }
 
@@ -546,6 +551,8 @@ model Submission {
   @@index([userId, createdAt(sort: Desc)])
   @@index([eventId, userId])
   @@index([teamId, challengeId])
+  // DISTINCT ON (sujet, défi) des classements d'événement, joueurs et équipes.
+  @@index([eventId, teamId, challengeId, score(sort: Desc), createdAt(sort: Asc)])
   @@map("submissions")
 }
 
@@ -591,6 +598,8 @@ model BestScore {
   @@unique([challengeId, subjectType, subjectId])
   @@index([submissionId])
   @@index([subjectType, subjectId])
+  // Fenêtres week/month/season des classements globaux.
+  @@index([subjectType, achievedAt])
   @@map("best_scores")
 }
 
