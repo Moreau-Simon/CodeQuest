@@ -44,11 +44,13 @@ API ──(enqueue)──> queue:submissions ──> runner ──(result)──
   "runs": 5,
   "mode": "score",                                   // score | validate | sample
   "context": {
-    "subjectType": "player",
-    "subjectId": "uuid",
+    "subjectType": "player",         // "team" quand teamId est fourni par la soumission
+    "subjectId": "uuid",             // identifiant de l'équipe dans ce cas
     "eventId": null,
     "isEventAttempt": false
   },
+  "teamId": null,                    // uuid de l'équipe pour une soumission officielle
+
   "enqueuedAt": "2026-11-13T09:59:58.120Z"
 }
 ```
@@ -174,3 +176,20 @@ Métriques Prometheus exposées sur `:9464` : `runner_jobs_active`, `runner_jobs
 | FR-036 détection d'abus | §5, §7 |
 | FR-110 tests et solutions chiffrés au repos | §2 (`testsRef`, `keyId`, déchiffrement côté runner uniquement) |
 | Principe I de la constitution — aucun code utilisateur hors runner | §1 |
+
+## État d’implémentation (T269, 28 novembre 2026)
+
+- `context.subjectType` vaut `team` et `context.subjectId` l’identifiant d’équipe lorsque
+  `teamId` est fourni par la soumission ; sinon le joueur est utilisé.
+- Le champ `failure.kind = "infrastructure"` est bien écrit en DLQ. La remise en `pending` avec
+  backoff (3 essais) n’est pas encore automatisée : le runbook « file bloquée » décrit la procédure
+  manuelle et l’idempotence garantit l’absence de double crédit.
+- La tolérance ±5 % s’applique à la répétabilité des mesures et est vérifiée par les golden tests ;
+  la formule de score n’arrondit pas les médianes en bandes.
+- `mode: "validate"` et la priorité `validation` sont réservés au recalibrage, non utilisés en v1.
+- L’idempotence repose sur la déduplication BullMQ et le ledger local du runner ; le contrôle de
+  l’état `pending`/`running` côté API reste à ajouter.
+- Les alertes 10 s / promotion 60 s sont couvertes par le timeout API et les métriques Prometheus,
+  pas par un sweep dédié.
+- Les images d’exécution sont épinglées par digest dans les manifests de déploiement ; les limites
+  I/O cgroup sont à ajouter à la prochaine révision du profil.

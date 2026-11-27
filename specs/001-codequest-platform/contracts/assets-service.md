@@ -60,7 +60,8 @@ Génère l'artefact d'une instance de défi.
 {
   "assetId": "uuid",
   "seedFingerprint": "3f9a…c1",          // 8 premiers octets du HMAC, pour support/debug
-  "objectKey": "assets/steg/018f…/3f9a…c1.png",
+  "ciphertext": "…",                     // présent pour decryption_image, consommé par GET /challenges/{id}
+  "objectKey": "assets/steg/018f…/3f9a…c1-<variant>.png",
   "url": "https://minio.internal/…?X-Amz-Expires=900",
   "sha256": "…",
   "width": 800,
@@ -117,7 +118,9 @@ Vérifie la réponse d'un joueur **sans jamais renvoyer la solution**.
 - En cas d'échec, `reason` reste générique (`"payload_mismatch"`, `"incomplete_fragments"`) : aucune
   fuite de la valeur attendue (FR-029).
 - La comparaison est à temps constant pour les payloads textuels.
-- Un rate limit de 10 vérifications/minute par `(subject, challengeId)` protège du brute force.
+- Un rate limit de 10 vérifications/minute par `(subject.type, subject.id, challengeId)` protège
+  du brute force. L'API publique traduit ses champs plats (`cipher`, `maskOpacity`) en
+  `parameters.decryptionStyle` ; le suffixe `-<variant>` de l'objectKey distingue les variantes.
 
 ## 5. `GET /health`
 
@@ -132,7 +135,7 @@ Vérifie la réponse d'un joueur **sans jamais renvoyer la solution**.
 | Élément | Règle |
 |---|---|
 | Bucket | `codequest-assets`, privé, versioning désactivé |
-| Chemin | `assets/<kind>/<challengeId>/<seedFingerprint>.<ext>` |
+| Chemin | `assets/<kind>/<challengeId>/<seedFingerprint>-<variant>.<ext>` |
 | Métadonnées | `sha256`, `challenge-version`, `generated-at`, `seed-fingerprint` |
 | Rétention | 90 jours ; purge des objets non référencés par une soumission récente |
 | Régénération | toujours possible depuis la graine, sans perte |
@@ -166,3 +169,15 @@ Vérifie la réponse d'un joueur **sans jamais renvoyer la solution**.
 | FR-044 QR surchargé, fragmenté, altéré | `qrStyle` (`overlay`, `fragments`, `rotationDeg`) |
 | FR-028 aucune fuite de test ou de solution vers le client | §4 (`reason` générique), §7 |
 | FR-027, principe I — exécution hors du processus web, sans code utilisateur | service séparé, aucun payload évalué |
+
+## État d’implémentation (T269, 28 novembre 2026)
+
+- L’API publique expose des champs plats (`cipher`, `maskOpacity`) traduits en
+  `parameters.decryptionStyle` avant l’appel au service interne.
+- `ciphertext` est renvoyé par `/generate` pour `decryption_image` et consommé par
+  `GET /challenges/{id}` ; il ne contient ni graine ni réponse attendue.
+- `maskOpacity` est réservé : le rendu actuel n’applique pas encore d’opacité paramétrable.
+- `GET /health` expose un champ `service` supplémentaire ; `minio` est signalé `ok` et le passage à
+  `degraded` nécessite une sonde de latence (à brancher sur le healthcheck MinIO).
+- La rétention à 90 jours est assurée par la politique de cycle de vie du bucket ; la file de
+  génération est bornée par la capacité du pool de workers.

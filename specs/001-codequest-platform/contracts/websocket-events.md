@@ -13,7 +13,7 @@ diffusion multi-instance.
 | Échec | `connect_error` avec `data.code = "UNAUTHENTICATED" \| "SESSION_REVOKED"` puis déconnexion |
 | Révocation | La révocation d'une session ferme tous ses sockets dans les 5 s (`auth.revoke` sur Redis pub/sub) |
 | Repli | Si le transport échoue, le client interroge `GET /api/v1/submissions/{id}` toutes les 2 s (FR-034) |
-| Reconnexion | Backoff exponentiel plafonné à 30 s, reprise des abonnements via `lastEventId` |
+| Reconnexion | Backoff exponentiel plafonné à 30 s, reprise des abonnements via `lastEventId` (champ réservé, non transmis par le client en v1 : le repli REST fait foi) |
 
 Le socket ne transporte **aucune** donnée d'administration sensible et ne remplace jamais un contrôle
 d'autorisation REST : chaque événement diffusé est filtré côté serveur par appartenance (FR-092).
@@ -27,7 +27,7 @@ d'autorisation REST : chaque événement diffusé est filtré côté serveur par
 | `channel:<channelId>` | audience du canal validée côté serveur | messages, suppressions, sanctions |
 | `event:<eventId>` | participants inscrits, spectateurs en lecture | rounds, classement live, éliminations |
 | `event:<eventId>:spectators` | éliminés et spectateurs | vue lecture seule (FR-099) |
-| `leaderboard:<scope>` | abonnés à un classement affiché | mises à jour incrémentales |
+| `leaderboard:<scope>:<scopeId>:<subjectType>:<period>` | abonnés à un classement affiché | mises à jour incrémentales ; `subjectType` vaut `player` ou `team` |
 | `doc:<teamId>:<challengeId>` | membres de l'équipe | deltas Yjs et présence (FR-057) |
 
 ## 3. Événements serveur → client
@@ -65,7 +65,7 @@ est exposée (FR-029).
 ```jsonc
 // type: "leaderboard.updated"
 {
-  "scope": "theme", "scopeId": "uuid", "period": "season",
+  "scope": "theme", "scopeId": "uuid", "subjectType": "player", "period": "season",
   "changes": [ { "rank": 1, "subjectId": "uuid", "displayName": "ada", "score": 1520.0 } ],
   "computedAt": "2026-11-13T10:00:00Z"
 }
@@ -159,7 +159,7 @@ FR-100). Une déconnexion ne suspend jamais le round.
 |---|---|---|
 | `room.join` | `{ room }` | `{ ok, error? }` — refus si non autorisé |
 | `room.leave` | `{ room }` | `{ ok }` |
-| `submission.watch` | `{ submissionId }` | Rejoint `user:<id>` ; `{ ok }` |
+| `submission.watch` | `{ submissionId }` | La salle `user:<id>` est déjà rejointe à la connexion ; acquittement `{ ok }` (ou `INVALID_PAYLOAD`) |
 | `chat.send` | `{ channelId, body, clientMessageId }` | Acquittement `{ ok, messageId }` ou `{ ok: false, code }` |
 | `chat.typing` | `{ channelId }` | Aucun |
 | `doc.update` | `{ docId, update }` | `{ ok }` |
@@ -191,3 +191,17 @@ FR-100). Une déconnexion ne suspend jamais le round.
 | FR-104 rappels d'événement et fin de KO | §3.6 `notification.new` (salle `user:<userId>`, idempotente par référence) |
 | FR-097 → FR-101 rounds, éliminations, spectateurs | §3.5 |
 | FR-017 fermeture à la révocation | §1 |
+
+## 7. État d’implémentation (T269, 28 novembre 2026)
+
+- `lastEventId` est réservé : le client v1 ne le transmet pas et s’appuie sur le repli REST (§1).
+- Les rooms `team:` / `event:` sont rejointes par les handlers dédiés au chat, aux events et aux
+  documents ; `room.join` n’accepte que `user:<id>` et `channel:<id>` pour éviter tout contoursnement
+  d’autorisation.
+- `doc.update` diffuse l’état Yjs complet encodé en base64 (le delta compressé reste une évolution
+  possible), avec `docId` dans l’enveloppe.
+- `voice.join` répond `{ ok, token, url, expiresAt }` ; `expiresAt` est redondant avec `voice.token`.
+- `maxHttpBufferSize` est fixé à 8 Kio. Les plafonds rooms/sockets et la déconnexion après trois
+  erreurs sont gérés par `RealtimeSessions` et le garde-fou REST ; ils restent à durcir en v2.
+- `presence.changed` est émis à la connexion (`online`) et à la déconnexion (`offline`) sur la salle
+  `user:<userId>`.

@@ -238,8 +238,8 @@ export class SubmissionsService {
       runs: 5,
       mode: 'score',
       context: {
-        subjectType: 'player',
-        subjectId: user.id,
+        subjectType: input.teamId ? 'team' : 'player',
+        subjectId: input.teamId ?? user.id,
         eventId: input.eventId ?? null,
         isEventAttempt: Boolean(input.eventId),
         bossPhaseId: input.bossPhaseId ?? null

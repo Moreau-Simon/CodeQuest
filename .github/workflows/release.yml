@@ -1,0 +1,59 @@
+name: Release SemVer
+
+# T272 — ne taguer `main` qu'après une CI complètement verte.
+on:
+  workflow_run:
+    workflows: ["CI CodeQuest"]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Générer le CHANGELOG et le tag SemVer
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch == 'main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Ignorer les commits de release (évite les boucles)
+        id: guard
+        run: |
+          SUBJECT=$(git log -1 --pretty=%s)
+          if [[ "$SUBJECT" == chore(release):* ]]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Générer le CHANGELOG depuis les Conventional Commits
+        id: changelog
+        if: steps.guard.outputs.skip == 'false'
+        run: |
+          VERSION=$(node scripts/release.cjs)
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Publier le CHANGELOG, le commit et le tag annoté
+        if: steps.changelog.outputs.version != ''
+        env:
+          VERSION: ${{ steps.changelog.outputs.version }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add CHANGELOG.md
+          git commit -m "chore(release): v$VERSION" || true
+          git push origin HEAD:main
+          git tag -a "v$VERSION" -m "Release v$VERSION"
+          git push origin "v$VERSION"
+          echo "Release v$VERSION publiée (SemVer)."

@@ -112,7 +112,8 @@ function chatErrorCode(error: unknown): ChatSocketAck {
  */
 @WebSocketGateway({
   namespace: REALTIME_NAMESPACE,
-  cors: { origin: env.WEB_ORIGIN, credentials: true }
+  cors: { origin: env.WEB_ORIGIN, credentials: true },
+  maxHttpBufferSize: 8192
 })
 @Injectable()
 export class RealtimeGateway
@@ -171,6 +172,11 @@ export class RealtimeGateway
     const { userId, sessionId } = socket.data as { userId?: string; sessionId?: string };
     if (userId) {
       void socket.join(`user:${userId}`);
+      this.emitToUser(userId, 'presence.changed', {
+        room: `user:${userId}`,
+        userId,
+        state: 'online'
+      });
     }
     this.sessions.register(socket as unknown as RealtimeSocket);
     this.metrics.setRealtimeConnections(this.sessions.count());
@@ -178,6 +184,14 @@ export class RealtimeGateway
   }
 
   handleDisconnect(socket: Socket): void {
+    const { userId } = socket.data as { userId?: string };
+    if (userId) {
+      this.emitToUser(userId, 'presence.changed', {
+        room: `user:${userId}`,
+        userId,
+        state: 'offline'
+      });
+    }
     this.sessions.unregister(socket.id);
     this.metrics.setRealtimeConnections(this.sessions.count());
   }
@@ -335,6 +349,22 @@ export class RealtimeGateway
     } catch (error) {
       return { ok: false, code: docErrorCode(error) };
     }
+  }
+
+  /**
+   * Contrat `websocket-events.md` §4 : le socket est déjà abonné à `user:<id>`
+   * dès la connexion. Cet handler fournit l'acquittement explicite attendu par
+   * le client lorsqu'il commence à suivre une soumission.
+   */
+  @SubscribeMessage('submission.watch')
+  onSubmissionWatch(
+    @MessageBody() payload: unknown
+  ): { ok: boolean; code?: string } {
+    const submissionId = (payload as { submissionId?: unknown } | null)?.submissionId;
+    if (typeof submissionId !== 'string' || submissionId.length === 0) {
+      return { ok: false, code: 'INVALID_PAYLOAD' };
+    }
+    return { ok: true };
   }
 
   /**

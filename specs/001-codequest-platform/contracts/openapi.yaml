@@ -1263,6 +1263,65 @@ paths:
         '200': { description: Validation réussie, bornes calibrées }
         '422': { description: Validation échouée, test fautif identifié }
 
+  /admin/stats:
+    get:
+      tags: [Admin]
+      summary: Statistiques d'administration (tableau de bord)
+      responses:
+        '200': { description: Statistiques }
+        '403': { description: Permission `admin:read` requise }
+
+  /admin/users/{userId}/roles:
+    post:
+      tags: [Admin]
+      summary: Ajouter un rôle à un utilisateur
+      parameters:
+        - { name: userId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200': { description: Rôle ajouté }
+        '403': { description: Permission `user:write` requise }
+    delete:
+      tags: [Admin]
+      summary: Retirer un rôle à un utilisateur
+      parameters:
+        - { name: userId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200': { description: Rôle retiré }
+
+  /admin/users/{userId}/status:
+    patch:
+      tags: [Admin]
+      summary: Suspendre ou réactiver un compte
+      parameters:
+        - { name: userId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200': { description: Statut mis à jour }
+
+  /admin/users/{userId}:
+    delete:
+      tags: [Admin]
+      summary: Supprimer un compte (anonymisation des scores)
+      parameters:
+        - { name: userId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '204': { description: Compte supprimé }
+
+  /admin/challenges/{challengeId}:
+    patch:
+      tags: [Admin]
+      summary: Modifier un défi en brouillon
+      parameters:
+        - { name: challengeId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200': { description: Défi mis à jour }
+    delete:
+      tags: [Admin]
+      summary: Supprimer un défi non publié
+      parameters:
+        - { name: challengeId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '204': { description: Défi supprimé }
+
   /admin/events:
     post:
       tags: [Admin]
