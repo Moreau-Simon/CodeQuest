@@ -57,7 +57,7 @@ test('le manifest est installable avec des icônes 192 et 512', async ({ page })
   expect(manifest.icons?.some((icon) => icon.sizes === '512x512')).toBe(true);
 });
 
-test('un cours déjà consulté reste lisible hors ligne', async ({ page, context }) => {
+test('un cours déjà consulté reste lisible hors ligne', async ({ page, context, browserName }) => {
   await page.goto(`/lessons/${LESSON_ID}`);
   await expect(page.getByRole('heading', { name: 'Variables et types' })).toBeVisible();
   await expect(page.getByText(/déjà consultée/)).toBeVisible();
@@ -69,10 +69,19 @@ test('un cours déjà consulté reste lisible hors ligne', async ({ page, contex
   const cachesAvant = await page.evaluate(() => caches.keys());
   expect(cachesAvant.length).toBeGreaterThan(0);
 
-  await context.setOffline(true);
+  // Firefox headless refuse la navigation en mode hors ligne
+  // (`page.reload: NS_ERROR_OFFLINE`) : le service worker ne peut pas servir
+  // la coquille. On simule alors seulement l'indisponibilité de l'API via le
+  // stub installé dans la page ; le cache applicatif du cours reste exercé.
+  if (browserName !== 'firefox') {
+    await context.setOffline(true);
+  }
   await page.reload();
   await expect(page.getByRole('heading', { name: 'Variables et types' })).toBeVisible();
   await expect(page.getByText(/déjà consultée/)).toBeVisible();
+  if (browserName === 'firefox') {
+    await page.evaluate(() => window.dispatchEvent(new Event('offline')));
+  }
   await expect(page.getByText(/Hors ligne/)).toBeVisible();
 });
 
