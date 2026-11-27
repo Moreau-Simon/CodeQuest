@@ -643,15 +643,15 @@ bloquée, restaurer une sauvegarde et valider l'intégrité, exporter et supprim
 - [X] T262 [P] Optimiser les requêtes chaudes (catalogue, classement, détail de défi) et ajouter les index manquants dans `apps/api/prisma/migrations/`
 - [X] T263 [P] Ajouter des tests de charge k6 dans `infra/load/` (`browse.js`, `submissions.js`, `realtime.js`) et consigner les résultats (SC-003, SC-004, SC-005)
 - [X] T264 [P] Compléter la couverture métier à ≥ 80 % (scoring, économie, élimination, prérequis) dans `apps/api/test/` et publier le rapport via `.github/workflows/ci.yml` (SC-012)
-- [ ] T265 [P] Exécuter OWASP ZAP baseline et la campagne d'évasion documentée, consigner les résultats dans `docs/security/` (SC-008)
-- [ ] T266 [P] Rédiger la documentation d'exploitation dans `docs/operations/` (runbooks : file bloquée, restauration, rotation de clé AES)
-- [ ] T267 [P] Rédiger le manuel utilisateur et le guide administrateur dans `docs/user/` et `docs/admin/`
+- [X] T265 [P] Exécuter OWASP ZAP baseline et la campagne d'évasion documentée, consigner les résultats dans `docs/security/` (SC-008)
+- [X] T266 [P] Rédiger la documentation d'exploitation dans `docs/operations/` (runbooks : file bloquée, restauration, rotation de clé AES)
+- [X] T267 [P] Rédiger le manuel utilisateur et le guide administrateur dans `docs/user/` et `docs/admin/`
 - [ ] T268 Nettoyer le code mort, harmoniser les noms de modules et supprimer les `TODO` restants dans `apps/` et `services/`
 - [ ] T269 Vérifier la cohérence des contrats : `contracts/openapi.yaml` vs implémentation, `contracts/websocket-events.md` vs gateway, `contracts/runner-job.md` vs runner, `contracts/assets-service.md` vs service
 - [ ] T270 Exécuter l'intégralité de `quickstart.md` (S1 → S14) sur un environnement neuf et consigner les écarts
 - [ ] T271 Vérifier la conformité constitutionnelle finale (5 principes) et mettre à jour `.specify/memory/constitution.md` si une dérive est constatée
 - [ ] T272 [P] Configurer la génération automatique des notes de version et le workflow `release.yml` dans `.github/workflows/` : **SemVer**, tags Git annotés `vX.Y.Z` sur `main` après CI verte, `CHANGELOG.md` généré depuis les Conventional Commits (section 11.2)
-- [ ] T273 Former les mainteneurs : documenter les procédures de validation de défi, de modération et de rotation de secrets dans `docs/operations/onboarding.md`
+- [X] T273 Former les mainteneurs : documenter les procédures de validation de défi, de modération et de rotation de secrets dans `docs/operations/onboarding.md`
 - [X] T274 [P] E2E du parcours critique complet dans `apps/web/e2e/critical-journey.spec.ts` : inscription → confirmation e-mail → leçon → défi → classement (SC-011, principe IV)
 - [X] T275 [P] E2E du cycle de vie du compte dans `apps/web/e2e/account-lifecycle.spec.ts` : réinitialisation de mot de passe, suppression avec réauthentification, anonymisation des scores (SC-011, SC-017)
 - [X] T276 [P] E2E de l'event à essai unique dans `apps/web/e2e/event-single-attempt.spec.ts` : ouverture sans consommation, démarrage explicite, second essai refusé, abandon consommé (SC-011, FR-062)
