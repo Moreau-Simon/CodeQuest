@@ -118,6 +118,11 @@ model User {
   inventory           Inventory[]
   hintPurchases       HintPurchase[]
   badges              UserBadge[]
+  chatMessages        ChatMessage[]            @relation("ChatMessageAuthor")
+  chatReports         ChatReport[]             @relation("ChatReportReporter")
+  resolvedChatReports ChatReport[]             @relation("ChatReportResolver")
+  chatSanctions       ChatSanction[]           @relation("ChatSanctionedUser")
+  issuedChatSanctions ChatSanction[]           @relation("ChatSanctionIssuer")
   createdTransactions Transaction[]            @relation("TransactionCreatedBy")
 
   @@map("users")
@@ -336,6 +341,24 @@ enum ReportStatus {
   dismissed
 
   @@map("report_status")
+}
+
+/// US15 : audiences des canaux textuels et vocaux (FR-091, FR-092).
+enum ChatChannelKind {
+  global
+  team
+  event
+  spectator
+
+  @@map("chat_channel_kind")
+}
+
+/// US15 : sanctions applicables à un compte (FR-094).
+enum SanctionKind {
+  mute
+  ban
+
+  @@map("sanction_kind")
 }
 
 /// Événements (US9). Le cycle de vie est draft → scheduled → open → finished →
@@ -1154,4 +1177,82 @@ model UserBadge {
   @@id([userId, badgeId])
   @@index([badgeId])
   @@map("user_badges")
+}
+
+/// US15 : canal textuel ou vocal, avec une audience vérifiée côté serveur.
+/// `scope_id` est nul pour le canal global, sinon team_id ou event_id.
+model ChatChannel {
+  id        String          @id @db.Uuid
+  kind      ChatChannelKind
+  scopeId   String?         @map("scope_id") @db.Uuid
+  name      String
+  createdAt DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  messages  ChatMessage[]
+  sanctions ChatSanction[]
+
+  @@unique([kind, scopeId])
+  @@map("chat_channels")
+}
+
+/// US15 : message conservé après suppression de compte sous le libellé
+/// « Joueur supprimé » (data-model.md §8).
+model ChatMessage {
+  id              String    @id @db.Uuid
+  channelId       String    @map("channel_id") @db.Uuid
+  userId          String?   @map("user_id") @db.Uuid
+  authorLabel     String    @map("author_label")
+  body            String
+  clientMessageId String    @map("client_message_id")
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  deletedAt       DateTime? @map("deleted_at") @db.Timestamptz(6)
+  deletedBy       String?   @map("deleted_by") @db.Uuid
+
+  channel ChatChannel  @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  user    User?        @relation("ChatMessageAuthor", fields: [userId], references: [id], onDelete: SetNull)
+  reports ChatReport[]
+
+  @@unique([channelId, clientMessageId])
+  @@index([channelId, createdAt])
+  @@map("chat_messages")
+}
+
+/// US15 : signalement d'un message, traité par un modérateur (FR-094).
+model ChatReport {
+  id         String       @id @db.Uuid
+  messageId  String       @map("message_id") @db.Uuid
+  reporterId String       @map("reporter_id") @db.Uuid
+  reason     String
+  status     ReportStatus @default(open)
+  createdAt  DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  resolvedBy String?      @map("resolved_by") @db.Uuid
+  resolvedAt DateTime?    @map("resolved_at") @db.Timestamptz(6)
+
+  message  ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  reporter User        @relation("ChatReportReporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  resolver User?       @relation("ChatReportResolver", fields: [resolvedBy], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@index([messageId])
+  @@map("chat_reports")
+}
+
+/// US15 : sanction temporaire, toujours journalisée dans `audit_logs`.
+model ChatSanction {
+  id        String       @id @db.Uuid
+  userId    String       @map("user_id") @db.Uuid
+  channelId String?      @map("channel_id") @db.Uuid
+  kind      SanctionKind
+  reason    String
+  startsAt  DateTime     @default(now()) @map("starts_at") @db.Timestamptz(6)
+  endsAt    DateTime?    @map("ends_at") @db.Timestamptz(6)
+  issuedBy  String       @map("issued_by") @db.Uuid
+  revokedAt DateTime?    @map("revoked_at") @db.Timestamptz(6)
+
+  user    User        @relation("ChatSanctionedUser", fields: [userId], references: [id], onDelete: Cascade)
+  issuer  User        @relation("ChatSanctionIssuer", fields: [issuedBy], references: [id], onDelete: Restrict)
+  channel ChatChannel? @relation(fields: [channelId], references: [id], onDelete: SetNull)
+
+  @@index([userId, endsAt])
+  @@map("chat_sanctions")
 }

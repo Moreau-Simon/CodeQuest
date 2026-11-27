@@ -1076,6 +1076,20 @@ paths:
         '404': { $ref: '#/components/responses/Error' }
         '409': { $ref: '#/components/responses/Error' }
 
+  /channels:
+    get:
+      tags: [Chat]
+      summary: Canaux accessibles au compte
+      responses:
+        '200':
+          description: Canaux de l'audience du compte
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/ChatChannel' }
+        '401': { $ref: '#/components/responses/Error' }
+
   /channels/{channelId}/messages:
     get:
       tags: [Chat]
@@ -1094,6 +1108,64 @@ paths:
                   items:
                     type: array
                     items: { $ref: '#/components/schemas/ChatMessage' }
+                  nextCursor: { type: string, nullable: true }
+        '403': { $ref: '#/components/responses/Error' }
+
+  /channels/{channelId}/messages/{messageId}/reports:
+    post:
+      tags: [Chat]
+      summary: Signaler un message
+      parameters:
+        - { name: channelId, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: messageId, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason: { type: string, minLength: 1, maxLength: 500 }
+      responses:
+        '201':
+          description: Signalement enregistré
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  reported: { type: boolean, enum: [true] }
+        '403': { $ref: '#/components/responses/Error' }
+
+  /admin/chat/messages/{messageId}/sanctions:
+    post:
+      tags: [Admin]
+      summary: Supprimer un message et sanctionner son auteur
+      parameters:
+        - { name: messageId, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [kind, reason]
+              properties:
+                kind: { type: string, enum: [mute, ban] }
+                reason: { type: string, minLength: 1, maxLength: 500 }
+                durationMinutes: { type: integer, minimum: 1 }
+      responses:
+        '200':
+          description: Sanction appliquée et journalisée
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  messageId: { type: string, format: uuid }
+                  endsAt: { type: string, format: date-time }
+        '403': { $ref: '#/components/responses/Error' }
 
   /admin/users:
     get:
@@ -1706,6 +1778,14 @@ components:
         content:
           type: string
           description: Markdown du chapitre, absent tant que le chapitre est verrouillé
+
+    ChatChannel:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        kind: { type: string, enum: [global, team, event, spectator] }
+        canWrite: { type: boolean }
 
     ChatMessage:
       type: object

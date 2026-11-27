@@ -68,7 +68,8 @@ const schema = z.object({
   LIVEKIT_URL: z.string().default('ws://localhost:7880'),
   LIVEKIT_API_KEY: z.string().default('devkey'),
   LIVEKIT_API_SECRET: z.string().min(1),
-  LIVEKIT_TOKEN_TTL_SECONDS: z.coerce.number().int().positive().default(3600),
+  // US15 (FR-095) : jeton vocal court, renouvelé à l'explicitation du micro.
+  LIVEKIT_TOKEN_TTL_SECONDS: z.coerce.number().int().positive().default(60),
 
   // US8 (FR-057) : persistance périodique des documents Yjs et limite de taille.
   YJS_FLUSH_INTERVAL_MS: z.coerce.number().int().positive().default(30_000),

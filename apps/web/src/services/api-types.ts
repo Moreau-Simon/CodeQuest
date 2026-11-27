@@ -2278,6 +2278,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/channels": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Canaux accessibles au compte */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Canaux de l'audience du compte */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ChatChannel"][];
+                    };
+                };
+                401: components["responses"]["Error"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/channels/{channelId}/messages": {
         parameters: {
             query?: never;
@@ -2307,13 +2344,117 @@ export interface paths {
                     content: {
                         "application/json": {
                             items?: components["schemas"]["ChatMessage"][];
+                            nextCursor?: string | null;
                         };
                     };
                 };
+                403: components["responses"]["Error"];
             };
         };
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/channels/{channelId}/messages/{messageId}/reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Signaler un message */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    channelId: string;
+                    messageId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        reason: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Signalement enregistré */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {boolean} */
+                            reported?: true;
+                        };
+                    };
+                };
+                403: components["responses"]["Error"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/chat/messages/{messageId}/sanctions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Supprimer un message et sanctionner son auteur */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    messageId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        kind: "mute" | "ban";
+                        reason: string;
+                        durationMinutes?: number;
+                    };
+                };
+            };
+            responses: {
+                /** @description Sanction appliquée et journalisée */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            messageId?: string;
+                            /** Format: date-time */
+                            endsAt?: string;
+                        };
+                    };
+                };
+                403: components["responses"]["Error"];
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -3001,6 +3142,14 @@ export interface components {
             readAt?: string | null;
             /** @description Markdown du chapitre, absent tant que le chapitre est verrouillé */
             content?: string;
+        };
+        ChatChannel: {
+            /** Format: uuid */
+            id?: string;
+            name?: string;
+            /** @enum {string} */
+            kind?: "global" | "team" | "event" | "spectator";
+            canWrite?: boolean;
         };
         ChatMessage: {
             /** Format: uuid */

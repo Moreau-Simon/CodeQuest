@@ -8,6 +8,7 @@ export const fr = {
   'nav.leaderboards': 'Classements',
   'nav.teams': 'Équipes',
   'nav.events': 'Événements',
+  'nav.chat': 'Chat',
   'nav.bosses': 'Boss',
   'nav.shop': 'Boutique',
   'nav.wallet': 'Portefeuille',
@@ -429,7 +430,40 @@ export const fr = {
   'audio.on': 'Ambiance activée',
   'audio.off': 'Ambiance désactivée',
   'audio.visualEquivalent':
-    'Le son est facultatif : toutes les informations sont aussi affichées en texte.'
+    'Le son est facultatif : toutes les informations sont aussi affichées en texte.',
+
+  'chat.pageTitle': 'Communiquer',
+  'chat.pageSubtitle':
+    'Discutez avec les autres joueurs et rejoignez un salon vocal sans enregistrement.',
+  'chat.title': 'Discussion',
+  'chat.channels': 'Canaux de discussion',
+  'chat.empty': 'Aucun message pour le moment.',
+  'chat.deletedMessage': 'Message supprimé par la modération',
+  'chat.authorDeleted': 'Joueur supprimé',
+  'chat.report': 'Signaler {{name}}',
+  'chat.typing': '{{name}} est en train d’écrire…',
+  'chat.messageLabel': 'Message',
+  'chat.send': 'Envoyer',
+  'chat.sending': 'Envoi en cours…',
+  'chat.rateLimited': 'Trop de messages : réessayez dans {{seconds}} s.',
+  'chat.sanction': 'Sanction {{kind}} jusqu’au {{date}} : {{reason}}',
+  'chat.error': 'Le chat est momentanément indisponible.',
+  'chat.offline': 'Hors ligne — reconnexion en cours…',
+  'chat.readOnly': 'Ce canal est en lecture seule.',
+
+  'voice.title': 'Salon vocal',
+  'voice.noRecording': 'Aucun enregistrement n’est effectué.',
+  'voice.idle': 'Microphone désactivé',
+  'voice.enableMicrophone': 'Activer le microphone',
+  'voice.microphoneOn': 'Microphone actif',
+  'voice.muted': 'Micro coupé',
+  'voice.mute': 'Couper le micro',
+  'voice.unmute': 'Réactiver le micro',
+  'voice.leave': 'Quitter le salon',
+  'voice.requestFailed': 'Impossible d’activer le microphone.',
+  'voice.participants': 'Participants',
+  'voice.empty': 'Personne dans le salon.',
+  'voice.you': 'Vous'
 } as const;
 
 export type TranslationKey = keyof typeof fr;
