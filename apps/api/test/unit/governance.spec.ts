@@ -9,7 +9,7 @@ import { join } from 'node:path';
 const ROOT = join(__dirname, '..', '..', '..', '..');
 const read = (path: string) => readFileSync(join(ROOT, path), 'utf8');
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const release = require(join(ROOT, 'scripts', 'release.cjs'));
 
 describe('Constitution (T271)', () => {

@@ -28,7 +28,7 @@ cp .env.example .env          # renseigner les secrets locaux, aucune valeur ré
 pnpm install
 docker compose -f infra/docker-compose.yml up -d
 pnpm --filter @codequest/api prisma migrate deploy
-pnpm --filter @codequest/api seed        # rôles, thèmes, cours, défis de référence, boutique
+pnpm --filter @codequest/api prisma:seed # rôles, thèmes, cours, défis de référence, boutique
 ```
 
 > Pour les défis de décryptage (US7) et de stéganographie/QR (US13), renseigner `ASSETS_SEED_KEY`
@@ -45,11 +45,11 @@ Services attendus :
 | Service | URL locale | Vérification |
 |---|---|---|
 | Web | http://localhost:5173 | page d'accueil rendue |
-| API | http://localhost:3000/api/v1 | `GET /health` → `{"status":"ok"}` |
+| API | http://localhost:3000/api/v1 | `GET /health/live` → sonde Docker ; `GET /api/v1/health` → `{"status":"ok"}` |
 | Assets | http://localhost:8001/health | `{"status":"ok"}` |
 | MinIO console | http://localhost:9001 | bucket `codequest-assets` présent |
 | MailHog | http://localhost:8025 | e-mails de confirmation capturés |
-| Grafana | http://localhost:3001 | tableau de bord « CodeQuest » provisionné |
+| Grafana | http://localhost:3001 | tableau de bord « CodeQuest » provisionné (hors `infra/docker-compose.yml` : démarrage via la pile d’exploitation) |
 
 Jeu de données de démonstration : `ada@example.test` / `grace@example.test` / `linus@example.test`
 (mot de passe `Demo-passw0rd!`), une équipe « Byte Me », un event `standard` ouvert et un event
@@ -63,7 +63,7 @@ pnpm test                            # Vitest (web + unités API)
 pnpm test:integration                # Jest + Testcontainers (PostgreSQL, Redis)
 pnpm --filter @codequest/assets test # pytest
 pnpm e2e                             # Playwright, parcours critiques
-pnpm test:golden                     # non-régression du scoring
+pnpm --filter @codequest/api test -- --runTestsByPath test/golden/sorting.spec.ts # non-régression du scoring
 k6 run infra/load/submissions.js     # charge : 100 soumissions/min
 ```
 
@@ -294,7 +294,7 @@ pnpm --filter @codequest/web test    # i18n, clavier de symboles, accessibilité
 ## 5. Critères de sortie
 
 Une version est validable lorsque : S1 à S15 passent en CI (avec S4 restreint aux runners Linux),
-`pnpm test:golden` est vert, la couverture métier est ≥ 80 % (SC-012), et aucune régression n'est
+`pnpm --filter @codequest/api test -- --runTestsByPath test/golden/sorting.spec.ts` est vert, la couverture métier est ≥ 80 % (SC-012), et aucune régression n'est
 constatée sur les classements reconstruits (SC-009).
 
 ## 6. Dépannage
