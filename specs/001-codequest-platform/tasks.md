@@ -640,9 +640,9 @@ bloquée, restaurer une sauvegarde et valider l'intégrité, exporter et supprim
 
 **Purpose**: Consolidation transverse, performance, documentation et validation finale.
 
-- [ ] T262 [P] Optimiser les requêtes chaudes (catalogue, classement, détail de défi) et ajouter les index manquants dans `apps/api/prisma/migrations/`
-- [ ] T263 [P] Ajouter des tests de charge k6 dans `infra/load/` (`browse.js`, `submissions.js`, `realtime.js`) et consigner les résultats (SC-003, SC-004, SC-005)
-- [ ] T264 [P] Compléter la couverture métier à ≥ 80 % (scoring, économie, élimination, prérequis) dans `apps/api/test/` et publier le rapport via `.github/workflows/ci.yml` (SC-012)
+- [X] T262 [P] Optimiser les requêtes chaudes (catalogue, classement, détail de défi) et ajouter les index manquants dans `apps/api/prisma/migrations/`
+- [X] T263 [P] Ajouter des tests de charge k6 dans `infra/load/` (`browse.js`, `submissions.js`, `realtime.js`) et consigner les résultats (SC-003, SC-004, SC-005)
+- [X] T264 [P] Compléter la couverture métier à ≥ 80 % (scoring, économie, élimination, prérequis) dans `apps/api/test/` et publier le rapport via `.github/workflows/ci.yml` (SC-012)
 - [ ] T265 [P] Exécuter OWASP ZAP baseline et la campagne d'évasion documentée, consigner les résultats dans `docs/security/` (SC-008)
 - [ ] T266 [P] Rédiger la documentation d'exploitation dans `docs/operations/` (runbooks : file bloquée, restauration, rotation de clé AES)
 - [ ] T267 [P] Rédiger le manuel utilisateur et le guide administrateur dans `docs/user/` et `docs/admin/`
