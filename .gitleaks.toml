@@ -1,0 +1,17 @@
+title = "CodeQuest — détection de secrets"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = """
+Valeurs factices uniquement : exemple d'environnement, configuration CI de
+vérification de sauvegarde et fixtures de tests. Aucune valeur réelle ne doit
+être ajoutée à ces chemins.
+"""
+paths = [
+  '''^\.env\.example$''',
+  '''^\.github/workflows/backup-verify\.yml$''',
+  '''^apps/api/test/''',
+  '''\.spec\.ts$'''
+]

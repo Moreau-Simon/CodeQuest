@@ -8,6 +8,7 @@ import { RateLimitGuard } from './common/rate-limit/rate-limit.guard';
 import { RateLimitService } from './common/rate-limit/rate-limit.service';
 import { MailModule } from './mail/mail.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { AntiCheatModule } from './modules/anti-cheat/anti-cheat.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { BattleRoyaleModule } from './modules/battle-royale/battle-royale.module';
 import { AuthenticationGuard } from './modules/auth/authentication.guard';
@@ -22,6 +23,7 @@ import { HealthModule } from './modules/health/health.module';
 import { LeaderboardsModule } from './modules/leaderboards/leaderboards.module';
 import { LessonsModule } from './modules/lessons/lessons.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { PrivacyModule } from './modules/privacy/privacy.module';
 import { RbacGuard } from './modules/rbac/rbac.guard';
 import { RbacModule } from './modules/rbac/rbac.module';
 import { SubmissionsModule } from './modules/submissions/submissions.module';
@@ -58,6 +60,8 @@ import { StorageModule } from './storage/storage.module';
     TeamsModule,
     LessonsModule,
     NotificationsModule,
+    PrivacyModule,
+    AntiCheatModule,
     HealthModule,
     RealtimeModule,
     AdminModule

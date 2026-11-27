@@ -1,0 +1,48 @@
+name: Backup and restore verification
+
+on:
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+env:
+  # La vérification CI utilise la stack locale ; le fichier prod reste la
+  # référence pour les déploiements (secrets Docker, réseaux segmentés).
+  COMPOSE_FILE: infra/docker-compose.yml
+  DATABASE_URL: postgresql://codequest:codequest@localhost:5432/codequest?schema=public
+  REDIS_URL: redis://localhost:6379
+  SESSION_SECRET: ci-verification-session-secret-0123456789
+  AES_KEY_BASE64: Y2ktdmVyaWZpY2F0aW9uLWtleS0zMi1vY3RldHMhISE=
+  LIVEKIT_API_SECRET: ci-verification-livekit-secret
+  ASSETS_SEED_KEY: ci-verification-seed-key-000000000000
+
+jobs:
+  backup:
+    name: Sauvegarde quotidienne et vérification de restauration
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.12.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Démarrer PostgreSQL
+        run: docker compose -f "$COMPOSE_FILE" up -d postgres
+      - name: Appliquer le schéma
+        run: pnpm --filter @codequest/api prisma migrate deploy
+      - name: Sauvegarder
+        run: pnpm ops:backup backups/codequest-latest.dump
+      - name: Restaurer sur une base de test
+        run: pnpm ops:restore backups/codequest-latest.dump
+      - name: Vérifier l'intégrité
+        run: pnpm ops:verify-integrity
+      - name: Conserver la sauvegarde
+        uses: actions/upload-artifact@v4
+        with:
+          name: codequest-backup
+          path: backups/codequest-latest.dump
+          retention-days: 90

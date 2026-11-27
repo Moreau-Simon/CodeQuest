@@ -10,17 +10,30 @@ export const REFRESH_COOKIE = 'refresh_token';
  */
 export const REFRESH_COOKIE_PATH = '/api/v1/auth';
 
-function baseOptions(): CookieOptions {
+export interface CookieSecurityOptions {
+  readonly secure: boolean;
+  readonly domain?: string;
+}
+
+/** Options de sécurité communes aux cookies de session (T249 / FR-112). */
+export function cookieSecurityOptions({
+  secure,
+  domain
+}: CookieSecurityOptions): CookieOptions {
   return {
     httpOnly: true,
-    secure: env.COOKIE_SECURE,
+    secure,
     // `lax` suffit : le front est servi par le même site, et cela bloque les
     // requêtes cross-site en écriture.
     sameSite: 'lax',
     // Par défaut, cookie hôte seul (pas de `Domain`) : plus strict, et
     // compatible avec les tests sur `127.0.0.1`.
-    domain: env.COOKIE_DOMAIN && env.COOKIE_DOMAIN !== 'localhost' ? env.COOKIE_DOMAIN : undefined
+    domain: domain && domain !== 'localhost' ? domain : undefined
   };
+}
+
+function baseOptions(): CookieOptions {
+  return cookieSecurityOptions({ secure: env.COOKIE_SECURE, domain: env.COOKIE_DOMAIN });
 }
 
 export interface IssuedSession {

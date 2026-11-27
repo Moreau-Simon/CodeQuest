@@ -5,6 +5,7 @@ import helmet from 'helmet';
 import type { NextFunction, Request, Response } from 'express';
 import pinoHttp from 'pino-http';
 import { RequestContextMiddleware } from './common/middleware/request-context.middleware';
+import { buildSecurityHeaders } from './common/security/headers';
 import { logger } from './common/logging/logger';
 import { env } from './config/env';
 
@@ -26,33 +27,7 @@ export function configureApp(app: NestExpressApplication): void {
     ]
   });
 
-  app.use(
-    helmet({
-      contentSecurityPolicy: {
-        useDefaults: true,
-        directives: {
-          defaultSrc: ["'self'"],
-          scriptSrc: env.NODE_ENV === 'production' ? ["'self'"] : ["'self'", "'unsafe-inline'"],
-          styleSrc: ["'self'", "'unsafe-inline'"],
-          imgSrc: ["'self'", 'data:', 'blob:'],
-          mediaSrc: ["'self'", 'blob:'],
-          connectSrc:
-            env.NODE_ENV === 'production'
-              ? ["'self'", 'wss:']
-              : ["'self'", 'ws:', 'http://localhost:*', 'http://127.0.0.1:*'],
-          fontSrc: ["'self'", 'data:'],
-          frameAncestors: ["'none'"],
-          objectSrc: ["'none'"],
-          baseUri: ["'self'"],
-          formAction: ["'self'"]
-        }
-      },
-      hsts: env.NODE_ENV === 'production' ? { maxAge: 31_536_000, includeSubDomains: true } : false,
-      frameguard: { action: 'deny' },
-      referrerPolicy: { policy: 'no-referrer' },
-      crossOriginResourcePolicy: { policy: 'same-site' }
-    })
-  );
+  app.use(helmet(buildSecurityHeaders(env.NODE_ENV)));
 
   app.use(cookieParser(env.SESSION_SECRET));
   app.use(new RequestContextMiddleware().use.bind(new RequestContextMiddleware()));

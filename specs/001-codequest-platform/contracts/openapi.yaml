@@ -29,6 +29,7 @@ tags:
   - name: Lore
   - name: Chat
   - name: Notifications
+  - name: Privacy
   - name: Admin
 
 paths:
@@ -197,6 +198,68 @@ paths:
           content:
             application/json:
               schema: { type: object, additionalProperties: true }
+
+  /privacy/consents:
+    get:
+      tags: [Privacy]
+      summary: Lister les consentements enregistrés
+      responses:
+        '200':
+          description: Registre des consentements
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Consent' }
+        '401': { $ref: '#/components/responses/Error' }
+    post:
+      tags: [Privacy]
+      summary: Enregistrer ou modifier un consentement explicite
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [purpose, granted]
+              properties:
+                purpose: { type: string, enum: [analytics, notifications, research] }
+                granted: { type: boolean }
+                source: { type: string, maxLength: 64 }
+      responses:
+        '201': { description: Consentement enregistré }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Error' }
+
+  /privacy/export:
+    get:
+      tags: [Privacy]
+      summary: Exporter les données personnelles (sans secret ni jeton)
+      responses:
+        '200':
+          description: Export RGPD
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        '401': { $ref: '#/components/responses/Error' }
+
+  /privacy/me:
+    patch:
+      tags: [Privacy]
+      summary: Rectifier les données personnelles du profil
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                pseudonym: { type: string, maxLength: 40 }
+                email: { type: string, format: email }
+      responses:
+        '204': { description: Profil rectifié }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Error' }
 
   /me/sessions:
     get:
@@ -1302,6 +1365,15 @@ components:
           schema: { $ref: '#/components/schemas/Error' }
 
   schemas:
+    Consent:
+      type: object
+      required: [purpose, granted, recordedAt]
+      properties:
+        purpose: { type: string, enum: [analytics, notifications, research] }
+        granted: { type: boolean }
+        source: { type: string, nullable: true }
+        recordedAt: { type: string, format: date-time }
+
     Error:
       type: object
       required: [code, message]

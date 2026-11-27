@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Counter, Gauge, Histogram, Registry } from 'prom-client';
+import type { IntegrityReport } from '../../modules/ops/restore-integrity';
+import { createConsistencyMetrics } from './consistency.metrics';
 
 /**
  * Métriques Prometheus de l'API (T028) :
@@ -52,6 +54,8 @@ export class MetricsService {
     registers: [this.registry]
   });
 
+  private readonly consistency = createConsistencyMetrics(this.registry);
+
   observeHttp(method: string, route: string, status: number, seconds: number): void {
     this.httpRequestDuration.observe(
       { method, route, status: String(status) },
@@ -77,6 +81,10 @@ export class MetricsService {
 
   countFirstAttempt(outcome: 'success' | 'failure'): void {
     this.lessonFirstAttempt.inc({ outcome });
+  }
+
+  recordIntegrityReport(report: IntegrityReport): void {
+    this.consistency.recordReport(report);
   }
 
   render(): Promise<string> {

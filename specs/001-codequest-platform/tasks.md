@@ -614,23 +614,23 @@ bloquée, restaurer une sauvegarde et valider l'intégrité, exporter et supprim
 
 ### Tests for User Story 17 ⚠️
 
-- [ ] T248 [P] [US17] Tests de non-fuite de secrets dans `apps/api/test/security/secrets.spec.ts` (aucun secret dans le dépôt, `.env.example` sans valeur réelle)
-- [ ] T249 [P] [US17] Tests d'en-têtes de sécurité dans `apps/api/test/security/headers.spec.ts` (HSTS, CSP, `X-Content-Type-Options`, cookies)
-- [ ] T250 [P] [US17] Tests de détection de similarité dans `apps/api/test/unit/similarity.spec.ts` (normalisation AST, indice de Jaccard, aucun blocage automatique)
-- [ ] T251 [P] [US17] Test d'intégrité après restauration dans `apps/api/test/ops/restore-integrity.spec.ts` (scores, soldes, états de comptes)
+- [X] T248 [P] [US17] Tests de non-fuite de secrets dans `apps/api/test/security/secrets.spec.ts` (aucun secret dans le dépôt, `.env.example` sans valeur réelle)
+- [X] T249 [P] [US17] Tests d'en-têtes de sécurité dans `apps/api/test/security/headers.spec.ts` (HSTS, CSP, `X-Content-Type-Options`, cookies)
+- [X] T250 [P] [US17] Tests de détection de similarité dans `apps/api/test/unit/similarity.spec.ts` (normalisation AST, indice de Jaccard, aucun blocage automatique)
+- [X] T251 [P] [US17] Test d'intégrité après restauration dans `apps/api/test/ops/restore-integrity.spec.ts` (scores, soldes, états de comptes)
 
 ### Implementation for User Story 17
 
-- [ ] T252 [US17] Configurer TLS et redirection HTTPS dans `infra/nginx/` (TLS 1.2+, HSTS, en-têtes de sécurité) (FR-108)
-- [ ] T253 [US17] Durcir `infra/docker-compose.prod.yml` : secrets Docker, réseaux segmentés, conteneurs non-root, healthchecks, `read_only` (FR-118)
-- [ ] T254 [US17] Mettre en place Gitleaks dans `.github/workflows/security.yml` et la validation d'environnement au démarrage dans `apps/api/src/config/env.ts`, `services/runner/src/config.ts`, `services/assets/app/config.py` (FR-111)
-- [ ] T255 [US17] Implémenter la détection de similarité asynchrone `apps/api/src/modules/anti-cheat/similarity.job.ts` (tree-sitter, shingles, Jaccard, revue humaine uniquement) (FR-114)
-- [ ] T256 [US17] Implémenter le registre de consentement et l'export RGPD dans `apps/api/src/modules/privacy/consent.service.ts` (minimisation, accès, rectification) (FR-115)
-- [ ] T257 [US17] Provisionner Prometheus et Grafana dans `infra/prometheus/` et `infra/grafana/` : latence, profondeur de file, durée d'exécution, taux d'erreur, connexions temps réel (FR-116)
-- [ ] T258 [US17] Configurer les alertes dans `infra/prometheus/alerts.yml` : file bloquée > 2 min, taux de 5xx > 1 % sur 5 min, échec de sauvegarde (FR-116, SC-013)
-- [ ] T259 [US17] Mettre en place les sauvegardes quotidiennes et le test de restauration dans `infra/backup/` + `.github/workflows/backup-verify.yml` (FR-117, SC-014)
-- [ ] T260 [US17] Ajouter les métriques de cohérence `ledger_balance_mismatch_total` et `leaderboard_drift_total` dans `apps/api/src/common/metrics/consistency.metrics.ts` (SC-021)
-- [ ] T261 [US17] Vérifier `quickstart.md` § S12, S13 et S14 (charge, sécurité, restauration)
+- [X] T252 [US17] Configurer TLS et redirection HTTPS dans `infra/nginx/` (TLS 1.2+, HSTS, en-têtes de sécurité) (FR-108)
+- [X] T253 [US17] Durcir `infra/docker-compose.prod.yml` : secrets Docker, réseaux segmentés, conteneurs non-root, healthchecks, `read_only` (FR-118)
+- [X] T254 [US17] Mettre en place Gitleaks dans `.github/workflows/security.yml` et la validation d'environnement au démarrage dans `apps/api/src/config/env.ts`, `services/runner/src/config.ts`, `services/assets/app/config.py` (FR-111)
+- [X] T255 [US17] Implémenter la détection de similarité asynchrone `apps/api/src/modules/anti-cheat/similarity.job.ts` (tree-sitter, shingles, Jaccard, revue humaine uniquement) (FR-114)
+- [X] T256 [US17] Implémenter le registre de consentement et l'export RGPD dans `apps/api/src/modules/privacy/consent.service.ts` (minimisation, accès, rectification) (FR-115)
+- [X] T257 [US17] Provisionner Prometheus et Grafana dans `infra/prometheus/` et `infra/grafana/` : latence, profondeur de file, durée d'exécution, taux d'erreur, connexions temps réel (FR-116)
+- [X] T258 [US17] Configurer les alertes dans `infra/prometheus/alerts.yml` : file bloquée > 2 min, taux de 5xx > 1 % sur 5 min, échec de sauvegarde (FR-116, SC-013)
+- [X] T259 [US17] Mettre en place les sauvegardes quotidiennes et le test de restauration dans `infra/backup/` + `.github/workflows/backup-verify.yml` (FR-117, SC-014)
+- [X] T260 [US17] Ajouter les métriques de cohérence `ledger_balance_mismatch_total` et `leaderboard_drift_total` dans `apps/api/src/common/metrics/consistency.metrics.ts` (SC-021)
+- [X] T261 [US17] Vérifier `quickstart.md` § S12, S13 et S14 (charge, sécurité, restauration)
 
 **Checkpoint**: US17 livrable seule — plateforme exploitable.
 

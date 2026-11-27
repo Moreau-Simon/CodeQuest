@@ -256,9 +256,15 @@ les trois formats d'écran, aucune alerte ZAP de sévérité haute.
 ### S14 — Restauration et intégrité (SC-014, SC-021)
 
 ```bash
-pnpm ops:backup && pnpm ops:restore --target=scratch
-pnpm ops:verify-integrity
+# Sur une instance d'exploitation : secrets dans infra/secrets/*.txt (jamais versionnés).
+pnpm ops:backup backups/codequest-latest.dump
+pnpm ops:restore backups/codequest-latest.dump   # pg_restore puis contrôle automatique
+pnpm ops:verify-integrity                        # soldes, classements, états des comptes
 ```
+
+Le workflow `.github/workflows/backup-verify.yml` exécute ces trois étapes chaque nuit et conserve
+l'archive 90 jours. Chaque anomalie est comptabilisée dans `ledger_balance_mismatch_total` et
+`leaderboard_drift_total`, puis alertée via `BackupFailed`.
 
 **Attendu** : restauration complète en moins de 4 h, classements identiques à l'original, soldes égaux
 à la somme du registre, comptes dans leur état d'origine.

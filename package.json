@@ -16,6 +16,11 @@
     "test:integration": "pnpm --filter @codequest/api test:integration",
     "e2e": "pnpm --filter @codequest/web e2e",
     "test:a11y": "pnpm --filter @codequest/web test:a11y",
+    "test:browsers": "pnpm --filter @codequest/web exec playwright test",
+    "security:zap": "docker run --rm -v \"$PWD:/zap/wrk\" ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t http://localhost:8080",
+    "ops:backup": "bash infra/backup/backup.sh",
+    "ops:restore": "bash infra/backup/restore.sh",
+    "ops:verify-integrity": "pnpm --filter @codequest/api exec ts-node --transpile-only src/ops/verify-integrity.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "prepare": "husky"

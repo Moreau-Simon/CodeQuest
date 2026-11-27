@@ -97,6 +97,7 @@ model User {
   passwordResetTokens PasswordResetToken[]
   pushSubscriptions   PushSubscription[]
   notifications       Notification[]
+  consents            Consent[]
   roles               UserRole[]
   grantedRoles        UserRole[]         @relation("UserRoleGrantedBy")
   auditLogs           AuditLog[]         @relation("AuditActor")
@@ -467,6 +468,7 @@ model Challenge {
   bossPhases              BossPhase[]
   prerequisites ChallengePrerequisite[] @relation("ChallengePrerequisites")
   requiredFor   ChallengePrerequisite[] @relation("ChallengePrerequisiteRequirements")
+  similarityFindings SimilarityFinding[]
   hints         ChallengeHint[]
   hintPurchases HintPurchase[]
 
@@ -1274,4 +1276,44 @@ model ChatSanction {
 
   @@index([userId, endsAt])
   @@map("chat_sanctions")
+}
+
+// ---------------------------------------------------------------------------
+// US17 — Sécurité, confidentialité et exploitation
+// ---------------------------------------------------------------------------
+
+/// Consentement explicite au traitement des données (T256, FR-115).
+model Consent {
+  id         String   @id @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  purpose    String   @db.VarChar(64)
+  granted    Boolean
+  source     String?  @db.VarChar(64)
+  recordedAt DateTime @default(now()) @map("recorded_at") @db.Timestamptz(6)
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, purpose])
+  @@index([userId])
+  @@map("consents")
+}
+
+/// Signal de similarité : jamais une sanction, toujours une revue humaine (T255, FR-114).
+model SimilarityFinding {
+  id            String   @id @db.Uuid
+  challengeId   String   @map("challenge_id") @db.Uuid
+  submissionAId String   @map("submission_a_id") @db.Uuid
+  submissionBId String   @map("submission_b_id") @db.Uuid
+  score         Decimal  @db.Decimal(5, 4)
+  evidence      Json
+  status        String   @default("open") @db.VarChar(16)
+  review        String   @default("human") @db.VarChar(16)
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  challenge Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+  @@unique([challengeId, submissionAId, submissionBId])
+  @@index([status, createdAt])
+  @@map("similarity_findings")
 }
