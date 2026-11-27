@@ -528,19 +528,19 @@ déconnexion sans suspension ; 7 participants → report.
 
 ### Tests for User Story 14 ⚠️
 
-- [ ] T216 [P] [US14] Tests unitaires de la règle d'élimination dans `apps/api/test/unit/elimination.spec.ts` (1/manche jusqu'à 50, puis 10 % arrondis au supérieur)
-- [ ] T217 [P] [US14] Tests d'intégration des manches dans `apps/api/test/integration/battle-royale.spec.ts` (transitions à l'échéance, pas de pause, spectateurs)
-- [ ] T218 [P] [US14] Tests de contrat temps réel des événements `round.*` dans `apps/api/test/contract/realtime-rounds.spec.ts`
+- [x] T216 [P] [US14] Tests unitaires de la règle d'élimination dans `apps/api/test/unit/elimination.spec.ts` (1/manche jusqu'à 50, puis 10 % arrondis au supérieur)
+- [x] T217 [P] [US14] Tests d'intégration des manches dans `apps/api/test/integration/battle-royale.spec.ts` (transitions à l'échéance, pas de pause, spectateurs)
+- [x] T218 [P] [US14] Tests de contrat temps réel des événements `round.*` dans `apps/api/test/contract/realtime-rounds.spec.ts`
 
 ### Implementation for User Story 14
 
-- [ ] T219 [P] [US14] Créer les modèles Prisma `BattleRound` (UNIQUE `(event_id, round_number)`, `status ∈ {scheduled, open, closed}`) et `RoundResult` (UNIQUE `(round_id, subject_type, subject_id)`, `eliminated`) dans `apps/api/prisma/schema.prisma`
-- [ ] T220 [US14] Implémenter `apps/api/src/modules/battle-royale/round.service.ts` : planification, ouverture et clôture sur l'horloge serveur, aucune pause sur déconnexion (FR-097, FR-100)
-- [ ] T221 [US14] Implémenter la règle d'élimination paramétrable dans `apps/api/src/modules/battle-royale/elimination.service.ts` (`elimination_rule` jsonb, défaut `{threshold: 50, percent: 10}`) (FR-098, clarification 4)
-- [ ] T222 [US14] Implémenter l'élimination et le passage en spectateur dans `apps/api/src/modules/battle-royale/spectator.service.ts` (room `event:<id>:spectators`, chat dédié) (FR-099)
-- [ ] T223 [US14] Implémenter le minimum de participants et le report dans `apps/api/src/modules/battle-royale/eligibility.service.ts` (`min_participants`, défaut 8) (FR-101)
-- [ ] T224 [US14] Émettre `round.started`, `round.warning`, `round.closed`, `participant.eliminated`, `event.finished` (contrat §3.5) et garantir la diffusion < 2 s
-- [ ] T225 [P] [US14] Créer `apps/web/src/pages/events/BattleRoyalePage.tsx` (arène, manche en cours, participants restants, bascule spectateur) et `SpectatorView.tsx`
+- [x] T219 [P] [US14] Créer les modèles Prisma `BattleRound` (UNIQUE `(event_id, round_number)`, `status ∈ {scheduled, open, closed}`) et `RoundResult` (UNIQUE `(round_id, subject_type, subject_id)`, `eliminated`) dans `apps/api/prisma/schema.prisma`
+- [x] T220 [US14] Implémenter `apps/api/src/modules/battle-royale/round.service.ts` : planification, ouverture et clôture sur l'horloge serveur, aucune pause sur déconnexion (FR-097, FR-100)
+- [x] T221 [US14] Implémenter la règle d'élimination paramétrable dans `apps/api/src/modules/battle-royale/elimination.service.ts` (`elimination_rule` jsonb, défaut `{threshold: 50, percent: 10}`) (FR-098, clarification 4)
+- [x] T222 [US14] Implémenter l'élimination et le passage en spectateur dans `apps/api/src/modules/battle-royale/spectator.service.ts` (room `event:<id>:spectators`, chat dédié) (FR-099)
+- [x] T223 [US14] Implémenter le minimum de participants et le report dans `apps/api/src/modules/battle-royale/eligibility.service.ts` (`min_participants`, défaut 8) (FR-101)
+- [x] T224 [US14] Émettre `round.started`, `round.warning`, `round.closed`, `participant.eliminated`, `event.finished` (contrat §3.5) et garantir la diffusion < 2 s
+- [x] T225 [P] [US14] Créer `apps/web/src/pages/events/BattleRoyalePage.tsx` (arène, manche en cours, participants restants, bascule spectateur) et `SpectatorView.tsx`
 
 **Checkpoint**: US14 livrable seule.
 

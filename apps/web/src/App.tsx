@@ -16,9 +16,11 @@ import { CatalogPage } from './pages/challenges/CatalogPage';
 import { DebugChallengePage } from './pages/challenges/DebugChallengePage';
 import { QrChallengePage } from './pages/challenges/QrChallengePage';
 import { StegoChallengePage } from './pages/challenges/StegoChallengePage';
+import { BattleRoyalePage } from './pages/events/BattleRoyalePage';
 import { EventDetailPage } from './pages/events/EventDetailPage';
 import { EventLeaderboardPage } from './pages/events/EventLeaderboardPage';
 import { EventsPage } from './pages/events/EventsPage';
+import { SpectatorView } from './pages/events/SpectatorView';
 import { BossPage } from './pages/bosses/BossPage';
 import { LeaderboardPage } from './pages/leaderboards/LeaderboardPage';
 import { LoreChapterPage } from './pages/lore/LoreChapterPage';
@@ -86,6 +88,8 @@ export function App(): JSX.Element {
         <Route path="events/:eventId/results" element={<EventLeaderboardPage />} />
 
         <Route element={<RequireAuth />}>
+          <Route path="events/:eventId/arena" element={<BattleRoyalePage />} />
+          <Route path="events/:eventId/spectate" element={<SpectatorView />} />
           <Route path="bosses" element={<BossPage />} />
           <Route path="shop" element={<ShopPage />} />
           <Route path="wallet" element={<WalletPage />} />

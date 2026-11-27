@@ -9,6 +9,7 @@ import { RateLimitService } from './common/rate-limit/rate-limit.service';
 import { MailModule } from './mail/mail.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { AuditModule } from './modules/audit/audit.module';
+import { BattleRoyaleModule } from './modules/battle-royale/battle-royale.module';
 import { AuthenticationGuard } from './modules/auth/authentication.guard';
 import { AuthModule } from './modules/auth/auth.module';
 import { BossesModule } from './modules/bosses/bosses.module';
@@ -45,6 +46,7 @@ import { StorageModule } from './storage/storage.module';
     UsersModule,
     ChallengesModule,
     EventsModule,
+    BattleRoyaleModule,
     EconomyModule,
     BossesModule,
     SubmissionsModule,

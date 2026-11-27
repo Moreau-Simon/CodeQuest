@@ -13,6 +13,8 @@ import {
   MinLength
 } from 'class-validator';
 import type { AuthenticatedUser } from '../../common/auth/authenticated-user';
+import type { BattleRoundView } from '../battle-royale/round.service';
+import { RoundService } from '../battle-royale/round.service';
 import { Authenticated, CurrentUser, Public, RequirePermissions } from '../rbac/rbac.constants';
 import { AttemptService, type EventAttemptView } from './attempt.service';
 import {
@@ -63,7 +65,8 @@ export class EventsController {
   constructor(
     private readonly events: EventsService,
     private readonly attempts: AttemptService,
-    private readonly results: ResultsService
+    private readonly results: ResultsService,
+    private readonly rounds: RoundService
   ) {}
 
   @Public()
@@ -88,6 +91,11 @@ export class EventsController {
     @CurrentUser() user: AuthenticatedUser
   ): Promise<EventAttemptView> {
     return this.attempts.start(eventId, user);
+  }
+
+  @Get(':eventId/rounds')
+  roundsFor(@Param('eventId') eventId: string): Promise<BattleRoundView[]> {
+    return this.rounds.list(eventId);
   }
 
   @Get(':eventId/results')

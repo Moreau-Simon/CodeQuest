@@ -42,6 +42,12 @@ export class AttemptService {
         message: 'Inscrivez-vous à l’événement avant de démarrer l’essai'
       });
     }
+    if (participant.eliminatedAt) {
+      throw new ForbiddenException({
+        code: 'PARTICIPANT_ELIMINATED',
+        message: 'Vous êtes spectateur de cette battle royale'
+      });
+    }
     if (participant.attemptConsumedAt) {
       throw new ConflictException({
         code: 'ATTEMPT_ALREADY_CONSUMED',
@@ -58,6 +64,12 @@ export class AttemptService {
         participant.id
       );
       const fresh = await tx.eventParticipant.findUnique({ where: key });
+      if (fresh?.eliminatedAt) {
+        throw new ForbiddenException({
+          code: 'PARTICIPANT_ELIMINATED',
+          message: 'Vous êtes spectateur de cette battle royale'
+        });
+      }
       if (!fresh || fresh.attemptConsumedAt) {
         throw new ConflictException({
           code: 'ATTEMPT_ALREADY_CONSUMED',
@@ -95,6 +107,12 @@ export class AttemptService {
       throw new ForbiddenException({
         code: 'EVENT_NOT_JOINED',
         message: 'Vous n’êtes pas inscrit à cet événement'
+      });
+    }
+    if (participant.eliminatedAt) {
+      throw new ForbiddenException({
+        code: 'PARTICIPANT_ELIMINATED',
+        message: 'Vous êtes spectateur de cette battle royale'
       });
     }
     if (!participant.attemptStartedAt || !participant.attemptConsumedAt) {
