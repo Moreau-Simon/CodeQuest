@@ -80,6 +80,8 @@ const schema = z.object({
   LEADERBOARD_REBUILD_INTERVAL_MS: z.coerce.number().int().positive().default(300_000),
   // US9 (FR-062) : fréquence du job qui consomme les essais abandonnés à la clôture.
   EVENT_ATTEMPT_SWEEP_INTERVAL_MS: z.coerce.number().int().positive().default(60_000),
+  // US14 (FR-097) : fréquence du balayage des manches (diffusion < 2 s).
+  BATTLE_ROUND_SWEEP_INTERVAL_MS: z.coerce.number().int().positive().default(1_000),
 
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
   METRICS_PORT: z.coerce.number().int().positive().default(9464)

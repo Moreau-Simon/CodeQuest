@@ -112,6 +112,11 @@ export function EventDetailPage(): JSX.Element {
         )}
       </section>
 
+      {event.type === 'battle_royale' ? (
+        <Link to={`/events/${eventId}/arena`} className="text-sm font-semibold">
+          {t('battle.title')}
+        </Link>
+      ) : null}
       <Link to={`/events/${eventId}/results`} className="text-sm font-semibold">
         {t('event.results')}
       </Link>

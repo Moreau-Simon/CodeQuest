@@ -6,6 +6,8 @@ export type EventResults = components['schemas']['EventResults'];
 export type EventSolution = components['schemas']['EventSolution'];
 export type EventParticipation = components['schemas']['EventParticipation'];
 export type EventAttempt = components['schemas']['EventAttempt'];
+export type BattleRound = components['schemas']['BattleRound'];
+export type BattleRoundResult = components['schemas']['BattleRoundResult'];
 
 /** US9 (FR-061 à FR-065) : événements, essai unique et résultats. */
 export function getEvents(signal?: AbortSignal): Promise<Event[]> {
@@ -18,6 +20,11 @@ export function joinEvent(eventId: string, signal?: AbortSignal): Promise<EventP
 
 export function startEvent(eventId: string, signal?: AbortSignal): Promise<EventAttempt> {
   return api.post<EventAttempt>(`/events/${encodeURIComponent(eventId)}/start`, {}, { signal });
+}
+
+/** US14 : manches d'une battle royale, y compris les résultats partiels. */
+export function getEventRounds(eventId: string, signal?: AbortSignal): Promise<BattleRound[]> {
+  return api.get<BattleRound[]>(`/events/${encodeURIComponent(eventId)}/rounds`, { signal });
 }
 
 export function getEventResults(eventId: string, signal?: AbortSignal): Promise<EventResults> {

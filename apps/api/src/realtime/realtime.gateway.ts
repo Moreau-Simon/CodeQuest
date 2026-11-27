@@ -26,6 +26,8 @@ import {
   REALTIME_NAMESPACE,
   REALTIME_REVOKE_CHANNEL,
   documentRoom,
+  eventRoom,
+  spectatorRoom,
   type RealtimeRevocation
 } from './realtime.constants';
 import { RealtimeSessions } from './realtime.sessions';
@@ -185,6 +187,41 @@ export class RealtimeGateway
 
     const room = leaderboardRoom(scope, scopeId, subjectType, period);
     void socket.join(room);
+    return { ok: true, room };
+  }
+
+  /**
+   * Battle royale (T224) : un socket n'entre dans la salle d'un événement
+   * qu'après vérification de son inscription. Un joueur éliminé bascule dans
+   * la salle des spectateurs (FR-099) : il continue de recevoir les manches
+   * mais ne peut plus soumettre.
+   */
+  @SubscribeMessage('battle.subscribe')
+  async onBattleSubscribe(
+    @ConnectedSocket() socket: Socket,
+    @MessageBody() payload: unknown
+  ): Promise<{ ok: boolean; room?: string; code?: string }> {
+    const data = (payload ?? {}) as { eventId?: unknown };
+    const eventId = data.eventId;
+    const userId = (socket.data as { userId?: string }).userId;
+    if (typeof eventId !== 'string' || !UUID_V4_PATTERN.test(eventId) || !userId) {
+      return { ok: false, code: 'INVALID_PAYLOAD' };
+    }
+
+    const participant = await this.prisma.eventParticipant.findUnique({
+      where: {
+        eventId_subjectType_subjectId: {
+          eventId,
+          subjectType: 'player',
+          subjectId: userId
+        }
+      },
+      select: { eliminatedAt: true }
+    });
+    if (!participant) return { ok: false, code: 'FORBIDDEN' };
+
+    const room = participant.eliminatedAt ? spectatorRoom(eventId) : eventRoom(eventId);
+    await socket.join(room);
     return { ok: true, room };
   }
 

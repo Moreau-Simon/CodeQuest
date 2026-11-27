@@ -1900,6 +1900,45 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/events/{eventId}/rounds": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Manches d'une battle royale et résultats connus (US14) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    eventId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Manches ordonnées, y compris leurs résultats partiels */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["BattleRound"][];
+                    };
+                };
+                404: components["responses"]["Error"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/events/{eventId}/results": {
         parameters: {
             query?: never;
@@ -2849,6 +2888,28 @@ export interface components {
              * @description Horloge serveur UTC, référence des comptes à rebours (FR-061)
              */
             serverNow: string;
+        };
+        BattleRound: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            eventId: string;
+            roundNumber: number;
+            /** Format: uuid */
+            challengeId: string;
+            /** Format: date-time */
+            startsAt: string;
+            /** Format: date-time */
+            endsAt: string;
+            /** @enum {string} */
+            status: "scheduled" | "open" | "closed";
+            results: components["schemas"]["BattleRoundResult"][];
+        };
+        BattleRoundResult: {
+            /** Format: uuid */
+            subjectId: string;
+            score: number;
+            eliminated: boolean;
         };
         EventParticipation: {
             /** Format: uuid */
