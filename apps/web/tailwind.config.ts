@@ -12,7 +12,10 @@ export default {
         primary: 'rgb(var(--cq-primary) / <alpha-value>)',
         accent: 'rgb(var(--cq-accent) / <alpha-value>)',
         danger: 'rgb(var(--cq-danger) / <alpha-value>)',
-        success: 'rgb(var(--cq-success) / <alpha-value>)'
+        success: 'rgb(var(--cq-success) / <alpha-value>)',
+        warning: 'rgb(var(--cq-warning) / <alpha-value>)',
+        border: 'rgb(var(--cq-border) / <alpha-value>)',
+        line: 'rgb(var(--cq-line) / <alpha-value>)'
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],

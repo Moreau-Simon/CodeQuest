@@ -1,4 +1,5 @@
 import { api } from './api-client';
+import { cachedLesson, cacheLesson } from './offline';
 
 export type LessonStatus = 'not_started' | 'in_progress' | 'completed';
 
@@ -74,8 +75,23 @@ export function listLessons(theme?: string, signal?: AbortSignal): Promise<Lesso
   return api.get<LessonSummary[]>(`/lessons${suffix}`, { signal });
 }
 
-export function getLesson(lessonId: string, signal?: AbortSignal): Promise<LessonDetail> {
-  return api.get<LessonDetail>(`/lessons/${encodeURIComponent(lessonId)}`, { signal });
+/**
+ * Cours (T243/FR-103) : réseau d'abord, puis lecture depuis le cache applicatif
+ * lorsque le navigateur est hors ligne. Les scores et soumissions ne passent
+ * jamais par ce chemin.
+ */
+export async function getLesson(lessonId: string, signal?: AbortSignal): Promise<LessonDetail> {
+  try {
+    const lesson = await api.get<LessonDetail>(`/lessons/${encodeURIComponent(lessonId)}`, {
+      signal
+    });
+    await cacheLesson(lessonId, lesson);
+    return lesson;
+  } catch (error) {
+    const cached = await cachedLesson<LessonDetail>(lessonId);
+    if (cached) return cached;
+    throw error;
+  }
 }
 
 export function startLesson(lessonId: string): Promise<LessonProgress> {
@@ -86,7 +102,10 @@ export function submitQuiz(lessonId: string, answers: QuizAnswers): Promise<Quiz
   return api.post<QuizResult>(`/lessons/${encodeURIComponent(lessonId)}/quiz`, { answers });
 }
 
-export function positioningAttempt(lessonId: string, answers: QuizAnswers): Promise<PositioningResult> {
+export function positioningAttempt(
+  lessonId: string,
+  answers: QuizAnswers
+): Promise<PositioningResult> {
   return api.post<PositioningResult>(`/lessons/${encodeURIComponent(lessonId)}/positioning`, {
     answers
   });

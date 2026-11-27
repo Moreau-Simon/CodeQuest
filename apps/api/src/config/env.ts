@@ -71,6 +71,11 @@ const schema = z.object({
   // US15 (FR-095) : jeton vocal court, renouvelé à l'explicitation du micro.
   LIVEKIT_TOKEN_TTL_SECONDS: z.coerce.number().int().positive().default(60),
 
+  // US16 (FR-104) : VAPID. Sans clés, le transport Web Push reste inerte en dev.
+  VAPID_PUBLIC_KEY: z.string().optional(),
+  VAPID_PRIVATE_KEY: z.string().optional(),
+  VAPID_SUBJECT: z.string().default('mailto:no-reply@codequest.local'),
+
   // US8 (FR-057) : persistance périodique des documents Yjs et limite de taille.
   YJS_FLUSH_INTERVAL_MS: z.coerce.number().int().positive().default(30_000),
   YJS_MAX_DOC_BYTES: z.coerce.number().int().positive().default(65_536),
@@ -83,6 +88,7 @@ const schema = z.object({
   EVENT_ATTEMPT_SWEEP_INTERVAL_MS: z.coerce.number().int().positive().default(60_000),
   // US14 (FR-097) : fréquence du balayage des manches (diffusion < 2 s).
   BATTLE_ROUND_SWEEP_INTERVAL_MS: z.coerce.number().int().positive().default(1_000),
+  NOTIFICATION_SWEEP_INTERVAL_MS: z.coerce.number().int().positive().default(60_000),
 
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
   METRICS_PORT: z.coerce.number().int().positive().default(9464)

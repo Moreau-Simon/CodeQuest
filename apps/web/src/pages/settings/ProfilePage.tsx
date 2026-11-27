@@ -8,6 +8,7 @@ import { exportPersonalData, updateProfile, type Profile } from '../../services/
 import { Button, Field, Input } from '../../components/ui';
 import { useSessionStore } from '../../stores/session';
 import { DeleteAccountDialog } from './DeleteAccountDialog';
+import { NotificationSettings } from './NotificationSettings';
 
 type VolumeChannel = Exclude<keyof SoundSettings, 'muted'>;
 
@@ -211,6 +212,8 @@ export function ProfilePage(): JSX.Element {
         <h2 className="text-xl font-semibold">{t('settings.sessionsTitle')}</h2>
         <Link to="/settings/sessions">{t('settings.sessionsTitle')}</Link>
       </section>
+
+      <NotificationSettings />
 
       <section className="flex flex-col gap-3 rounded-xl border border-elevated p-4">
         <h2 className="text-xl font-semibold">{t('settings.dataTitle')}</h2>

@@ -263,9 +263,31 @@ pnpm ops:verify-integrity
 **Attendu** : restauration complète en moins de 4 h, classements identiques à l'original, soldes égaux
 à la somme du registre, comptes dans leur état d'origine.
 
+### S15 — Multi-appareils, PWA et notifications (SC-015, SC-016, FR-102 → FR-107)
+
+```bash
+pnpm e2e e2e/responsive.spec.ts e2e/a11y.spec.ts e2e/pwa.spec.ts
+pnpm --filter @codequest/web test    # i18n, clavier de symboles, accessibilité
+```
+
+1. Ouvrir catalogue, défi et profil en 375 px, 768 px et 1440 px : **attendu** navigation adaptée,
+   cibles tactiles ≥ 44 px et aucun débordement horizontal.
+2. Installer la PWA puis couper le réseau après avoir consulté un cours : **attendu** le cours reste
+   lisible ; scores, soumissions, économie et temps réel ne sont jamais servis depuis le cache
+   (bannière hors ligne visible).
+3. Activer les notifications depuis `/settings/profile` : **attendu** l'autorisation n'est demandée
+   qu'après l'action explicite ; un événement à venir et la fin d'un KO produisent un
+   `notification.new` et un Web Push ; un refus n'envoie aucun abonnement, une désactivation le
+   révoque. Sans clés `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY`, l'endpoint renvoie une clé vide et
+   l'interface signale l'absence de notifications.
+4. Sur mobile, ouvrir l'éditeur : **attendu** clavier de symboles nommé (insertion au curseur, focus
+   rendu) et plein écran tactile utilisables.
+5. Parcourir les écrans au clavier seul puis lancer axe-core : **attendu** focus visible, verdicts
+   annoncés, zéro violation critique et aucune chaîne en dur dans l'interface française.
+
 ## 5. Critères de sortie
 
-Une version est validable lorsque : S1 à S14 passent en CI (avec S4 restreint aux runners Linux),
+Une version est validable lorsque : S1 à S15 passent en CI (avec S4 restreint aux runners Linux),
 `pnpm test:golden` est vert, la couverture métier est ≥ 80 % (SC-012), et aucune régression n'est
 constatée sur les classements reconstruits (SC-009).
 

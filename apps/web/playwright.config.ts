@@ -13,6 +13,9 @@ export default defineConfig({
   reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : 'list',
   use: {
     baseURL: process.env.PUBLIC_APP_URL ?? 'http://localhost:5173',
+    // Le service worker n'est autorisé que dans la suite PWA (T240) : ailleurs
+    // il rendrait les scénarios dépendants d'un cache partagé entre pages.
+    serviceWorkers: 'block',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure'
   },

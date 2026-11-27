@@ -21,6 +21,7 @@ import { EventsModule } from './modules/events/events.module';
 import { HealthModule } from './modules/health/health.module';
 import { LeaderboardsModule } from './modules/leaderboards/leaderboards.module';
 import { LessonsModule } from './modules/lessons/lessons.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 import { RbacGuard } from './modules/rbac/rbac.guard';
 import { RbacModule } from './modules/rbac/rbac.module';
 import { SubmissionsModule } from './modules/submissions/submissions.module';
@@ -56,6 +57,7 @@ import { StorageModule } from './storage/storage.module';
     LeaderboardsModule,
     TeamsModule,
     LessonsModule,
+    NotificationsModule,
     HealthModule,
     RealtimeModule,
     AdminModule

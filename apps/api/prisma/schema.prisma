@@ -96,6 +96,7 @@ model User {
   sessions            Session[]
   passwordResetTokens PasswordResetToken[]
   pushSubscriptions   PushSubscription[]
+  notifications       Notification[]
   roles               UserRole[]
   grantedRoles        UserRole[]         @relation("UserRoleGrantedBy")
   auditLogs           AuditLog[]         @relation("AuditActor")
@@ -177,6 +178,24 @@ model PushSubscription {
 
   @@index([userId])
   @@map("push_subscriptions")
+}
+
+/// Notifications déjà émises (data-model.md §6) : la clé (user, kind,
+/// reference) rend les jobs idempotents (FR-104).
+model Notification {
+  id          String    @id @db.Uuid
+  userId      String    @map("user_id") @db.Uuid
+  kind        String    @db.VarChar(64)
+  referenceId String    @map("reference_id") @db.VarChar(255)
+  payload     Json      @default("{}")
+  readAt      DateTime? @map("read_at") @db.Timestamptz(6)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, kind, referenceId])
+  @@index([userId, readAt])
+  @@map("notifications")
 }
 
 // ---------------------------------------------------------------------------

@@ -110,8 +110,8 @@ function BossCard({ boss, ko, animated }: BossCardProps): JSX.Element {
             onChange={(event) => setLanguage(event.target.value as 'python' | 'javascript')}
             className="rounded-xl border border-elevated bg-surface p-2"
           >
-            <option value="python">Python</option>
-            <option value="javascript">JavaScript</option>
+            <option value="python">{t('settings.languagePython')}</option>
+            <option value="javascript">{t('settings.languageJavascript')}</option>
           </select>
           <label htmlFor={`boss-code-${boss.id}`} className="text-sm font-medium">
             {t('boss.code')}
@@ -128,8 +128,16 @@ function BossCard({ boss, ko, animated }: BossCardProps): JSX.Element {
               {error}
             </p>
           ) : null}
-          {notice ? <p role="status" className="text-sm">{notice}</p> : null}
-          <Button type="submit" disabled={ko || code.trim().length === 0} loading={submit.isPending}>
+          {notice ? (
+            <p role="status" className="text-sm">
+              {notice}
+            </p>
+          ) : null}
+          <Button
+            type="submit"
+            disabled={ko || code.trim().length === 0}
+            loading={submit.isPending}
+          >
             {t('boss.submit')}
           </Button>
         </form>
@@ -140,7 +148,10 @@ function BossCard({ boss, ko, animated }: BossCardProps): JSX.Element {
 
 /** US10 (T184) : liste des boss, barre de PV serveur et compte à rebours de KO. */
 export function BossPage(): JSX.Element {
-  const health = useQuery({ queryKey: ['me', 'health'], queryFn: ({ signal }) => getMyHealth(signal) });
+  const health = useQuery({
+    queryKey: ['me', 'health'],
+    queryFn: ({ signal }) => getMyHealth(signal)
+  });
   const bosses = useQuery({ queryKey: ['bosses'], queryFn: ({ signal }) => getBosses(signal) });
   const animated = !useSessionStore((state) => state.user?.preferences?.reducedMotion === true);
 

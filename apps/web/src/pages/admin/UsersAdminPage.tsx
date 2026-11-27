@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { t } from '../../i18n';
 import { Button, Input, Skeleton } from '../../components/ui';
 import {
   assignUserRole,
@@ -71,16 +72,14 @@ export function UsersAdminPage(): JSX.Element {
     <section className="mx-auto max-w-5xl px-6 py-12">
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Gestion des utilisateurs</h1>
-          <p className="mt-1 text-muted">
-            Contrôle des statuts, suspension et attribution des rôles RBAC
-          </p>
+          <h1 className="text-3xl font-bold tracking-tight">{t('admin.usersTitle')}</h1>
+          <p className="mt-1 text-muted">{t('admin.usersSubtitle')}</p>
         </div>
       </div>
 
       <div className="mt-6 flex max-w-md items-center gap-3">
         <Input
-          placeholder="Rechercher par pseudo ou e-mail..."
+          placeholder={t('admin.searchUser')}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
@@ -99,17 +98,17 @@ export function UsersAdminPage(): JSX.Element {
           <table className="w-full text-left text-sm">
             <thead className="border-b border-border bg-elevated/50 text-xs text-muted uppercase">
               <tr>
-                <th className="px-6 py-3">Utilisateur</th>
-                <th className="px-6 py-3">Statut</th>
-                <th className="px-6 py-3">Rôles</th>
-                <th className="px-6 py-3 text-right">Actions</th>
+                <th className="px-6 py-3">{t('admin.user')}</th>
+                <th className="px-6 py-3">{t('admin.status')}</th>
+                <th className="px-6 py-3">{t('admin.roles')}</th>
+                <th className="px-6 py-3 text-right">{t('admin.actions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {filteredUsers.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="px-6 py-8 text-center text-muted">
-                    Aucun utilisateur trouvé.
+                    {t('admin.noUsers')}
                   </td>
                 </tr>
               ) : (

@@ -1,3 +1,5 @@
+import { t } from '../i18n';
+
 /** Enveloppe d'erreur normalisée du contrat `contracts/openapi.yaml`. */
 export interface ErrorEnvelope {
   code: string;
@@ -74,7 +76,7 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
     }
     throw new ApiError(response.status, {
       code: 'INTERNAL_ERROR',
-      message: typeof payload === 'string' && payload ? payload : 'Une erreur est survenue'
+      message: typeof payload === 'string' && payload ? payload : t('common.error')
     });
   }
 

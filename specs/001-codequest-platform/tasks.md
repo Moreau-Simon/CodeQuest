@@ -586,19 +586,19 @@ d'un cours hors ligne, navigation clavier seule, zéro violation critique axe.
 
 ### Tests for User Story 16 ⚠️
 
-- [ ] T238 [P] [US16] Tests Playwright multi-navigateurs et multi-viewports dans `apps/web/e2e/responsive.spec.ts` (SC-016)
-- [ ] T239 [P] [US16] Tests axe-core sur les parcours critiques dans `apps/web/e2e/a11y.spec.ts` (SC-015)
-- [ ] T240 [P] [US16] Tests PWA et hors ligne dans `apps/web/e2e/pwa.spec.ts` (installation, cours déjà consulté, aucune donnée de score en cache)
-- [ ] T241 [P] [US16] Test de non-régression i18n dans `apps/web/test/i18n.spec.ts` (aucun texte en dur, clés françaises complètes)
+- [X] T238 [P] [US16] Tests Playwright multi-navigateurs et multi-viewports dans `apps/web/e2e/responsive.spec.ts` (SC-016)
+- [X] T239 [P] [US16] Tests axe-core sur les parcours critiques dans `apps/web/e2e/a11y.spec.ts` (SC-015)
+- [X] T240 [P] [US16] Tests PWA et hors ligne dans `apps/web/e2e/pwa.spec.ts` (installation, cours déjà consulté, aucune donnée de score en cache)
+- [X] T241 [P] [US16] Test de non-régression i18n dans `apps/web/test/i18n.spec.ts` (aucun texte en dur, clés françaises complètes)
 
 ### Implementation for User Story 16
 
-- [ ] T242 [US16] Implémenter les points de rupture responsive et la navigation mobile dans `apps/web/src/components/layout/` (barre inférieure, tiroir, zones tactiles ≥ 44 px) (FR-102)
-- [ ] T243 [US16] Configurer la PWA `apps/web/public/manifest.webmanifest` et le service worker Workbox `apps/web/src/sw.ts` : *stale-while-revalidate* pour les cours, *network-only* pour scores/soumissions/économie/temps réel (FR-103)
-- [ ] T244 [US16] Implémenter les notifications Web Push `apps/web/src/hooks/usePushNotifications.ts` et l'envoi serveur `apps/api/src/modules/notifications/push.service.ts` (events à venir, fin de KO) (FR-104)
-- [ ] T245 [P] [US16] Créer `apps/web/src/components/editor/SymbolKeyboard.tsx` et le mode plein écran mobile de l'éditeur (FR-105)
-- [ ] T246 [US16] Corriger l'accessibilité dans `apps/web/src/components/ui/` et `apps/web/src/styles/a11y.css` : contrastes, focus visible, libellés ARIA, ordre de tabulation, annonces de verdict (FR-106)
-- [ ] T247 [US16] Finaliser l'externalisation des textes dans `apps/web/src/i18n/fr.ts` et vérifier l'absence de chaîne en dur (FR-107)
+- [X] T242 [US16] Implémenter les points de rupture responsive et la navigation mobile dans `apps/web/src/components/layout/` (barre inférieure, tiroir, zones tactiles ≥ 44 px) (FR-102)
+- [X] T243 [US16] Configurer la PWA `apps/web/public/manifest.webmanifest` et le service worker `apps/web/public/sw.js` : *stale-while-revalidate* pour les cours, *network-only* pour scores/soumissions/économie/temps réel ; mise en cache applicative des cours via `apps/web/src/services/offline.ts` (FR-103)
+- [X] T244 [US16] Implémenter les notifications Web Push `apps/web/src/hooks/usePushNotifications.ts` et l'envoi serveur `apps/api/src/modules/notifications/push.service.ts` (events à venir, fin de KO) (FR-104)
+- [X] T245 [P] [US16] Créer `apps/web/src/components/editor/SymbolKeyboard.tsx` et le mode plein écran mobile de l'éditeur (FR-105)
+- [X] T246 [US16] Corriger l'accessibilité dans `apps/web/src/components/ui/` et `apps/web/src/styles/a11y.css` : contrastes, focus visible, libellés ARIA, ordre de tabulation, annonces de verdict (FR-106)
+- [X] T247 [US16] Finaliser l'externalisation des textes dans `apps/web/src/i18n/fr.ts` et vérifier l'absence de chaîne en dur (FR-107)
 
 **Checkpoint**: US16 livrable seule.
 

@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import type * as Y from 'yjs';
 import { t } from '../../i18n';
 import { Button, cn } from '../ui';
+import { insertSymbol, SymbolKeyboard, type SymbolTarget } from './SymbolKeyboard';
 
 export interface CodeEditorProps {
   value: string;
@@ -39,6 +40,7 @@ export function CodeEditor({
   const [bound, setBound] = useState(false);
   const editorRef = useRef<MonacoEditor | null>(null);
   const modelRef = useRef<MonacoModel | null>(null);
+  const fullscreenButton = useRef<HTMLButtonElement | null>(null);
   const binding = useRef<{ destroy(): void } | null>(null);
 
   // `sharedDoc` peut arriver après le montage de Monaco (authentification
@@ -65,6 +67,18 @@ export function CodeEditor({
     };
   }, [mounted, sharedDoc]);
 
+  // FR-105 : Échap quitte le plein écran et restitue le focus au bouton.
+  useEffect(() => {
+    if (!fullscreen) return;
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.key !== 'Escape') return;
+      setFullscreen(false);
+      fullscreenButton.current?.focus();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [fullscreen]);
+
   const handleMount: OnMount = (editor, monaco) => {
     void monaco;
     editorRef.current = editor;
@@ -85,11 +99,16 @@ export function CodeEditor({
     >
       <div className="flex items-center justify-between px-3 pt-3">
         <span className="text-sm text-muted">{label ?? t('editor.title')}</span>
-        <Button variant="ghost" size="sm" onClick={() => setFullscreen((current) => !current)}>
+        <Button
+          ref={fullscreenButton}
+          variant="ghost"
+          size="sm"
+          onClick={() => setFullscreen((current) => !current)}
+        >
           {fullscreen ? t('editor.exitFullscreen') : t('editor.fullscreen')}
         </Button>
       </div>
-      <div style={{ height: fullscreen ? 'calc(100vh - 96px)' : height }}>
+      <div style={{ height: fullscreen ? 'calc(100dvh - 96px)' : height }}>
         <Editor
           height="100%"
           language={language === 'javascript' ? 'javascript' : 'python'}
@@ -110,6 +129,14 @@ export function CodeEditor({
           }}
         />
       </div>
+      {readOnly ? null : (
+        <SymbolKeyboard
+          onInsert={(symbol) => {
+            if (editorRef.current)
+              insertSymbol(editorRef.current as unknown as SymbolTarget, symbol);
+          }}
+        />
+      )}
     </div>
   );
 }
