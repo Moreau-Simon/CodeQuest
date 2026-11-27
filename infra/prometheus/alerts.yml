@@ -1,0 +1,29 @@
+groups:
+  - name: codequest-operations
+    rules:
+      - alert: QueueBlocked
+        expr: max by(queue) (queue_depth) > 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: 'File bloquée depuis plus de 2 minutes'
+          runbook: 'docs/operations/runbooks.md#file-bloquée'
+
+      - alert: HighServerErrorRate
+        expr: >-
+          sum(rate(http_request_duration_seconds_count{status=~"5.."}[5m]))
+          / sum(rate(http_request_duration_seconds_count[5m])) > 0.01
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'Taux de réponses 5xx supérieur à 1 % sur 5 minutes'
+
+      - alert: BackupFailed
+        expr: backup_last_result{status="failure"} == 1
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: 'La dernière sauvegarde ou vérification de restauration a échoué'

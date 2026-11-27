@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { z } from 'zod';
 import pino from 'pino';
@@ -35,7 +35,13 @@ const envSchema = z.object({
   RUNNER_METRICS_PORT: z.coerce.number().int().positive().default(9464)
 });
 
-const env = envSchema.safeParse(process.env);
+const source: NodeJS.ProcessEnv = { ...process.env };
+for (const name of ['AES_KEY_BASE64'] as const) {
+  const path = source[`${name}_FILE`];
+  if (!source[name] && path && existsSync(path)) source[name] = readFileSync(path, 'utf8').trim();
+}
+
+const env = envSchema.safeParse(source);
 if (!env.success) {
   const details = env.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('\n');
   throw new Error(`Configuration runner invalide :\n${details}`);

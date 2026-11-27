@@ -1,0 +1,322 @@
+name: codequest-prod
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    user: postgres:postgres
+    environment:
+      # L'image officielle ne gère que `POSTGRES_PASSWORD_FILE` : le nom
+      # d'utilisateur et la base ne sont pas des secrets.
+      POSTGRES_DB: codequest
+      POSTGRES_USER: codequest
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+    secrets: [postgres_password]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    tmpfs: [/tmp, /var/run/postgresql]
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U codequest -d codequest']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    read_only: true
+    cap_drop: [ALL]
+    cap_add: [CHOWN, DAC_OVERRIDE, FOWNER, SETGID, SETUID]
+    restart: unless-stopped
+    networks: [backend]
+
+  redis:
+    image: redis:7-alpine
+    user: redis:redis
+    command: ['redis-server', '--appendonly', 'yes']
+    volumes: [redisdata:/data]
+    tmpfs: [/tmp]
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    read_only: true
+    cap_drop: [ALL]
+    restart: unless-stopped
+    networks: [backend]
+
+  minio:
+    image: minio/minio:RELEASE.2024-09-13T20-26-02Z
+    command: ['server', '/data', '--console-address', ':9001']
+    environment:
+      MINIO_ROOT_USER_FILE: /run/secrets/minio_access_key
+      MINIO_ROOT_PASSWORD_FILE: /run/secrets/minio_secret_key
+    secrets: [minio_access_key, minio_secret_key]
+    volumes: [miniodata:/data]
+    tmpfs: [/tmp]
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:9000/minio/health/live']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    read_only: true
+    cap_drop: [ALL]
+    restart: unless-stopped
+    networks: [backend]
+
+  api:
+    build:
+      context: ..
+      dockerfile: apps/api/Dockerfile
+    user: api:api
+    environment:
+      NODE_ENV: production
+      COOKIE_SECURE: 'true'
+      WEB_ORIGIN: https://codequest.example
+      PUBLIC_APP_URL: https://codequest.example
+      DATABASE_URL_FILE: /run/secrets/database_url
+      REDIS_URL: redis://redis:6379
+      SESSION_SECRET_FILE: /run/secrets/session_secret
+      AES_KEY_BASE64_FILE: /run/secrets/aes_key_base64
+      MINIO_ENDPOINT: minio
+      MINIO_SECRET_KEY_FILE: /run/secrets/minio_secret_key
+      ASSETS_SEED_KEY_FILE: /run/secrets/assets_seed_key
+      ASSETS_SERVICE_URL: http://assets:8000
+      LIVEKIT_URL: wss://livekit.example
+      LIVEKIT_API_SECRET_FILE: /run/secrets/livekit_api_secret
+      VAPID_PUBLIC_KEY_FILE: /run/secrets/vapid_public_key
+      VAPID_PRIVATE_KEY_FILE: /run/secrets/vapid_private_key
+    secrets:
+      [
+        database_url,
+        session_secret,
+        aes_key_base64,
+        minio_secret_key,
+        assets_seed_key,
+        livekit_api_secret,
+        vapid_public_key,
+        vapid_private_key
+      ]
+    tmpfs: [/tmp]
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3000/health/live').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    read_only: true
+    cap_drop: [ALL]
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks: [backend, frontend, metrics]
+
+  web:
+    build:
+      context: ..
+      dockerfile: apps/web/Dockerfile
+      args:
+        NGINX_CONF: infra/nginx/web.prod.conf
+    ports:
+      - '80:80'
+      - '443:443'
+    user: nginx:nginx
+    volumes:
+      - ./certs:/etc/nginx/certs:ro
+    tmpfs: [/tmp, /var/cache/nginx, /var/run]
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'wget --no-check-certificate -q -O /dev/null https://127.0.0.1/'
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    read_only: true
+    cap_drop: [ALL]
+    cap_add: [NET_BIND_SERVICE]
+    restart: unless-stopped
+    depends_on: [api]
+    networks: [frontend]
+
+  runner:
+    build:
+      context: ..
+      dockerfile: services/runner/Dockerfile
+    user: runner:runner
+    environment:
+      NODE_ENV: production
+      REDIS_URL: redis://redis:6379
+      AES_KEY_BASE64_FILE: /run/secrets/aes_key_base64
+      RESULTS_QUEUE: submissions-results
+      DLQ: submissions-dlq
+    secrets: [aes_key_base64]
+    tmpfs: [/tmp]
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -q -O /dev/null http://127.0.0.1:9464/metrics']
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    read_only: true
+    cap_drop: [ALL]
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks: [backend, metrics]
+
+  assets:
+    build:
+      context: ../services/assets
+      dockerfile: Dockerfile
+    user: assets:assets
+    environment:
+      NODE_ENV: production
+      ASSETS_SEED_KEY_FILE: /run/secrets/assets_seed_key
+      ASSETS_S3_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY_FILE: /run/secrets/minio_access_key
+      MINIO_SECRET_KEY_FILE: /run/secrets/minio_secret_key
+    secrets: [assets_seed_key, minio_access_key, minio_secret_key]
+    tmpfs: [/tmp]
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:8000/health']
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    read_only: true
+    cap_drop: [ALL]
+    restart: unless-stopped
+    networks: [backend, metrics]
+
+  postgres-exporter:
+    image: quay.io/prometheuscommunity/postgres-exporter:v0.15.0
+    user: '65534:65534'
+    environment:
+      DATA_SOURCE_NAME_FILE: /run/secrets/postgres_exporter_dsn
+    secrets: [postgres_exporter_dsn]
+    tmpfs: [/tmp]
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '-O', '/dev/null', 'http://localhost:9187/metrics']
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    read_only: true
+    cap_drop: [ALL]
+    restart: unless-stopped
+    networks: [metrics, backend]
+
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.60.0
+    user: '65534:65534'
+    environment:
+      REDIS_ADDR: redis://redis:6379
+    tmpfs: [/tmp]
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '-O', '/dev/null', 'http://localhost:9121/metrics']
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    read_only: true
+    cap_drop: [ALL]
+    restart: unless-stopped
+    networks: [metrics, backend]
+
+  pushgateway:
+    image: prom/pushgateway:v1.9.0
+    user: '65534:65534'
+    ports:
+      - '9091:9091'
+    tmpfs: [/tmp]
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '-O', '/dev/null', 'http://localhost:9091/-/healthy']
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    read_only: true
+    cap_drop: [ALL]
+    restart: unless-stopped
+    networks: [metrics]
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    user: '65534:65534'
+    volumes:
+      - ./prometheus:/etc/prometheus:ro
+      - promdata:/prometheus
+    tmpfs: [/tmp]
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '-O', '/dev/null', 'http://localhost:9090/-/healthy']
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    read_only: true
+    cap_drop: [ALL]
+    restart: unless-stopped
+    networks: [metrics]
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    user: '472:472'
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD_FILE: /run/secrets/grafana_admin_password
+    secrets: [grafana_admin_password]
+    volumes:
+      - ./grafana:/etc/grafana/provisioning:ro
+      - grafanadata:/var/lib/grafana
+    tmpfs: [/tmp]
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '-O', '/dev/null', 'http://localhost:3000/api/health']
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    read_only: true
+    cap_drop: [ALL]
+    restart: unless-stopped
+    networks: [metrics]
+
+secrets:
+  database_url:
+    file: ./secrets/database_url.txt
+  session_secret:
+    file: ./secrets/session_secret.txt
+  aes_key_base64:
+    file: ./secrets/aes_key_base64.txt
+  minio_access_key:
+    file: ./secrets/minio_access_key.txt
+  minio_secret_key:
+    file: ./secrets/minio_secret_key.txt
+  assets_seed_key:
+    file: ./secrets/assets_seed_key.txt
+  livekit_api_secret:
+    file: ./secrets/livekit_api_secret.txt
+  vapid_public_key:
+    file: ./secrets/vapid_public_key.txt
+  vapid_private_key:
+    file: ./secrets/vapid_private_key.txt
+  postgres_password:
+    file: ./secrets/postgres_password.txt
+  postgres_exporter_dsn:
+    file: ./secrets/postgres_exporter_dsn.txt
+  grafana_admin_password:
+    file: ./secrets/grafana_admin_password.txt
+
+networks:
+  frontend:
+    driver: bridge
+  backend:
+    driver: bridge
+    internal: true
+  metrics:
+    driver: bridge
+    internal: true
+
+volumes:
+  pgdata:
+  redisdata:
+  miniodata:
+  promdata:
+  grafanadata:

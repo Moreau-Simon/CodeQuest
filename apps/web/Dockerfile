@@ -12,6 +12,8 @@ COPY apps/web apps/web
 RUN pnpm --filter @codequest/web build
 
 FROM nginx:1.27-alpine AS runtime
-COPY infra/nginx/web.conf /etc/nginx/conf.d/default.conf
+ARG NGINX_CONF=infra/nginx/web.conf
+COPY ${NGINX_CONF} /etc/nginx/conf.d/default.conf
 COPY --from=build /app/apps/web/dist /usr/share/nginx/html
+USER nginx:nginx
 EXPOSE 8080

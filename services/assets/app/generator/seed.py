@@ -9,21 +9,20 @@ from __future__ import annotations
 
 import hashlib
 import hmac
-import os
 
-DEFAULT_SEED_KEY = b"codequest-dev-seed-key-000000000000"
+from app.config import DEFAULT_SEED_KEY, load_config
+
+DEFAULT_KEY_BYTES = DEFAULT_SEED_KEY.encode()
 
 
 def seed_key() -> bytes:
-    """Lit le secret de 32 octets depuis l'environnement, sans le journaliser."""
-    raw = os.environ.get("ASSETS_SEED_KEY", "")
-    if not raw:
-        return DEFAULT_SEED_KEY
+    """Lit le secret validé de 32 octets depuis la configuration, sans le journaliser."""
+    raw = load_config().seed_key
     try:
         key = bytes.fromhex(raw) if len(raw) == 64 else raw.encode()
     except ValueError:
         key = raw.encode()
-    return key[:32] if len(key) >= 32 else (key + DEFAULT_SEED_KEY)[:32]
+    return key[:32] if len(key) >= 32 else (key + DEFAULT_KEY_BYTES)[:32]
 
 
 def derive_seed(

@@ -159,3 +159,11 @@ blob-report/
 
 # Turbo Repo
 .turbo
+
+# Secrets, certificats et sauvegardes d'exploitation (US17)
+.env
+.env.*
+!.env.example
+infra/secrets/
+infra/certs/
+backups/

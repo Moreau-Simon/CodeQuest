@@ -1,0 +1,42 @@
+{
+  "title": "CodeQuest — Supervision",
+  "uid": "codequest-ops",
+  "schemaVersion": 39,
+  "refresh": "30s",
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Latence HTTP (p95)",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket[5m])))",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Profondeur des files",
+      "targets": [{ "expr": "max by(queue) (queue_depth)", "refId": "A" }]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Connexions temps réel",
+      "targets": [{ "expr": "realtime_connections", "refId": "A" }]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Incohérences de cohérence",
+      "targets": [
+        {
+          "expr": "sum(ledger_balance_mismatch_total) + sum(leaderboard_drift_total)",
+          "refId": "A"
+        }
+      ]
+    }
+  ]
+}

@@ -1,6 +1,7 @@
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { z } from 'zod';
+import { assertProductionEnvironment } from './production-env';
 
 if (typeof process.loadEnvFile === 'function') {
   for (const candidate of ['.env', '../.env', '../../.env']) {
@@ -96,14 +97,38 @@ const schema = z.object({
 
 export type Env = z.infer<typeof schema>;
 
+const FILE_BACKED_SECRETS = [
+  'DATABASE_URL',
+  'SESSION_SECRET',
+  'AES_KEY_BASE64',
+  'MINIO_SECRET_KEY',
+  'LIVEKIT_API_SECRET',
+  'VAPID_PRIVATE_KEY',
+  'VAPID_PUBLIC_KEY',
+  'SMTP_PASSWORD'
+] as const;
+
+/** Docker secrets : `NAME_FILE` est lu quand `NAME` n'est pas défini. */
+function configurationSource(): NodeJS.ProcessEnv {
+  const source: NodeJS.ProcessEnv = { ...process.env };
+  for (const name of FILE_BACKED_SECRETS) {
+    const path = source[`${name}_FILE`];
+    if (!source[name] && path && existsSync(path)) {
+      source[name] = readFileSync(path, 'utf8').trim();
+    }
+  }
+  return source;
+}
+
 function load(): Env {
-  const parsed = schema.safeParse(process.env);
+  const parsed = schema.safeParse(configurationSource());
   if (!parsed.success) {
     const details = parsed.error.issues
       .map((issue) => `  - ${issue.path.join('.') || '(racine)'}: ${issue.message}`)
       .join('\n');
     throw new Error(`Configuration d'environnement invalide :\n${details}`);
   }
+  assertProductionEnvironment(parsed.data);
   return parsed.data;
 }
 
