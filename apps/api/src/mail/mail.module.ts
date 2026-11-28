@@ -2,6 +2,7 @@ import { Injectable, Module } from '@nestjs/common';
 import nodemailer, { type Transporter } from 'nodemailer';
 import { env } from '../config/env';
 import { EMAIL_QUEUE, MAIL_TRANSPORT } from './mail.constants';
+import { MailDeliveryJob } from './mail.delivery.job';
 import { MailService, type MailMessage, type MailTransport } from './mail.service';
 
 /** Transport SMTP (MailHog en développement — T036). */
@@ -42,7 +43,8 @@ export class NodemailerTransport implements MailTransport {
       useFactory: (transport: MailTransport, queue?: unknown) =>
         new MailService(transport, queue as never),
       inject: [MAIL_TRANSPORT, { token: EMAIL_QUEUE, optional: true }]
-    }
+    },
+    MailDeliveryJob
   ],
   exports: [MailService, MAIL_TRANSPORT]
 })

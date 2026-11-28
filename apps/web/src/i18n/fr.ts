@@ -44,6 +44,8 @@ export const fr = {
   'auth.pseudonymHint': '3 à 20 caractères : lettres, chiffres, tiret et souligné.',
   'auth.password': 'Mot de passe',
   'auth.passwordHint': 'Au moins 12 caractères, non présent dans les fuites connues.',
+  'auth.invalidPseudonym': 'Le pseudo doit contenir 3 à 20 lettres, chiffres, tirets ou soulignés.',
+  'auth.passwordTooShort': 'Le mot de passe doit contenir au moins 12 caractères.',
   'auth.currentPassword': 'Mot de passe actuel',
   'auth.submitLogin': 'Se connecter',
   'auth.submitRegister': 'Créer mon compte',

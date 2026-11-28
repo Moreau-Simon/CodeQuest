@@ -2,8 +2,20 @@ import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { t } from '../../i18n';
 import { register } from '../../services/auth';
-import { ApiError } from '../../services/api-client';
+import { apiErrorMessage } from '../../services/api-client';
 import { Button, Field, Input } from '../../components/ui';
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const PSEUDONYM_PATTERN = /^[a-zA-Z0-9_-]{3,20}$/;
+
+function validateInput(email: string, pseudonym: string, password: string): string | null {
+  const address = email.trim();
+  if (address.length === 0) return t('auth.identifierRequired');
+  if (!EMAIL_PATTERN.test(address)) return t('auth.invalidEmail');
+  if (!PSEUDONYM_PATTERN.test(pseudonym.trim())) return t('auth.invalidPseudonym');
+  if (password.length < 12) return t('auth.passwordTooShort');
+  return null;
+}
 
 /** Inscription (T061) : e-mail, pseudo et mot de passe conforme à la politique. */
 export function RegisterPage(): JSX.Element {
@@ -16,13 +28,18 @@ export function RegisterPage(): JSX.Element {
 
   async function onSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
+    const invalid = validateInput(email, pseudonym, password);
+    if (invalid) {
+      setError(invalid);
+      return;
+    }
     setError(null);
     setSubmitting(true);
     try {
       await register({ email, pseudonym, password });
       setDone(true);
     } catch (cause) {
-      setError(cause instanceof ApiError ? cause.message : t('common.error'));
+      setError(apiErrorMessage(cause));
     } finally {
       setSubmitting(false);
     }
