@@ -22,7 +22,7 @@ export interface TestApp {
   readonly anonymous: TestAgent;
   /** Ferme l'application Nest (les conteneurs restent gérés par `db.ts`). */
   close(): Promise<void>;
-  /** Attend qu'un e-mail soit mis en file et le renvoie. */
+  /** Attend qu'un e-mail soit mis en file (ou livré) et le renvoie. */
   waitForEmail(
     name: 'confirmation' | 'password-reset',
     predicate?: (message: MailMessage) => boolean,
@@ -85,7 +85,16 @@ export async function createTestApp(
       const deadline = Date.now() + timeoutMs;
 
       while (Date.now() < deadline) {
-        const jobs = await queueService.emails.getJobs(['waiting', 'delayed', 'paused', 'active']);
+        // Le worker mail consomme la file dès que l'application démarre : le
+        // message passe donc rapidement en `completed`. Lire aussi cet état
+        // évite une course entre l'émission et la livraison (T036).
+        const jobs = await queueService.emails.getJobs([
+          'waiting',
+          'delayed',
+          'paused',
+          'active',
+          'completed'
+        ]);
         const found = jobs
           .filter((job: { name: string }) => job.name === name)
           .map((job: { data: unknown }) => job.data as MailMessage)
