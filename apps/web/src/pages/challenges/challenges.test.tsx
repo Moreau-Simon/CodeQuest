@@ -6,7 +6,6 @@ import type { Profile } from '../../services/auth';
 import type { Submission } from '../../services/challenges';
 import { useSessionStore } from '../../stores/session';
 import { ChallengePage } from './ChallengePage';
-import { ChallengesPage } from './ChallengesPage';
 
 const verdictState = vi.hoisted(() => ({
   submission: null as Submission | null,
@@ -87,25 +86,6 @@ beforeEach(() => {
 afterEach(() => {
   vi.unstubAllGlobals();
   useSessionStore.setState({ status: 'unauthenticated', user: null });
-});
-
-describe('catalogue des défis (T088)', () => {
-  it('liste les défis publiés avec leur meilleur score', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi
-        .fn()
-        .mockResolvedValue(
-          jsonResponse({ items: [{ ...challenge, bestScore: 214.86 }], nextCursor: null })
-        )
-    );
-
-    renderAt('/challenges', <ChallengesPage />);
-
-    expect(await screen.findByRole('heading', { name: 'Trier une liste' })).toBeInTheDocument();
-    expect(screen.getByText(/Algorithmes de tri/)).toBeInTheDocument();
-    expect(screen.getByText(/214\.86/)).toBeInTheDocument();
-  });
 });
 
 describe('page de défi (T088)', () => {

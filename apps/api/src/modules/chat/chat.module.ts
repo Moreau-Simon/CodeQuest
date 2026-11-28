@@ -2,7 +2,7 @@ import { forwardRef, Module } from '@nestjs/common';
 import { RateLimitService } from '../../common/rate-limit/rate-limit.service';
 import { RealtimeModule } from '../../realtime/realtime.module';
 import { AdminModule } from '../admin/admin.module';
-import { ChatAdminController } from './chat-admin.controller';
+import { ChatAdminController } from './chat.admin.controller';
 import { ChatController } from './chat.controller';
 import { ChatRateLimitService } from './chat-rate-limit.service';
 import { ChatService } from './chat.service';

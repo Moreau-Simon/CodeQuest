@@ -36,7 +36,8 @@ describe('Job de similarité (T255 / FR-114)', () => {
     };
     const job = createSimilarityJob(store, { threshold: 0.8 });
 
-    const result = await job.sweep();
+    // Horloge injectée : le test reste stable quelle que soit l'heure de la CI.
+    const result = await job.sweep(new Date('2026-11-27T10:05:00.000Z'));
 
     expect(result).toEqual({ compared: 1, findings: 1, sanctioned: 0 });
     expect(store.recordFinding).toHaveBeenCalledTimes(1);
@@ -51,6 +52,19 @@ describe('Job de similarité (T255 / FR-114)', () => {
     );
   });
 
+  it('ignore les soumissions sorties de la fenêtre de 24 h', async () => {
+    const store = {
+      findRecent: jest.fn().mockResolvedValue(CANDIDATES),
+      recordFinding: jest.fn().mockResolvedValue(undefined)
+    };
+    const job = createSimilarityJob(store, { threshold: 0.8 });
+
+    const result = await job.sweep(new Date('2026-11-28T10:05:00.000Z'));
+
+    expect(result).toEqual({ compared: 0, findings: 0, sanctioned: 0 });
+    expect(store.recordFinding).not.toHaveBeenCalled();
+  });
+
   it('n’enregistre rien sous le seuil', async () => {
     const store = {
       findRecent: jest.fn().mockResolvedValue([
@@ -61,7 +75,7 @@ describe('Job de similarité (T255 / FR-114)', () => {
     };
     const job = createSimilarityJob(store, { threshold: 0.95 });
 
-    const result = await job.sweep();
+    const result = await job.sweep(new Date('2026-11-27T10:05:00.000Z'));
 
     expect(result.findings).toBe(0);
     expect(store.recordFinding).not.toHaveBeenCalled();

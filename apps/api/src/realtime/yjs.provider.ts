@@ -29,6 +29,7 @@ export interface DocumentSnapshot {
 }
 
 export interface AwarenessView {
+  docId: string;
   clients: AwarenessClient[];
 }
 
@@ -186,7 +187,7 @@ export class YjsProvider implements OnModuleDestroy {
     }
     clients.set(userId, { userId, cursor });
 
-    const view = { clients: [...clients.values()] };
+    const view = { docId: key, clients: [...clients.values()] };
     this.gateway.emitToRoom(documentRoom(teamId, challengeId), 'doc.awareness', view);
     return view;
   }
@@ -196,7 +197,7 @@ export class YjsProvider implements OnModuleDestroy {
     const key = documentKey(teamId, challengeId);
     const clients = this.awareness.get(key);
     clients?.delete(userId);
-    const view = { clients: [...(clients?.values() ?? [])] };
+    const view = { docId: key, clients: [...(clients?.values() ?? [])] };
     this.gateway.emitToRoom(documentRoom(teamId, challengeId), 'doc.awareness', view);
     return view;
   }

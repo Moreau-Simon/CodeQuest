@@ -1,0 +1,9 @@
+# Propriétaire par défaut du dépôt (T280)
+* @Moreau-Simon
+
+# Zones sensibles : revue supplémentaire obligatoire
+/contracts/ @Moreau-Simon
+/apps/api/prisma/schema.prisma @Moreau-Simon
+/apps/api/prisma/migrations/ @Moreau-Simon
+/.github/workflows/ @Moreau-Simon
+/docs/security/ @Moreau-Simon
