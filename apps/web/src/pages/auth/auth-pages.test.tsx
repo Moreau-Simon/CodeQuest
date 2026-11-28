@@ -53,6 +53,98 @@ describe('pages d’authentification (T061)', () => {
     });
   });
 
+  it('précise qu’une adresse e-mail mal formée est invalide avant tout appel réseau', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    renderPage(<LoginPage />);
+    fireEvent.change(screen.getByLabelText(/E-mail ou pseudo/), {
+      target: { value: 'ada@example' }
+    });
+    fireEvent.change(screen.getByLabelText(/Mot de passe/), {
+      target: { value: 'correct-horse-battery-staple' }
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Se connecter' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Adresse e-mail invalide.');
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('précise quel champ manque sans afficher « Requête invalide »', async () => {
+    renderPage(<LoginPage />);
+    fireEvent.click(screen.getByRole('button', { name: 'Se connecter' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Saisissez votre adresse e-mail ou votre pseudo.'
+    );
+    expect(screen.getByRole('alert')).not.toHaveTextContent('Requête invalide');
+
+    fireEvent.change(screen.getByLabelText(/E-mail ou pseudo/), {
+      target: { value: 'ada' }
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Se connecter' }));
+
+    await waitFor(() =>
+      expect(screen.getByRole('alert')).toHaveTextContent('Saisissez votre mot de passe.')
+    );
+  });
+
+  it('affiche le détail de validation renvoyé par l’API (400) au lieu du message générique', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        jsonResponse(
+          {
+            code: 'VALIDATION_ERROR',
+            message: 'Requête invalide',
+            details: { errors: ['Le mot de passe doit contenir au moins 12 caractères.'] }
+          },
+          400
+        )
+      )
+    );
+
+    renderPage(<LoginPage />);
+    fireEvent.change(screen.getByLabelText(/E-mail ou pseudo/), {
+      target: { value: 'ada@example.com' }
+    });
+    fireEvent.change(screen.getByLabelText(/Mot de passe/), { target: { value: 'court' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Se connecter' }));
+
+    await waitFor(() =>
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        'Le mot de passe doit contenir au moins 12 caractères.'
+      )
+    );
+    expect(screen.getByRole('alert')).not.toHaveTextContent('Requête invalide');
+  });
+
+  it('affiche le message précis d’identifiants incorrects (401)', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        jsonResponse(
+          {
+            code: 'INVALID_CREDENTIALS',
+            message: 'Identifiant ou mot de passe incorrect'
+          },
+          401
+        )
+      )
+    );
+
+    renderPage(<LoginPage />);
+    fireEvent.change(screen.getByLabelText(/E-mail ou pseudo/), {
+      target: { value: 'ada@example.com' }
+    });
+    fireEvent.change(screen.getByLabelText(/Mot de passe/), { target: { value: 'mauvais' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Se connecter' }));
+
+    await waitFor(() =>
+      expect(screen.getByRole('alert')).toHaveTextContent('Identifiant ou mot de passe incorrect')
+    );
+  });
+
   it('affiche le message de verrouillage renvoyé par l’API (423)', async () => {
     vi.stubGlobal(
       'fetch',

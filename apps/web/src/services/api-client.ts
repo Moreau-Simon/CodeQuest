@@ -21,6 +21,25 @@ export class ApiError extends Error {
   }
 }
 
+/**
+ * Message affichable pour une erreur API. Le contrat renvoie parfois un message
+ * générique (« Requête invalide ») et range les vraies raisons dans
+ * `details.errors` : on les remonte à l'utilisateur au lieu du générique.
+ */
+export function apiErrorMessage(error: unknown): string {
+  if (!(error instanceof ApiError)) return t('common.error');
+
+  const errors = error.details?.errors;
+  if (Array.isArray(errors)) {
+    const details = errors
+      .map((entry) => (typeof entry === 'string' ? entry : ''))
+      .filter(Boolean);
+    if (details.length > 0) return details.join(' ');
+  }
+
+  return error.message === 'Requête invalide' ? t('common.error') : error.message;
+}
+
 export interface ApiRequestOptions extends Omit<RequestInit, 'body'> {
   body?: unknown;
   /** En-tête `Idempotency-Key` pour les opérations d'achat (contrat OpenAPI). */

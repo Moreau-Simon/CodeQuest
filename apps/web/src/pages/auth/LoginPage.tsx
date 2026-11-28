@@ -3,8 +3,19 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
 import { t } from '../../i18n';
 import { login } from '../../services/auth';
-import { ApiError } from '../../services/api-client';
+import { apiErrorMessage } from '../../services/api-client';
 import { Button, Field, Input } from '../../components/ui';
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+/** L'identifiant est soit un e-mail valide, soit un pseudo (pas de `@`). */
+function validateInput(identifier: string, password: string): string | null {
+  const value = identifier.trim();
+  if (value.length === 0) return t('auth.identifierRequired');
+  if (value.includes('@') && !EMAIL_PATTERN.test(value)) return t('auth.invalidEmail');
+  if (password.length === 0) return t('auth.passwordRequired');
+  return null;
+}
 
 /** Connexion (T061) : cookies `HttpOnly` posés par l'API, aucun jeton en JS. */
 export function LoginPage(): JSX.Element {
@@ -17,6 +28,11 @@ export function LoginPage(): JSX.Element {
 
   async function onSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
+    const invalid = validateInput(identifier, password);
+    if (invalid) {
+      setError(invalid);
+      return;
+    }
     setError(null);
     setSubmitting(true);
     try {
@@ -24,7 +40,7 @@ export function LoginPage(): JSX.Element {
       await queryClient.invalidateQueries({ queryKey: ['session', 'me'] });
       navigate('/profile');
     } catch (cause) {
-      setError(cause instanceof ApiError ? cause.message : t('common.error'));
+      setError(apiErrorMessage(cause));
     } finally {
       setSubmitting(false);
     }
