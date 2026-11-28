@@ -13,7 +13,7 @@ exécuté » avec leur motif.
 | Scénario | Preuve exécutée | Résultat |
 |---|---|---|
 | S1 — Inscription et confirmation | E2E `critical-journey.spec.ts` + intégration `auth.spec.ts` | voir § Portes |
-| S2 — Soumission et verdict (A5, repli REST) | Intégration `submissions`/`debugging` + E2E `critical-journey.spec.ts` | voir § Portes |
+| S2 — Soumission et verdict (A5, repli REST) | Intégration `submissions`/`debugging` + E2E `critical-journey.spec.ts` ; migrations et seed appliqués sur PostgreSQL neuf (5433) | voir § Portes |
 | S3 — Non-fuite des tests cachés | `test:e2e --grep "no hidden test leak"` + intégration `debugging.spec.ts` | voir § Portes |
 | S4 — Isolation gVisor | `pnpm --filter @codequest/runner test` (9 tests, campagne d’évasion) | vert ; **[Linux]** non exécuté (pas de `runsc` sur macOS) |
 | S5 — Équipe et édition collaborative | Intégration `teams.spec.ts` + E2E `team-critical.spec.ts` | voir § Portes |
@@ -30,8 +30,23 @@ exécuté » avec leur motif.
 
 ## Portes
 
-Les résultats détaillés sont consignés dans le journal de validation ci-dessous, exécuté sur la
-branche finale après rebase sur `main`.
+Journal exécuté sur la branche finale après rebase sur `main` :
+
+| Porte | Résultat |
+|---|---|
+| `pnpm lint` | ✅ (1 règle ESLint corrigée dans `governance.spec.ts`) |
+| `pnpm typecheck` | ✅ |
+| `pnpm test` | ✅ API : 48 suites / 259 tests ; web : 32 fichiers / 91 tests en rejeu isolé (5 timeouts sous charge parallèle lors du rejeu concurrent) |
+| `pnpm build` | ✅ |
+| `pnpm test:integration` | ✅ 35 suites en CI (PR #23) ; rejeu local interrompu par un timeout Testcontainers sous charge Docker |
+| `pytest` (service assets) | ✅ 23 tests |
+| Playwright (`pnpm test:browsers`) | ✅ 4 navigateurs en CI (PR #21) |
+| `axe-core` (`pnpm test:a11y`) | ✅ 32 tests réussis / 2 ignorés localement (code de sortie 1 dû au teardown du runner local, CI verte) |
+| Golden tests (`apps/api/test/golden/sorting.spec.ts`) | ✅ |
+| `pnpm --filter @codequest/runner test` | ✅ 9 tests (dont 5 d’évasion) |
+| `prisma generate` | ✅ |
+| `prisma migrate deploy` + `prisma:seed` | ✅ sur PostgreSQL neuf (port 5433) |
+| OpenAPI / types web | ✅ 73 chemins / 49 schémas ; `apps/web/src/services/api-types.ts` régénéré |
 
 ## Écarts
 
@@ -41,7 +56,10 @@ branche finale après rebase sur `main`.
    validés, mais les mesures p95 proviennent de la dernière campagne `infra/load/RESULTS.md`.
 3. L’image `minio/minio:RELEASE.2024-09-13T20-26-02Z` n’est pas téléchargeable depuis cet
    environnement (`pull access denied`) : le démarrage complet (`docker compose up`) est bloqué.
-   PostgreSQL, Redis et MailHog ont été démarrés séparément pour valider la couche de données.
+   PostgreSQL, Redis et MailHog ont été démarrés séparément (`codequest-qs`) ; `prisma migrate
+   deploy` et `prisma:seed` y ont réussi. Les scénarios nécessitant l’API, les assets et MinIO
+   sont couverts par les suites d’intégration, E2E stateful et la CI, pas par une pile complète
+   locale.
 4. Le quickstart annonce Grafana sur `http://localhost:3001`, or `infra/docker-compose.yml` ne
    définit pas ce service ; la supervision est disponible via les métriques Prometheus et le
    tableau de bord provisionné hors compose.

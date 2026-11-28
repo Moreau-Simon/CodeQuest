@@ -73,6 +73,7 @@ describe('Release SemVer (T272)', () => {
     ]) {
       expect(workflow).toContain(marker);
     }
+    expect(workflow).not.toContain('git push origin HEAD:main');
     expect(read('CHANGELOG.md')).toContain('## [0.1.0]');
   });
 });
