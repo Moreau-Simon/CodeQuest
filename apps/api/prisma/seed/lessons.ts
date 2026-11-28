@@ -2,8 +2,8 @@ import { PrismaClient } from '@prisma/client';
 import { uuidv7 } from '../../src/common/uuid';
 
 /**
- * Seed pédagogique (US6) : deux leçons publiées avec mini-quiz et test de
- * positionnement. Idempotent (identifié par `slug`), sans donnée personnelle.
+ * Seed pédagogique (US6) : deux leçons publiées avec mini-quiz.
+ * Idempotent (identifié par `slug`), sans donnée personnelle.
  */
 const LESSONS = [
   {
@@ -23,7 +23,7 @@ const LESSONS = [
     ].join('\n'),
     order: 1,
     estimatedMinutes: 10,
-    positioningTest: {
+    quiz: {
       passScore: 70,
       questions: [
         {
@@ -56,7 +56,7 @@ const LESSONS = [
     ].join('\n'),
     order: 2,
     estimatedMinutes: 15,
-    positioningTest: {
+    quiz: {
       passScore: 70,
       questions: [
         {
@@ -93,7 +93,7 @@ export async function seedLessons(prisma: PrismaClient): Promise<void> {
         order: lesson.order,
         estimatedMinutes: lesson.estimatedMinutes,
         status: 'published',
-        positioningTest: lesson.positioningTest
+        quiz: lesson.quiz
       }
     });
   }

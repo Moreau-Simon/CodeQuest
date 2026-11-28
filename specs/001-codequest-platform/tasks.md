@@ -290,22 +290,22 @@ débloqué après réussite ; cycle A↔B refusé à l'enregistrement.
 
 ## Phase 8: User Story 6 - Suivre un cours et progresser dans un parcours (Priority: P2)
 
-**Goal**: Leçons courtes, quiz, défi d'application, XP et niveaux, test de positionnement.
+**Goal**: Leçons courtes, mini-quiz, défi d'application, XP et niveaux.
 
-**Independent Test**: suivre une leçon, échouer puis réussir le quiz, constater la progression ; réussir
-un test de positionnement sur une autre leçon et être dispensé.
+**Independent Test**: suivre une leçon, échouer puis réussir le quiz, constater la progression
+et le déblocage du défi d'application.
 
 ### Tests for User Story 6 ⚠️
 
 - [X] T129 [P] [US6] Tests unitaires de la courbe d'XP dans `apps/api/test/unit/xp.spec.ts` (monotonie, paliers, aucun niveau négatif)
-- [X] T130 [P] [US6] Tests d'intégration progression et positionnement dans `apps/api/test/integration/lessons.spec.ts`
+- [X] T130 [P] [US6] Tests d'intégration progression et mini-quiz dans `apps/api/test/integration/lessons.spec.ts`
 - [X] T131 [P] [US6] Tests de contrat `/lessons` dans `apps/api/test/contract/lessons.contract.spec.ts`
 
 ### Implementation for User Story 6
 
-- [X] T132 [P] [US6] Créer les modèles Prisma `Lesson` (`slug` UNIQUE, `content_md`, `order`, `positioning_test` jsonb) et `LessonProgress` (PK composite, `status ∈ {not_started, in_progress, completed}`) dans `apps/api/prisma/schema.prisma`
+- [X] T132 [P] [US6] Créer les modèles Prisma `Lesson` (`slug` UNIQUE, `content_md`, `order`, `quiz` jsonb) et `LessonProgress` (PK composite, `status ∈ {not_started, in_progress, completed}`) dans `apps/api/prisma/schema.prisma`
 - [X] T133 [US6] Implémenter `apps/api/src/modules/lessons/lessons.service.ts` : contenu, quiz, persistance de la progression et de l'état de lecture (FR-051, FR-053)
-- [X] T134 [US6] Implémenter `apps/api/src/modules/lessons/positioning.service.ts` : test de positionnement, dispense du cours, traçabilité (FR-052)
+- [X] T134 [US6] ~~Retiré~~ : le test de positionnement (FR-052) est supprimé au profit du seul mini-quiz pédagogique.
 - [X] T135 [US6] Implémenter `apps/api/src/modules/lessons/xp.service.ts` : attribution d'XP par défi réussi, recalcul du niveau, courbe paramétrable dans `PlatformSetting` (FR-054)
 - [X] T136 [US6] Exposer `apps/api/src/modules/lessons/lessons.controller.ts` : `GET /lessons`, `POST /lessons/{id}/complete`
 - [X] T137 [P] [US6] Créer `apps/web/src/pages/lessons/LessonPage.tsx` (Markdown, quiz, progression, défi d'application lié) et `LessonsPage.tsx` (parcours)

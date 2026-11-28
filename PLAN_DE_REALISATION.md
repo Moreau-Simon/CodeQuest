@@ -130,7 +130,7 @@ projet-codequest/
 - [ ] **Didacticiels & Arbre de compétences**
   - [ ] Tables `lessons`, `lesson_progress`, `challenge_prerequisites`.
   - [ ] Validation des prérequis sous forme de graphe orienté acyclique (DAG).
-  - [ ] Interface de cours interactif (leçon théorique, quiz, test de positionnement).
+  - [ ] Interface de cours interactif (leçon théorique, mini-quiz).
 - [ ] **Nouveaux types de défis**
   - [ ] *Défis de débogage* : code pré-rempli avec anomalies, décompte du nombre de lignes modifiées.
   - [ ] *Défis de décryptage* : génération dynamique du texte chiffré et de la clé par graine (*seed*) pour chaque participant.

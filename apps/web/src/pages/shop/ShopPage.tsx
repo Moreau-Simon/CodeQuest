@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Modal, Button, Skeleton } from '../../components/ui';
 import { t } from '../../i18n';
 import { ApiError } from '../../services/api-client';
@@ -65,7 +66,17 @@ export function ShopPage(): JSX.Element {
     }
   });
 
-  if (!authenticated) return <section>{t('common.error')}</section>;
+  if (!authenticated) {
+    return (
+      <section className="mx-auto flex w-full max-w-5xl flex-col gap-3 px-4 py-8">
+        <h1 className="text-3xl font-bold">{t('shop.title')}</h1>
+        <p role="alert">{t('common.loginRequired')}</p>
+        <Link to="/login" className="text-primary hover:underline">
+          {t('common.login')}
+        </Link>
+      </section>
+    );
+  }
 
   return (
     <section className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-8">
@@ -94,7 +105,11 @@ export function ShopPage(): JSX.Element {
         </p>
       )}
 
-      {shopQuery.isPending ? (
+      {shopQuery.isError ? (
+        <p role="alert" className="rounded-lg bg-danger p-3">
+          {t('shop.error.load')}
+        </p>
+      ) : shopQuery.isPending ? (
         <Skeleton className="h-64 w-full" />
       ) : shopQuery.data?.length ? (
         <ul className="grid gap-4 sm:grid-cols-2">

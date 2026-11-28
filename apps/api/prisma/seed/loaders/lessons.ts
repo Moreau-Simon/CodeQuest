@@ -2,7 +2,7 @@ import { Prisma, type PrismaClient } from '@prisma/client';
 import { LESSONS } from '../content';
 import { uuidv7 } from '../../../src/common/uuid';
 
-/** Leçons et quiz de positionnement : clé `slug`, thème résolu au préalable. */
+/** Leçons et mini-quiz pédagogiques : clé `slug`, thème résolu au préalable. */
 export async function seedLessonsCatalog(prisma: PrismaClient): Promise<number> {
   const themes = await prisma.theme.findMany({ select: { id: true, slug: true } });
   const themeIds = new Map(themes.map((theme) => [theme.slug, theme.id]));
@@ -10,7 +10,7 @@ export async function seedLessonsCatalog(prisma: PrismaClient): Promise<number> 
   for (const lesson of LESSONS) {
     const themeId = themeIds.get(lesson.themeSlug);
     if (!themeId) throw new Error(`Thème introuvable pour la leçon ${lesson.slug}`);
-    const positioningTest = lesson.quiz as unknown as Prisma.InputJsonValue;
+    const quiz = lesson.quiz as unknown as Prisma.InputJsonValue;
     await prisma.lesson.upsert({
       where: { slug: lesson.slug },
       update: {
@@ -20,7 +20,7 @@ export async function seedLessonsCatalog(prisma: PrismaClient): Promise<number> 
         order: lesson.order,
         estimatedMinutes: lesson.estimatedMinutes,
         status: lesson.status,
-        positioningTest
+        quiz
       },
       create: {
         id: uuidv7(),
@@ -31,7 +31,7 @@ export async function seedLessonsCatalog(prisma: PrismaClient): Promise<number> 
         order: lesson.order,
         estimatedMinutes: lesson.estimatedMinutes,
         status: lesson.status,
-        positioningTest
+        quiz
       }
     });
   }

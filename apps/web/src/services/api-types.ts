@@ -1449,50 +1449,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/lessons/{lessonId}/positioning": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Passer le test de positionnement et obtenir une dispense */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    lessonId: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["QuizAnswers"];
-                };
-            };
-            responses: {
-                /** @description Résultat du positionnement */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["PositioningResult"];
-                    };
-                };
-                400: components["responses"]["Error"];
-                403: components["responses"]["Error"];
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/lessons/{lessonId}/complete": {
         parameters: {
             query?: never;
@@ -3450,7 +3406,6 @@ export interface components {
             estimatedMinutes?: number;
             /** @enum {string} */
             status: "not_started" | "in_progress" | "completed";
-            positioningTestAvailable: boolean;
             contentMd?: string;
             quiz?: components["schemas"]["Quiz"];
             applicationChallenge?: {
@@ -3478,13 +3433,6 @@ export interface components {
             correct: number;
             total: number;
             passed: boolean;
-        };
-        PositioningResult: {
-            score: number;
-            passed: boolean;
-            exempted: boolean;
-            /** @enum {string|null} */
-            source: "positioning" | null;
         };
         LessonProgress: {
             /** @enum {string} */

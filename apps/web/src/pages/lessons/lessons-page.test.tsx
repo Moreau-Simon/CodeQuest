@@ -12,7 +12,6 @@ const mockLessons = [
     order: 1,
     estimatedMinutes: 10,
     status: 'not_started',
-    positioningTestAvailable: true,
     applicationChallenge: null,
     progress: { status: 'not_started', quizScore: null, completedAt: null }
   },
@@ -23,7 +22,6 @@ const mockLessons = [
     order: 2,
     estimatedMinutes: 15,
     status: 'completed',
-    positioningTestAvailable: false,
     applicationChallenge: { id: 'ch-1', title: 'Tri optimal' },
     progress: { status: 'completed', quizScore: 100, completedAt: '2026-11-18T10:00:00.000Z' }
   }

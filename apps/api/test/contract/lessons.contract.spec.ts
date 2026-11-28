@@ -7,7 +7,7 @@ import { startTestInfrastructure, type TestInfrastructure } from '../helpers/db'
 /**
  * T131 [P] [US6] Tests de contrat `/lessons/*` conformes à `contracts/openapi.yaml`.
  * - Catalogue et détail (quiz sans réponses correctes)
- * - Mini-quiz, positionnement et complétion (comptes confirmés)
+ * - Mini-quiz et complétion (comptes confirmés)
  * - Statistiques SC-010 et erreurs 403/404 motivées
  */
 describe('contrat /lessons/* (T131)', () => {
@@ -22,7 +22,7 @@ describe('contrat /lessons/* (T131)', () => {
   let lessonId: string;
   let answers: Record<string, number>;
 
-  const positioningTest = {
+  const quiz = {
     passScore: 70,
     questions: [
       { id: 'q1', prompt: 'Premier index ?', choices: ['0', '1'], answerIndex: 0 },
@@ -57,7 +57,7 @@ describe('contrat /lessons/* (T131)', () => {
         contentMd: '# Leçon\n\nContenu.',
         order: 1,
         status: 'published',
-        positioningTest
+        quiz
       }
     });
     answers = { q1: 0, q2: 0 };
@@ -119,33 +119,12 @@ describe('contrat /lessons/* (T131)', () => {
     );
   });
 
-  it('dispense via positionnement et renvoie 403 si retry ou auto-déclaration', async () => {
-    const secondLessonId = uuidv7();
-    await prisma.lesson.create({
-      data: {
-        id: secondLessonId,
-        themeId,
-        slug: 'contrat-positionnement',
-        title: 'Positionnement',
-        contentMd: '# Positionnement',
-        order: 2,
-        status: 'published',
-        positioningTest
-      }
-    });
+  it('ne propose plus de route de positionnement', async () => {
+    const response = await api.agent.post(`/api/v1/lessons/${lessonId}/positioning`).send({ answers });
+    expect(response.status).toBe(404);
+  });
 
-    const positioning = await api.agent
-      .post(`/api/v1/lessons/${secondLessonId}/positioning`)
-      .send({ answers });
-    expect(positioning.status).toBe(200);
-    expectValidResponse({ method: 'post', path: '/lessons/{lessonId}/positioning' }, 200, positioning.body);
-    expect(positioning.body).toMatchObject({ passed: true, exempted: true, source: 'positioning' });
-
-    const retry = await api.agent
-      .post(`/api/v1/lessons/${secondLessonId}/positioning`)
-      .send({ answers });
-    expect(retry.status).toBe(403);
-
+  it('refuse une auto-déclaration de score sans tentative de quiz', async () => {
     const thirdLessonId = uuidv7();
     await prisma.lesson.create({
       data: {
@@ -156,7 +135,7 @@ describe('contrat /lessons/* (T131)', () => {
         contentMd: '# Quiz',
         order: 3,
         status: 'published',
-        positioningTest
+        quiz
       }
     });
     const declared = await api.agent

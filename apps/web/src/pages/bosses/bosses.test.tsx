@@ -91,6 +91,30 @@ describe('boss et points de vie (T184)', () => {
     expect(await screen.findByRole('status')).toHaveTextContent('Phase soumise');
   });
 
+  it('affiche une erreur explicite quand la liste des boss ne charge pas', async () => {
+    const fetchMock = vi.fn((url: string) => {
+      if (url.includes('/me/health')) {
+        return Promise.resolve(
+          jsonResponse({
+            hp: 100,
+            maxHp: 100,
+            koUntil: null,
+            nextRegenAt: null,
+            serverNow: new Date().toISOString()
+          })
+        );
+      }
+      return Promise.resolve(jsonResponse({ code: 'INTERNAL', message: 'Erreur' }, 500));
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    renderPage();
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Impossible de charger les boss');
+    expect(screen.queryByText('Aucun boss disponible pour le moment.')).not.toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalled();
+  });
+
   it('annonce le KO serveur et verrouille la soumission', async () => {
     const serverNow = new Date();
     const health = {

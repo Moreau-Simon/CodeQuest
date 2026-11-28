@@ -194,27 +194,22 @@ réussite du premier.
 ### User Story 6 - Suivre un cours et progresser dans un parcours (Priority: P2)
 
 Un joueur suit une leçon courte, passe un mini-quiz, termine par un défi d'application et
-gagne de l'expérience ; un joueur confirmé peut passer le test de positionnement pour être
-dispensé du cours.
+gagne de l'expérience.
 
 **Why this priority**: La promesse « apprendre par la pratique » dépend du contenu
 pédagogique, mais le MVP peut exister sans lui.
 
 **Independent Test**: Suivre une leçon, échouer puis réussir le quiz, constater la
-progression enregistrée, puis réussir un test de positionnement sur une autre leçon et
-vérifier le dispense.
+progression enregistrée et le déblocage du défi d'application.
 
 **Acceptance Scenarios**:
 
 1. **Given** un cours non suivi, **When** le joueur ouvre le premier défi de la notion,
-   **Then** le cours associé lui est proposé comme obligatoire ou contournable par test de
-   positionnement.
+   **Then** le cours associé lui est proposé comme obligatoire.
 2. **Given** un quiz réussi, **When** le joueur revient plus tard, **Then** sa progression
    est conservée et le défi d'application est débloqué.
 3. **Given** un défi réussi, **When** l'expérience est attribuée, **Then** le niveau du
    joueur est recalculé et les zones de lore conditionnées par ce niveau s'ouvrent.
-4. **Given** un joueur qui échoue au test de positionnement, **When** il revient au
-   parcours, **Then** le cours complet reste obligatoire.
 
 ---
 
@@ -674,7 +669,7 @@ et vérifier l'intégrité des scores.
 - **FR-051**: System MUST provide one lesson per concept with a short theoretical part,
   interactive examples, and a mini-quiz, ending with an application challenge.
 - **FR-052**: System MUST make the lesson mandatory before the first challenge of its
-  concept, unless the player passes a positioning test.
+  concept.
 - **FR-053**: System MUST persist lesson progress and reading state.
 - **FR-054**: System MUST award experience for each successful challenge, recompute the
   player level, and unlock level-gated lore content.

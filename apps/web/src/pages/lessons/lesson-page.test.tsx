@@ -16,7 +16,6 @@ const detail: LessonDetail = {
   order: 1,
   estimatedMinutes: 10,
   status: 'not_started',
-  positioningTestAvailable: true,
   applicationChallenge: { id: 'ch-1', title: 'Tri optimal' },
   progress: { status: 'not_started', quizScore: null, completedAt: null },
   contentMd: '# Les bases\n\nUn **tableau** retient une séquence. Utilisez `len()`.\n\n- Zéro indexed\n- Copie safe',
@@ -140,31 +139,14 @@ describe('LessonPage (US6 - T137)', () => {
     expect(link.closest('a')).toHaveAttribute('href', '/challenges/ch-1');
   });
 
-  it('dispense du cours après un positionnement réussi', async () => {
-    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
-      const url = String(input);
-      const method = (init?.method ?? 'GET').toUpperCase();
-      if (method === 'GET') return jsonResponse(detail);
-      if (url.endsWith('/positioning')) {
-        return jsonResponse({ score: 100, passed: true, exempted: true, source: 'positioning' });
-      }
-      return jsonResponse({});
-    });
+  it('ne propose que le mini-quiz pédagogique, sans test de positionnement', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(jsonResponse(detail));
     useSessionStore.getState().setUser(profile);
 
     renderPage();
 
-    await waitFor(() => {
-      expect(screen.getByText('Passer le test de positionnement')).toBeInTheDocument();
-    });
-    const positioningSection = screen
-      .getByRole('heading', { name: 'Test de positionnement' })
-      .closest('section')!;
-    answerAll(positioningSection);
-    fireEvent.click(screen.getByText('Passer le test de positionnement'));
-
-    await waitFor(() => {
-      expect(screen.getByText(/Positionnement réussi/)).toBeInTheDocument();
-    });
+    expect(await screen.findByRole('heading', { name: 'Mini-quiz' })).toBeInTheDocument();
+    expect(screen.queryByText('Test de positionnement')).not.toBeInTheDocument();
+    expect(screen.queryByText('Passer le test de positionnement')).not.toBeInTheDocument();
   });
 });

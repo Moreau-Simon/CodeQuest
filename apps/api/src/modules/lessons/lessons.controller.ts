@@ -12,7 +12,6 @@ import {
   type LessonSummary,
   type QuizResult
 } from './lessons.service';
-import { PositioningService, type PositioningResult } from './positioning.service';
 import type { QuizAnswers } from './quiz';
 
 export class QuizAnswersDto {
@@ -44,7 +43,6 @@ export class LessonsQueryDto {
 export class LessonsController {
   constructor(
     private readonly lessons: LessonsService,
-    private readonly positioning: PositioningService,
     private readonly analytics: AnalyticsService
   ) {}
 
@@ -91,17 +89,6 @@ export class LessonsController {
     @CurrentUser() user: AuthenticatedUser
   ): Promise<QuizResult> {
     return this.lessons.quiz(lessonId, user.id, body.answers);
-  }
-
-  @Authenticated()
-  @Post(':lessonId/positioning')
-  @HttpCode(HttpStatus.OK)
-  positioningAttempt(
-    @Param('lessonId') lessonId: string,
-    @Body() body: QuizAnswersDto,
-    @CurrentUser() user: AuthenticatedUser
-  ): Promise<PositioningResult> {
-    return this.positioning.attempt(lessonId, user.id, body.answers);
   }
 
   @Authenticated()

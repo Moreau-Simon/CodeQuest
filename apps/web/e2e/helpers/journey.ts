@@ -26,7 +26,6 @@ const lessonSummary = {
   order: 1,
   estimatedMinutes: 5,
   status: 'not_started',
-  positioningTestAvailable: false,
   applicationChallenge: null,
   progress: { status: 'not_started', quizScore: null, completedAt: null }
 };
@@ -179,7 +178,7 @@ export async function installJourneyStub(page: Page): Promise<void> {
         }
       });
     }
-    if (/^\/lessons\/[^/]+\/(start|quiz|complete|positioning)$/.test(path)) {
+    if (/^\/lessons\/[^/]+\/(start|quiz|complete)$/.test(path)) {
       if (path.endsWith('/quiz')) {
         state.quizPassed = true;
         return json(route, 200, { score: 100, correct: 1, total: 1, passed: true });
