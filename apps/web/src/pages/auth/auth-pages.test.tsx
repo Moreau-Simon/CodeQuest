@@ -145,6 +145,109 @@ describe('pages d’authentification (T061)', () => {
     );
   });
 
+  it('précise qu’une adresse e-mail d’inscription est invalide sans appel réseau', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    renderPage(<RegisterPage />);
+    fireEvent.change(screen.getByLabelText(/Adresse e-mail/), {
+      target: { value: 'ada@example' }
+    });
+    fireEvent.change(screen.getByLabelText(/Pseudo/), { target: { value: 'ada' } });
+    fireEvent.change(screen.getByLabelText(/Mot de passe/), {
+      target: { value: 'correct-horse-battery-staple' }
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Créer mon compte' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Adresse e-mail invalide.');
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('précise les contraintes de pseudo et de mot de passe à l’inscription', async () => {
+    renderPage(<RegisterPage />);
+    fireEvent.change(screen.getByLabelText(/Adresse e-mail/), {
+      target: { value: 'ada@example.com' }
+    });
+    fireEvent.change(screen.getByLabelText(/Pseudo/), { target: { value: 'a!' } });
+    fireEvent.change(screen.getByLabelText(/Mot de passe/), {
+      target: { value: 'correct-horse-battery-staple' }
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Créer mon compte' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Le pseudo doit contenir 3 à 20 lettres, chiffres, tirets ou soulignés.'
+    );
+
+    fireEvent.change(screen.getByLabelText(/Pseudo/), { target: { value: 'ada' } });
+    fireEvent.change(screen.getByLabelText(/Mot de passe/), { target: { value: 'court' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Créer mon compte' }));
+
+    await waitFor(() =>
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        'Le mot de passe doit contenir au moins 12 caractères.'
+      )
+    );
+  });
+
+  it('affiche le motif précis d’un conflit à l’inscription (409)', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        jsonResponse(
+          { code: 'EMAIL_TAKEN', message: 'Un compte existe déjà avec cette adresse e-mail' },
+          409
+        )
+      )
+    );
+
+    renderPage(<RegisterPage />);
+    fireEvent.change(screen.getByLabelText(/Adresse e-mail/), {
+      target: { value: 'ada@example.com' }
+    });
+    fireEvent.change(screen.getByLabelText(/Pseudo/), { target: { value: 'ada' } });
+    fireEvent.change(screen.getByLabelText(/Mot de passe/), {
+      target: { value: 'correct-horse-battery-staple' }
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Créer mon compte' }));
+
+    await waitFor(() =>
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        'Un compte existe déjà avec cette adresse e-mail'
+      )
+    );
+  });
+
+  it('affiche le détail de validation d’inscription au lieu du message générique', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        jsonResponse(
+          {
+            code: 'VALIDATION_ERROR',
+            message: 'Requête invalide',
+            details: { errors: ['Adresse e-mail invalide'] }
+          },
+          400
+        )
+      )
+    );
+
+    renderPage(<RegisterPage />);
+    fireEvent.change(screen.getByLabelText(/Adresse e-mail/), {
+      target: { value: 'ada@example.com' }
+    });
+    fireEvent.change(screen.getByLabelText(/Pseudo/), { target: { value: 'ada' } });
+    fireEvent.change(screen.getByLabelText(/Mot de passe/), {
+      target: { value: 'correct-horse-battery-staple' }
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Créer mon compte' }));
+
+    await waitFor(() =>
+      expect(screen.getByRole('alert')).toHaveTextContent('Adresse e-mail invalide')
+    );
+    expect(screen.getByRole('alert')).not.toHaveTextContent('Requête invalide');
+  });
+
   it('affiche le message de verrouillage renvoyé par l’API (423)', async () => {
     vi.stubGlobal(
       'fetch',
