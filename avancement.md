@@ -585,8 +585,22 @@ EOF
 - Architecture de fichiers à respecter : `apps/web`, `apps/api`, `services/runner`, `services/assets`, `infra/`, `docs/` — **sans `packages/`** (voir `versioning.md`).
 - `plan.md` doit conserver l'ordre des titres du gabarit ; les artefacts sont référencés par chemins relatifs.
 - La spec mélange prose FR et FR/SC en anglais : décision de style (finding T1) non tranchée, sans impact d'exécution.
-- Les 280 tâches sont suivies dans `tasks.md` (**197 cochées**, 83 restantes).
+- Les 280 tâches sont suivies dans `tasks.md` (**280 cochées**, 0 restante).
 - **Propriété du score** : seul `ScoringService` calcule ; le runner renvoie des mesures brutes. Aucun test réussi ⇒ score `0` (les golden tests le figent).
 - **Fin de vie Socket.IO** : ne pas quitter les clients Redis de l'adaptateur dans `onModuleDestroy` (Nest ferme Socket.IO ensuite) — utiliser `onApplicationShutdown`.
 - **Suppression de compte** : `submissions.user_id` est `NOT NULL` ; l'anonymat est assuré par le tombeau pseudonyme à J+30, pas par un `UPDATE ... NULL`.
 - **Préfixe API** : `/api/v1` partout, y compris le cookie `refresh_token` (`Path=/api/v1/auth`).
+
+---
+
+## 9. Catalogue de contenu durable (lot post-Phase 20)
+
+- **Objectif** : fournir un volume de contenu évolutif sans disperser les données dans le code du seed.
+- **Structure** : données pures dans `apps/api/prisma/seed/content/` (un dossier par domaine, voir son `README.md`), écritures Prisma dans `apps/api/prisma/seed/loaders/`, orchestration dans `apps/api/prisma/seed/index.ts`.
+- **Volumes livrés** : 10 thèmes, 12 chapitres de lore, 30 leçons avec quiz, 52 définitions de défis (16 cas chacun), 102 indices, 104 prérequis, 4 saisons, 8 événements, 10 manches, 4 boss × 3 phases, 34 objets de boutique et 20 badges. Les entités historiques (`Trier une liste`, `bases-des-tableaux`, `complexite-lineaire`) et les compteurs RBAC (3/21/41) sont conservés.
+- **TDD** : la garde `test/unit/seed-catalog.spec.ts` a d'abord été écrite et vue rouge, puis rendue verte (14 invariants : volumes, clés naturelles, contraintes SQL, références, cycles, somme des PV).
+- **Versions immuables** : modifier les cas d'un défi crée une version supplémentaire et met à jour `currentVersion` ; rejouer un seed inchangé ne crée ni version ni doublon.
+- **Idempotence vérifiée** : deux exécutions de `pnpm --filter @codequest/api prisma:seed` sur PostgreSQL `:5433` donnent les mêmes comptages (53 défis, 53 versions, 8 événements, 4 boss, 34 objets, 20 badges, 3/21/41 pour le RBAC).
+- **Correction d'interface** : `test/helpers/app.ts` lit désormais aussi les jobs `completed` de la file `emails`, puisque `MailDeliveryJob` (Phase 20) consomme immédiatement les messages ; le contrat `/auth` repasse vert sans réintroduire de fuite d'information sur les identifiants.
+- **Portes** : `pnpm lint`, `pnpm typecheck`, `pnpm test` (50 suites API / 275 tests, 32 suites web / 99 tests), `pnpm build`, `prisma generate` et `pnpm test:integration` (35 suites / 161 tests) verts.
+- **E2E locaux** : 100 scénarios réussis sur Chromium (desktop/mobile/tablet) et WebKit. Firefox (`Could not find profile folder`) et Edge (`msedge` absent de `/Applications`) ne peuvent pas se lancer sur cette machine ; aucun échec fonctionnel constaté, à rejouer en CI.
