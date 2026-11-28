@@ -14,7 +14,7 @@ content/
 ├── index.ts                 # exports publics
 ├── lore/chapters.ts         # 12 chapitres en 4 arcs
 ├── themes.ts                # 10 provinces de la Grille
-├── courses/lessons.ts       # 30 leçons avec quiz de positionnement
+├── courses/lessons.ts       # 30 leçons avec mini-quiz pédagogique
 ├── challenges/
 │   ├── cases.ts             # 16 familles de cas déterministes + solutions
 │   ├── templates.ts         # énoncés FR et indices par famille

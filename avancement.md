@@ -604,3 +604,26 @@ EOF
 - **Correction d'interface** : `test/helpers/app.ts` lit désormais aussi les jobs `completed` de la file `emails`, puisque `MailDeliveryJob` (Phase 20) consomme immédiatement les messages ; le contrat `/auth` repasse vert sans réintroduire de fuite d'information sur les identifiants.
 - **Portes** : `pnpm lint`, `pnpm typecheck`, `pnpm test` (50 suites API / 275 tests, 32 suites web / 99 tests), `pnpm build`, `prisma generate` et `pnpm test:integration` (35 suites / 161 tests) verts.
 - **E2E locaux** : 100 scénarios réussis sur Chromium (desktop/mobile/tablet) et WebKit. Firefox (`Could not find profile folder`) et Edge (`msedge` absent de `/Applications`) ne peuvent pas se lancer sur cette machine ; aucun échec fonctionnel constaté, à rejouer en CI.
+
+---
+
+## 10. Retrait du positionnement et visibilité boss/boutique
+
+- **Positionnement supprimé** (retour utilisateur : doublon avec le mini-quiz) : route
+  `POST /lessons/:id/positioning`, `PositioningService`, types et libellés web retirés. Le banc de
+  questions sert uniquement au mini-quiz (FR-051) ; la colonne `lessons.positioning_test` est
+  renommée `quiz` par la migration `20261128140000_lessons_quiz` (sans perte de données).
+- **Contrat et specs** : `openapi.yaml`, types web générés, `spec.md`, `data-model.md`, `tasks.md`,
+  `manuel.md` et `PLAN_DE_REALISATION.md` mis à jour ; la dispense n'existe plus, le cours reste
+  obligatoire avant le défi d'application (FR-052).
+- **Boss et boutique** : les données sont présentes en base (4 boss, 34 objets) et les routes
+  authentifiées les renvoient. Les pages affichent désormais explicitement les erreurs de
+  chargement et un lien de connexion au lieu d'une page vide ; les PV sont invalidés après une
+  soumission de phase.
+- **TDD** : gardes écrites rouges puis vertes dans `lesson-page.test.tsx`,
+  `bosses.test.tsx` et `shop.test.tsx`.
+- **Portes** : `pnpm lint`, `pnpm typecheck`, `pnpm test` (50 suites API / 275 tests, 32 suites web / 102 tests),
+  `pnpm build`, `prisma generate`, types web générés et `pnpm test:integration` (35 suites / 162 tests) verts.
+- **E2E locaux** : 108 scénarios vérifiés sur Chromium (desktop/mobile/tablet) et WebKit ; les scénarios
+  mobile ont été rejoués en série après des timeouts liés au parallélisme local (4 workers). Firefox et Edge
+  ne peuvent toujours pas se lancer sur cette machine ; CI doit rejouer les 4 navigateurs.

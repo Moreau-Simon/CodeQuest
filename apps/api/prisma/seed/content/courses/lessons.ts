@@ -57,13 +57,13 @@ function lesson(input: LessonInput): LessonSeed {
       '## Mise en pratique',
       '',
       'Ouvrez le défi associé à cette leçon, puis appliquez la méthode décrite',
-      'avant de consulter les indices. Le test de positionnement vérifie que',
-      'vous avez compris les notions essentielles.'
+      'avant de consulter les indices. Le mini-quiz vérifie que vous avez',
+      'compris les notions essentielles.'
     ].join('\n')
   };
 }
 
-/** Trente leçons publiées, trois par province, avec quiz de positionnement. */
+/** Trente leçons publiées, trois par province, avec un mini-quiz pédagogique. */
 export const LESSONS: LessonSeed[] = [
   lesson({
     slug: 'complexite-des-tris',

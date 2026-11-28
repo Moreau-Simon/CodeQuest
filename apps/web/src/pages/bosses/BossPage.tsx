@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Button, Skeleton } from '../../components/ui';
 import { t } from '../../i18n';
 import { ApiError } from '../../services/api-client';
@@ -7,6 +8,14 @@ import { getBosses, getMyHealth, submitBossPhase, type Boss } from '../../servic
 import { useSessionStore } from '../../stores/session';
 import { formatCountdown } from '../events/countdown';
 import { HealthBar } from './HealthBar';
+
+/** Distingue une session expirée d'une panne de chargement. */
+export function bossLoadError(error: unknown): { message: string; login: boolean } {
+  if (error instanceof ApiError && error.status === 401) {
+    return { message: t('common.loginRequired'), login: true };
+  }
+  return { message: t('boss.error.load'), login: false };
+}
 
 function submissionError(error: unknown): string {
   if (!(error instanceof ApiError)) return t('boss.error.default');
@@ -49,6 +58,7 @@ function BossCard({ boss, ko, animated }: BossCardProps): JSX.Element {
       setNotice(t('boss.submitted'));
       setCode('');
       void queryClient.invalidateQueries({ queryKey: ['bosses'] });
+      void queryClient.invalidateQueries({ queryKey: ['me', 'health'] });
     },
     onError: (cause: unknown) => {
       setNotice(null);
@@ -159,6 +169,7 @@ export function BossPage(): JSX.Element {
   const offset = health.data ? serverNow - Date.now() : 0;
   const koUntil = health.data?.koUntil ? new Date(health.data.koUntil).getTime() : null;
   const ko = koUntil !== null && koUntil > serverNow;
+  const loadFailure = bosses.error ? bossLoadError(bosses.error) : health.error ? bossLoadError(health.error) : null;
 
   return (
     <section className="mx-auto flex max-w-4xl flex-col gap-6 px-6 py-16">
@@ -167,6 +178,19 @@ export function BossPage(): JSX.Element {
         <p className="mt-2 text-muted">{t('boss.subtitle')}</p>
       </header>
 
+      {loadFailure && (
+        <p role="alert" className="rounded-lg bg-danger p-3 text-sm">
+          {loadFailure.message}
+          {loadFailure.login && (
+            <>
+              {' '}
+              <Link to="/login" className="underline">
+                {t('common.login')}
+              </Link>
+            </>
+          )}
+        </p>
+      )}
       {health.isPending ? <Skeleton label={t('common.loading')} className="h-24 w-full" /> : null}
       {health.data ? (
         <div className="flex flex-col gap-2 rounded-xl border border-elevated bg-surface p-5">

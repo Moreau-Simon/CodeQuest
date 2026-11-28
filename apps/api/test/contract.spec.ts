@@ -83,7 +83,6 @@ describe('validateur de contrat OpenAPI (T042)', () => {
       order: 1,
       estimatedMinutes: 10,
       status: 'not_started',
-      positioningTestAvailable: true,
       applicationChallenge: null,
       progress: { status: 'not_started', quizScore: null, completedAt: null }
     });
@@ -103,15 +102,6 @@ describe('validateur de contrat OpenAPI (T042)', () => {
       }
     );
     expect(completion.valid).toBe(true);
-
-    expect(
-      validator.validateNamedSchema('PositioningResult', {
-        score: 40,
-        passed: false,
-        exempted: false,
-        source: null
-      }).valid
-    ).toBe(true);
 
     expect(
       validator.validateNamedSchema('FirstAttemptStats', { attempts: 10, successes: 8, rate: 0.8 }).valid

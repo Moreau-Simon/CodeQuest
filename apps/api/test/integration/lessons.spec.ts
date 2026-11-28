@@ -4,28 +4,26 @@ import { PrismaService } from '../../src/prisma/prisma.service';
 import { PrerequisiteCheckService } from '../../src/modules/challenges/prerequisite-check.service';
 import { AnalyticsService } from '../../src/modules/lessons/analytics.service';
 import { LessonsService } from '../../src/modules/lessons/lessons.service';
-import { PositioningService } from '../../src/modules/lessons/positioning.service';
 import { XpService } from '../../src/modules/lessons/xp.service';
 import { DEFAULT_XP_CURVE, levelForXp } from '../../src/modules/lessons/xp-curve';
 import { AuditService } from '../../src/modules/audit/audit.service';
 import { startTestInfrastructure, type TestInfrastructure } from '../helpers/db';
 
 /**
- * T130 [P] [US6] Tests d'intégration progression, positionnement, XP et analytics
+ * T130 [P] [US6] Tests d'intégration progression, mini-quiz, XP et analytics
  * (FR-051 → FR-054, SC-010). Chaque suite démarre sur une base éphémère migrée.
  */
 describe('Cours, progression et niveaux (T130)', () => {
   let infra: TestInfrastructure;
   let prisma: PrismaService;
   let lessons: LessonsService;
-  let positioning: PositioningService;
   let xp: XpService;
   let analytics: AnalyticsService;
   let checks: PrerequisiteCheckService;
   let themeId: string;
   let userId: string;
 
-  const positioningTest = {
+  const quiz = {
     passScore: 70,
     questions: [
       {
@@ -51,7 +49,6 @@ describe('Cours, progression et niveaux (T130)', () => {
 
     const audit = new AuditService(prisma);
     lessons = new LessonsService(prisma, audit);
-    positioning = new PositioningService(prisma, lessons, audit);
     xp = new XpService(prisma, audit);
     analytics = new AnalyticsService(prisma, audit, new MetricsService());
     checks = new PrerequisiteCheckService(prisma);
@@ -89,7 +86,7 @@ describe('Cours, progression et niveaux (T130)', () => {
         contentMd: '# Leçon\n\nContenu de démonstration.',
         order: 1,
         status: 'published',
-        positioningTest
+        quiz
       }
     });
     return id;
@@ -147,29 +144,7 @@ describe('Cours, progression et niveaux (T130)', () => {
     expect(evaluation.status).toBe('available');
   });
 
-  it('dispense via positionnement réussi et refuse une auto-déclaration de score', async () => {
-    const lessonId = await createLesson('positionnement-unique');
-
-    const failed = await positioning.attempt(lessonId, userId, { q1: 1, q2: 0 });
-    expect(failed.passed).toBe(false);
-    expect(failed.exempted).toBe(false);
-    const stillMandatory = await prisma.lessonProgress.findUnique({
-      where: { userId_lessonId: { userId, lessonId } }
-    });
-    expect(stillMandatory).toBeNull();
-
-    const passed = await positioning.attempt(lessonId, userId, { q1: 0, q2: 0 });
-    expect(passed).toMatchObject({ passed: true, exempted: true, source: 'positioning' });
-    const exempted = await prisma.lessonProgress.findUniqueOrThrow({
-      where: { userId_lessonId: { userId, lessonId } }
-    });
-    expect(exempted.status).toBe('completed');
-
-    const audit = await prisma.auditLog.findFirst({
-      where: { actorId: userId, action: 'lesson.positioning.passed', targetId: lessonId }
-    });
-    expect(audit).not.toBeNull();
-
+  it('refuse une auto-déclaration de score sans tentative de quiz enregistrée', async () => {
     const otherLessonId = await createLesson('quiz-obligeant');
     await expect(lessons.complete(otherLessonId, userId, { quizScore: 100 })).rejects.toMatchObject({
       response: { code: 'LESSON_QUIZ_REQUIRED' }

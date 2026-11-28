@@ -7,7 +7,7 @@ import {
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
-import { gradeQuiz, parsePositioningTest, publicQuiz, type PublicQuiz, type QuizAnswers } from './quiz';
+import { gradeQuiz, parseQuizBank, publicQuiz, type PublicQuiz, type QuizAnswers } from './quiz';
 
 export type LessonStatus = 'not_started' | 'in_progress' | 'completed';
 
@@ -24,7 +24,6 @@ export interface LessonSummary {
   order: number;
   estimatedMinutes: number;
   status: LessonStatus;
-  positioningTestAvailable: boolean;
   applicationChallenge: { id: string; title: string } | null;
   progress: LessonProgressView;
 }
@@ -94,11 +93,11 @@ export class LessonsService {
     }
 
     const progress = await this.progressFor(userId, [lesson.id]);
-    const test = parsePositioningTest(lesson.positioningTest);
+    const test = parseQuizBank(lesson.quiz);
     return {
       ...this.toSummary(lesson, progress.get(lesson.id)),
       contentMd: lesson.contentMd,
-      quiz: test ? publicQuiz(test, 'quiz') : null
+      quiz: test ? publicQuiz(test) : null
     };
   }
 
@@ -136,7 +135,7 @@ export class LessonsService {
   async quiz(lessonId: string, userId: string, answers: QuizAnswers): Promise<QuizResult> {
     await this.assertConfirmed(userId);
     const lesson = await this.publishedLesson(lessonId);
-    const test = parsePositioningTest(lesson.positioningTest);
+    const test = parseQuizBank(lesson.quiz);
     if (!test) {
       throw new BadRequestException({
         code: 'LESSON_QUIZ_UNAVAILABLE',
@@ -144,7 +143,7 @@ export class LessonsService {
       });
     }
 
-    const result = gradeQuiz(test, answers, 'quiz');
+    const result = gradeQuiz(test, answers);
     const existing = await this.prisma.lessonProgress.findUnique({
       where: { userId_lessonId: { userId, lessonId } }
     });
@@ -174,7 +173,7 @@ export class LessonsService {
   }
 
   /**
-   * Valide la leçon après réussite du quiz.
+   * Valide la leçon après réussite du mini-quiz.
    * Sans réponses fournies, le score déclaré doit correspondre à une tentative
    * déjà enregistrée côté serveur : le client ne peut pas s'auto-dispenser.
    */
@@ -185,7 +184,7 @@ export class LessonsService {
   ): Promise<CompleteResult> {
     await this.assertConfirmed(userId);
     const lesson = await this.publishedLesson(lessonId);
-    const test = parsePositioningTest(lesson.positioningTest);
+    const test = parseQuizBank(lesson.quiz);
     if (!test) {
       throw new BadRequestException({
         code: 'LESSON_QUIZ_UNAVAILABLE',
@@ -195,7 +194,7 @@ export class LessonsService {
 
     let effectiveScore = input.quizScore;
     if (input.answers) {
-      const grade = gradeQuiz(test, input.answers, 'quiz');
+      const grade = gradeQuiz(test, input.answers);
       if (!grade.passed) {
         throw new ForbiddenException({
           code: 'LESSON_QUIZ_FAILED',
@@ -297,7 +296,6 @@ export class LessonsService {
       status: progress?.status === 'in_progress' || progress?.status === 'completed'
         ? progress.status
         : 'not_started',
-      positioningTestAvailable: Boolean(lesson.positioningTest),
       applicationChallenge: this.applicationChallenge(lesson),
       progress: progress
         ? this.toProgressView(progress)

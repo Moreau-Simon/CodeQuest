@@ -7,11 +7,9 @@ import { ApiError } from '../../services/api-client';
 import {
   completeLesson,
   getLesson,
-  positioningAttempt,
   startLesson,
   submitQuiz,
   type LessonCompletion,
-  type PositioningResult,
   type QuizAnswers,
   type QuizQuestion,
   type QuizResult
@@ -176,9 +174,7 @@ export function LessonPage(): JSX.Element {
   });
 
   const [answers, setAnswers] = useState<QuizAnswers>({});
-  const [positionAnswers, setPositionAnswers] = useState<QuizAnswers>({});
   const [quizResult, setQuizResult] = useState<QuizResult | null>(null);
-  const [positioningResult, setPositioningResult] = useState<PositioningResult | null>(null);
   const [completion, setCompletion] = useState<LessonCompletion | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -199,16 +195,6 @@ export function LessonPage(): JSX.Element {
     mutationFn: () => submitQuiz(lessonId, answers),
     onSuccess: (result) => {
       setQuizResult(result);
-      setError(null);
-      refresh();
-    },
-    onError: (cause) => setError(messageOf(cause))
-  });
-
-  const positioning = useMutation({
-    mutationFn: () => positioningAttempt(lessonId, positionAnswers),
-    onSuccess: (result) => {
-      setPositioningResult(result);
       setError(null);
       refresh();
     },
@@ -252,10 +238,8 @@ export function LessonPage(): JSX.Element {
     (lesson.progress.quizScore ?? 0) >= (lesson.quiz?.passScore ?? 101);
   const applicationChallenge = completion?.applicationChallenge ?? lesson.applicationChallenge;
 
-  function setAnswer(target: 'quiz' | 'positioning', id: string, choice: number): void {
-    const update = (current: QuizAnswers): QuizAnswers => ({ ...current, [id]: choice });
-    if (target === 'quiz') setAnswers(update);
-    else setPositionAnswers(update);
+  function setAnswer(id: string, choice: number): void {
+    setAnswers((current) => ({ ...current, [id]: choice }));
   }
 
   return (
@@ -309,7 +293,7 @@ export function LessonPage(): JSX.Element {
                 group="quiz"
                 questions={lesson.quiz.questions}
                 answers={answers}
-                onChange={(id, choice) => setAnswer('quiz', id, choice)}
+                onChange={(id, choice) => setAnswer(id, choice)}
                 disabled={quiz.isPending}
               />
               <Button
@@ -323,37 +307,6 @@ export function LessonPage(): JSX.Element {
                 <p role="status" className="text-sm font-medium">
                   {t('lesson.quizResult', { score: quizResult.score, total: quizResult.correct })} —{' '}
                   {quizResult.passed ? t('lesson.quizPassed') : t('lesson.quizFailed')}
-                </p>
-              )}
-            </section>
-          )}
-
-          {lesson.positioningTestAvailable && !completed && (
-            <section className="flex flex-col gap-4 rounded-2xl border border-elevated p-6">
-              <h2 className="text-xl font-semibold">{t('lesson.positioningTitle')}</h2>
-              <p className="text-sm text-muted">{t('lesson.positioningHint')}</p>
-              <QuestionForm
-                group="positioning"
-                questions={lesson.quiz?.questions ?? []}
-                answers={positionAnswers}
-                onChange={(id, choice) => setAnswer('positioning', id, choice)}
-                disabled={positioning.isPending}
-              />
-              <Button
-                onClick={() => positioning.mutate()}
-                loading={positioning.isPending}
-                disabled={
-                  (lesson.quiz?.questions.length ?? 0) === 0 ||
-                  Object.keys(positionAnswers).length < (lesson.quiz?.questions.length ?? 0)
-                }
-              >
-                {t('lesson.positioningSubmit')}
-              </Button>
-              {positioningResult && (
-                <p role="status" className="text-sm font-medium">
-                  {positioningResult.passed
-                    ? t('lesson.positioningPassed')
-                    : t('lesson.positioningFailed', { score: positioningResult.score })}
                 </p>
               )}
             </section>

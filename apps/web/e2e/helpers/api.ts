@@ -22,7 +22,6 @@ export const LESSON = {
   order: 1,
   estimatedMinutes: 5,
   status: 'completed',
-  positioningTestAvailable: false,
   applicationChallenge: null,
   progress: { status: 'completed', quizScore: 100, completedAt: '2031-06-03T10:00:00.000Z' },
   contentMd: '# Variables\n\nUne leçon déjà consultée, disponible hors ligne.',

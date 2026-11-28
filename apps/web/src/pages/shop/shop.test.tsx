@@ -130,6 +130,29 @@ describe('boutique et portefeuille (T195)', () => {
     expect(await screen.findByText(/70 Bits/)).toBeInTheDocument();
   });
 
+  it('affiche une erreur explicite quand le catalogue ne charge pas', async () => {
+    const fetchMock = vi.fn((url: string) => {
+      if (url.includes('/me/wallet')) {
+        return Promise.resolve(jsonResponse({ balance: 120, recentTransactions: [] }));
+      }
+      return Promise.resolve(jsonResponse({ code: 'INTERNAL', message: 'Erreur' }, 500));
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    renderPage(<ShopPage />);
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Impossible de charger la boutique');
+    expect(screen.queryByText('Aucun objet disponible pour le moment.')).not.toBeInTheDocument();
+  });
+
+  it('invite à se connecter quand la session n’est pas authentifiée', () => {
+    useSessionStore.setState({ status: 'unauthenticated', user: null });
+
+    renderPage(<ShopPage />);
+
+    expect(screen.getByRole('link', { name: /Se connecter/ })).toHaveAttribute('href', '/login');
+  });
+
   it('affiche l’historique signé du portefeuille', async () => {
     vi.stubGlobal(
       'fetch',

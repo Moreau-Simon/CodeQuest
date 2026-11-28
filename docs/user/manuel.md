@@ -18,7 +18,6 @@
 
 - Le parcours `/lessons` présente les cours dans l'ordre. Un cours se lit en mode libre ;
   le quiz valide la progression et débloque le défi associé.
-- Un positionnement permet de dispenser un cours déjà maîtrisé.
 - Le lore se débloque chapitre par chapitre. Les cours déjà consultés restent lisibles hors
   ligne : l'application les met en cache sur l'appareil. Les scores, transactions et échanges
   temps réel ne sont jamais mis en cache.

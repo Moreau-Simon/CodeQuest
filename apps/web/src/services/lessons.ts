@@ -27,13 +27,6 @@ export interface QuizResult {
   passed: boolean;
 }
 
-export interface PositioningResult {
-  score: number;
-  passed: boolean;
-  exempted: boolean;
-  source: 'positioning' | null;
-}
-
 export interface LessonCompletion {
   lessonId: string;
   status: LessonStatus;
@@ -57,7 +50,6 @@ export interface LessonSummary {
   order: number;
   estimatedMinutes: number;
   status: LessonStatus;
-  positioningTestAvailable: boolean;
   applicationChallenge: { id: string; title: string } | null;
   progress: LessonProgress;
 }
@@ -100,15 +92,6 @@ export function startLesson(lessonId: string): Promise<LessonProgress> {
 
 export function submitQuiz(lessonId: string, answers: QuizAnswers): Promise<QuizResult> {
   return api.post<QuizResult>(`/lessons/${encodeURIComponent(lessonId)}/quiz`, { answers });
-}
-
-export function positioningAttempt(
-  lessonId: string,
-  answers: QuizAnswers
-): Promise<PositioningResult> {
-  return api.post<PositioningResult>(`/lessons/${encodeURIComponent(lessonId)}/positioning`, {
-    answers
-  });
 }
 
 export function completeLesson(

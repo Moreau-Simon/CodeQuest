@@ -712,26 +712,6 @@ paths:
         '400': { $ref: '#/components/responses/Error' }
         '403': { $ref: '#/components/responses/Error' }
 
-  /lessons/{lessonId}/positioning:
-    post:
-      tags: [Lessons]
-      summary: Passer le test de positionnement et obtenir une dispense
-      parameters:
-        - { name: lessonId, in: path, required: true, schema: { type: string, format: uuid } }
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: { $ref: '#/components/schemas/QuizAnswers' }
-      responses:
-        '200':
-          description: Résultat du positionnement
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/PositioningResult' }
-        '400': { $ref: '#/components/responses/Error' }
-        '403': { $ref: '#/components/responses/Error' }
-
   /lessons/{lessonId}/complete:
     post:
       tags: [Lessons]
@@ -1732,7 +1712,7 @@ components:
 
     Lesson:
       type: object
-      required: [id, title, theme, order, status, positioningTestAvailable]
+      required: [id, title, theme, order, status]
       properties:
         id: { type: string, format: uuid }
         title: { type: string }
@@ -1740,7 +1720,6 @@ components:
         order: { type: integer }
         estimatedMinutes: { type: integer }
         status: { type: string, enum: [not_started, in_progress, completed] }
-        positioningTestAvailable: { type: boolean }
         contentMd: { type: string }
         quiz: { $ref: '#/components/schemas/Quiz' }
         applicationChallenge:
@@ -1783,15 +1762,6 @@ components:
         correct: { type: integer, minimum: 0 }
         total: { type: integer, minimum: 0 }
         passed: { type: boolean }
-
-    PositioningResult:
-      type: object
-      required: [score, passed, exempted, source]
-      properties:
-        score: { type: integer, minimum: 0, maximum: 100 }
-        passed: { type: boolean }
-        exempted: { type: boolean }
-        source: { type: string, enum: [positioning, null], nullable: true }
 
     LessonProgress:
       type: object

@@ -120,7 +120,7 @@ CHECK : exactement **une** des quatre conditions renseignée. Le graphe est vali
 l'écriture (FR-024) par parcours en profondeur dans le service `challenges`.
 
 ### `lessons`
-`id`, `theme_id` FK, `slug` UNIQUE, `title`, `content_md`, `order`, `positioning_test` jsonb,
+`id`, `theme_id` FK, `slug` UNIQUE, `title`, `content_md`, `order`, `quiz` jsonb (banc du mini-quiz),
 `estimated_minutes`, `status` (`draft`/`published`).
 
 ### `lesson_progress`

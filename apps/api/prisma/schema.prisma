@@ -675,7 +675,7 @@ model Lesson {
   title            String
   contentMd        String   @map("content_md")
   order            Int      @default(0)
-  positioningTest  Json?    @map("positioning_test")
+  quiz             Json?
   estimatedMinutes Int      @default(15) @map("estimated_minutes")
   status           String   @default("draft")
   createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
